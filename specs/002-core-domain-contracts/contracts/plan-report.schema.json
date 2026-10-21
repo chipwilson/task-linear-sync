@@ -1,0 +1,135 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/task-linear-sync/plan-report.schema.json",
+  "title": "task-linear-sync plan review report (JSON artifact)",
+  "description": "Sanitized plan review report. Structural content exclusion: additionalProperties is false at every level and no property admits a raw task body or raw issue description - description material appears only as content hashes. Durable identifiers only; Markdown sibling carries human-readable names. Frozen contract (specs/002-core-domain-contracts/contracts/plan-artifact.md); changes are cross-feature amendments.",
+  "type": "object",
+  "required": ["schemaVersion", "planId", "generatedAt", "guards", "securityAssertions", "groups", "unmapped"],
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "planId": { "type": "string", "pattern": "^[0-9a-f]{64}$", "description": "sha256 over canonicalized plan JSON; doubles as Plan_Reference." },
+    "generatedAt": { "type": "string", "format": "date-time" },
+    "repositoryRoot": { "type": "string" },
+    "guards": {
+      "type": "object",
+      "required": ["fileHashes", "headCommit"],
+      "additionalProperties": false,
+      "properties": {
+        "fileHashes": {
+          "type": "object",
+          "additionalProperties": { "type": "string", "pattern": "^[0-9a-f]{64}$" }
+        },
+        "headCommit": { "type": ["string", "null"] }
+      }
+    },
+    "lowConfidencePresent": { "type": "boolean" },
+    "securityAssertions": {
+      "type": "array",
+      "minItems": 1,
+      "description": "One discrete pass/fail assertion per read-only and content-exclusion guarantee (009 FR-008).",
+      "items": {
+        "type": "object",
+        "required": ["guarantee", "status"],
+        "additionalProperties": false,
+        "properties": {
+          "guarantee": { "type": "string" },
+          "status": { "enum": ["pass", "fail"] },
+          "detail": { "type": "string", "description": "Sanitized; screened before propagation." }
+        }
+      }
+    },
+    "groups": {
+      "type": "array",
+      "description": "Grouped by project then milestone (009 FR-007). Empty for a zero-task plan.",
+      "items": {
+        "type": "object",
+        "required": ["project", "milestone", "entries"],
+        "additionalProperties": false,
+        "properties": {
+          "project": { "type": "string" },
+          "milestone": { "type": "string" },
+          "entries": { "type": "array", "items": { "$ref": "#/$defs/reportTaskEntry" } }
+        }
+      }
+    },
+    "unmapped": {
+      "type": "array",
+      "description": "Issues with no task mapping, separate section (009 FR-007).",
+      "items": {
+        "type": "object",
+        "required": ["issueId", "teamKey", "project", "title", "parentMapped"],
+        "additionalProperties": false,
+        "properties": {
+          "issueId": { "type": "string" },
+          "teamKey": { "type": "string" },
+          "project": { "type": "string" },
+          "title": { "type": "string", "description": "Tracker title, screened by the Security_Screener before inclusion." },
+          "parentMapped": { "type": "boolean", "description": "True iff any descendant issue is mapped." }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "reportTaskEntry": {
+      "type": "object",
+      "description": "Complete per-task field set (009 FR-006). No raw body/description field exists (SC-005).",
+      "required": [
+        "taskUuid", "decision", "framework", "filePath", "confidence", "score", "margin",
+        "reasons", "alternatives", "changedFields", "descriptionContentHash",
+        "expectedMarkdownChanges", "lowConfidenceGateStatus"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "taskUuid": { "type": "string", "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$" },
+        "issueId": { "type": ["string", "null"] },
+        "decision": { "enum": ["create", "update", "no-change", "conflict", "skip-unresolved", "archive"] },
+        "framework": { "enum": ["bmad", "spec-kit", "open-spec", "kiro", "generic"] },
+        "featureName": { "type": ["string", "null"] },
+        "filePath": { "type": "string", "description": "Repository-relative POSIX path." },
+        "confidence": { "enum": ["high", "medium", "low", "unmatched"] },
+        "score": { "type": "integer", "minimum": 0 },
+        "margin": { "type": "integer", "minimum": 0 },
+        "reasons": { "type": "array", "items": { "type": "string" } },
+        "alternatives": {
+          "type": "array", "maxItems": 3,
+          "items": {
+            "type": "object",
+            "required": ["issueId", "score", "mapped"],
+            "additionalProperties": false,
+            "properties": {
+              "issueId": { "type": "string" },
+              "score": { "type": "integer", "minimum": 0 },
+              "mapped": { "type": "boolean" }
+            }
+          }
+        },
+        "changedFields": { "type": "array", "items": { "type": "string" } },
+        "descriptionContentHash": {
+          "type": "string", "pattern": "^[0-9a-f]{64}$",
+          "description": "Content hash in lieu of raw task body or raw issue description."
+        },
+        "expectedMarkdownChanges": {
+          "type": "array", "items": { "type": "string", "maxLength": 512 },
+          "description": "Sanitized, screened line-level change summaries."
+        },
+        "lowConfidenceGateStatus": { "enum": ["passed", "failed"] },
+        "unresolvedConflict": { "type": "boolean", "description": "True => awaiting human resolution of conflict markers (009 FR-007)." },
+        "routing": {
+          "type": ["object", "null"],
+          "additionalProperties": false,
+          "properties": {
+            "teamKey": { "type": "string" },
+            "project": { "type": "string" },
+            "matchedPrefix": { "type": ["string", "null"] },
+            "defaulted": { "type": "boolean" }
+          }
+        },
+        "attachmentUrls": {
+          "type": "array", "items": { "type": "string" },
+          "description": "Planned canonical/continuation attachment URLs (scheme contract)."
+        }
+      }
+    }
+  }
+}
