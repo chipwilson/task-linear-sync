@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "planId": "3f7b9c2e1d4a5b6c7d8e9f0a1b2c3d4e5f60718293a4b5c6d7e8f90a1b2c3d4e",
+  "generatedAt": "2026-10-21T10:00:00.000Z",
+  "repositoryRoot": "/fixture/repo-a",
+  "guards": {
+    "fileHashes": {
+      "specs/001-example/tasks.md": "0a1b2c3d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f60718293a4b5c6d7e8f9"
+    },
+    "headCommit": "abc1234def5678abc1234def5678abc1234def56"
+  },
+  "lowConfidencePresent": false,
+  "securityAssertions": [
+    { "guarantee": "read-only-plan-zero-mutations", "status": "pass" },
+    { "guarantee": "no-raw-body-or-description-fields", "status": "pass" }
+  ],
+  "groups": [
+    {
+      "project": "proj-alpha",
+      "milestone": "M1",
+      "entries": [
+        {
+          "taskUuid": "5b8f1e2a-3c4d-5e6f-7a8b-9c0d1e2f3a4b",
+          "issueId": "issue-0001",
+          "decision": "update",
+          "framework": "spec-kit",
+          "featureName": "001-example",
+          "filePath": "specs/001-example/tasks.md",
+          "confidence": "high",
+          "score": 120,
+          "margin": 40,
+          "reasons": ["durable-uuid", "title-exact"],
+          "alternatives": [
+            { "issueId": "issue-0002", "score": 80, "mapped": false }
+          ],
+          "changedFields": ["title"],
+          "descriptionContentHash": "0a1b2c3d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f60718293a4b5c6d7e8f9",
+          "expectedMarkdownChanges": ["- [ ] Task 1.2 → - [x] Task 1.2"],
+          "lowConfidenceGateStatus": "passed",
+          "unresolvedConflict": false,
+          "routing": {
+            "teamKey": "acme",
+            "project": "proj-alpha",
+            "matchedPrefix": "specs/001",
+            "defaulted": false
+          },
+          "attachmentUrls": ["https://contoso.example.invalid/task-linear-sync/5b8f1e2a-3c4d-5e6f-7a8b-9c0d1e2f3a4b"]
+        }
+      ]
+    }
+  ],
+  "unmapped": [
+    {
+      "issueId": "issue-9999",
+      "teamKey": "acme",
+      "project": "proj-beta",
+      "title": "Orphaned issue (screened)",
+      "parentMapped": false
+    }
+  ]
+}

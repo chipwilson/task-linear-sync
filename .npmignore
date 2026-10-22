@@ -1,0 +1,12 @@
+# Publishing allowlist lives in package.json "files"; this file is a
+# belt-and-braces exclusion list so a stray `npm pack` never ships internals.
+src/
+tests/
+specs/
+build/
+coverage/
+.github/
+.specify/
+.opencode/
+eslint.config.js
+tsconfig*.json

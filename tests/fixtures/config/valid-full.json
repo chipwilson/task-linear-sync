@@ -1,0 +1,28 @@
+{
+  "attachmentBaseHost": "https://contoso.example.invalid",
+  "pageSize": 250,
+  "confidenceFloors": {
+    "medium": 55,
+    "plausible": 20
+  },
+  "minimumMatchMargin": 12,
+  "teams": {
+    "acme": {
+      "projects": ["proj-alpha", "proj-beta"],
+      "workflowStates": {
+        "backlog": "Backlog",
+        "todo": "Todo",
+        "inProgress": "In Progress",
+        "done": "Done",
+        "completedTypes": ["completed"],
+        "ignoredTypes": ["canceled", "duplicate"]
+      }
+    }
+  },
+  "projectByPath": [
+    { "prefix": "specs/001", "teamKey": "acme", "project": "proj-alpha" },
+    { "prefix": "specs/", "teamKey": "acme", "project": "proj-beta" }
+  ],
+  "defaultTeamKey": "acme",
+  "defaultProject": "proj-alpha"
+}

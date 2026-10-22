@@ -1,0 +1,26 @@
+# dependencies
+node_modules/
+
+# build outputs
+dist/
+build/
+coverage/
+
+# logs
+*.log
+npm-debug.log*
+
+# environment / credentials (values are never config — names only, per constitution)
+.env
+.env.*
+
+# editors / OS
+.DS_Store
+Thumbs.db
+*.swp
+.vscode/
+.idea/
+
+# npm
+*.tgz
+.eslintcache

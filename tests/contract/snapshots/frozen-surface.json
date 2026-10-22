@@ -1,0 +1,171 @@
+{
+  "domain/task": [
+    "FrameworkId",
+    "FrameworkMetadata",
+    "IssueRef",
+    "Task",
+    "TaskBodyExtent",
+    "TaskFile",
+    "TaskKind",
+    "taskStableSeed"
+  ],
+  "domain/match": [
+    "Confidence",
+    "Match",
+    "MatchAlternative"
+  ],
+  "domain/routing": [
+    "ProjectByPathEntry",
+    "RoutingResolution",
+    "TeamIdentity",
+    "WorkflowStateIdentities"
+  ],
+  "domain/state-payload": [
+    "SyncHistoryEvent",
+    "SyncHistoryEventKind",
+    "SyncStatePayload",
+    "parseSyncStatePayload",
+    "serializeSyncStatePayload"
+  ],
+  "domain/checkpoint": [
+    "Checkpoint",
+    "ConflictAction",
+    "ConflictResolutionMap",
+    "DescriptionConflictType"
+  ],
+  "domain/plan": [
+    "Plan",
+    "PlanDecision",
+    "PlanGuards",
+    "PlanTaskEntry",
+    "StoredPlan",
+    "UnmappedIssue",
+    "canonicalJson",
+    "canonicalizePlanJson",
+    "derivePlanId"
+  ],
+  "domain/run-records": [
+    "AuditManifest",
+    "AuditOperation",
+    "AuditStepState",
+    "CreateIntent",
+    "CreateIntentStatus",
+    "HookBlock",
+    "HookDefinition",
+    "LastRunMarker",
+    "PendingJob",
+    "RunLockRecord"
+  ],
+  "config/schema": [
+    "ConfidenceFloors",
+    "ConfigFailureCategory",
+    "ConfigFileError",
+    "ConfigOverrides",
+    "CredentialEnvVarNames",
+    "DeepPartial",
+    "LoadConfigOptions",
+    "McpSurfaceConfig",
+    "MissingIdentityError",
+    "ResolvedConfig",
+    "ScoringWeights",
+    "WebSurfaceConfig",
+    "WorkerConfig"
+  ],
+  "config/defaults": [
+    "DERIVATIONS",
+    "builtInDefaults",
+    "envVarPrefixFor"
+  ],
+  "config/merge": [
+    "canonicalizeConfig",
+    "deepMerge"
+  ],
+  "config/load": [
+    "loadConfig"
+  ],
+  "config/validate": [
+    "validateWorkspaceIdentity"
+  ],
+  "state/clock": [
+    "Clock",
+    "fixedClock",
+    "systemClock"
+  ],
+  "state/fs": [
+    "StateFileError",
+    "atomicWriteJson",
+    "atomicWriteText",
+    "ensurePrivateDir",
+    "readJsonFile"
+  ],
+  "state/paths": [
+    "StatePlacementError",
+    "StateStore",
+    "StateStoreOptions",
+    "StateStorePaths",
+    "canonicalizePath",
+    "createStateStore",
+    "platformStateBase",
+    "resolveStateDir",
+    "stateDirHash16"
+  ],
+  "state/lock": [
+    "LockAcquisition",
+    "acquireRunLock",
+    "releaseRunLock"
+  ],
+  "state/manifest": [
+    "KeyProvider",
+    "ManifestEnvelope",
+    "ManifestKeyUnavailableError",
+    "ManifestTamperError",
+    "isManifestExpired",
+    "openManifest",
+    "sealManifest"
+  ],
+  "state/intent": [
+    "listIntentsByTask",
+    "updateCreateIntentStatus",
+    "writeCreateIntentBeforeAttempt"
+  ],
+  "state/marker": [
+    "ReportScreeningError",
+    "readLastRunMarker",
+    "writeRunReports"
+  ],
+  "urls/attachment-url": [
+    "AttachmentUrlConfig",
+    "ParsedAttachmentUrl",
+    "UrlSchemeError",
+    "canonicalAttachmentUrl",
+    "continuationAttachmentUrl",
+    "parseAttachmentUrl"
+  ],
+  "gates/gates": [
+    "GateFailure",
+    "GateFailureCode",
+    "GateRequest",
+    "GateValidation",
+    "validatePlanReference"
+  ],
+  "ports/linear-port": [
+    "AttachmentMetadata",
+    "AttachmentView",
+    "CreateIssueInput",
+    "IssueScope",
+    "IssueUpdatePatch",
+    "IssueView",
+    "LinearPort",
+    "Page",
+    "TeamMetadataCollections"
+  ],
+  "ports/engine": [
+    "ApplyResult",
+    "BuildPlanOptions",
+    "EngineDependencies",
+    "OperationOutcome",
+    "RollbackResult",
+    "SecurityScreener",
+    "SyncEngine"
+  ]
+}
