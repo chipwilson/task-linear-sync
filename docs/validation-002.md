@@ -2,9 +2,10 @@
 
 Executed 2026-10-22 against commit range implementing `specs/002-core-domain-contracts/tasks.md`
 (Node v22.14.0, Linux x64, non-root; CI matrix additionally validates the engines floor on
-Node 20 — its runner supports no `--test-coverage-*` threshold options, so `scripts/run-tests.mjs`
-probes flag support at runtime, runs the full suite ungated-with-notice there, and enforces
-the threshold gate on the modern-runner leg). Full suite: **111 tests,
+Node 20 — its runner supports no `--test-coverage-*` threshold options and its experimental
+coverage reporter crashes on child-process coverage, so `scripts/run-tests.mjs` probes flag
+support at runtime and runs that leg WITHOUT coverage instrumentation; the threshold gate is
+enforced on the modern-runner leg). Full suite: **111 tests,
 0 failures**; coverage
 lines 94.21% / branches 89.13% / functions 98.89% (gate: 80/70/80). Lint and typecheck
 clean.

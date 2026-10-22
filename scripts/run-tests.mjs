@@ -61,23 +61,22 @@ function supportsFlag(flag) {
   return r.status === 0 && !/bad option/.test(r.stderr ?? "");
 }
 
-const [major] = process.versions.node.split(".").map(Number);
-
 const flags = ["--test", ...passthrough];
 if (all) {
-  // Coverage gate (constitution: test-first with a threshold). Flags are added only
-  // when this runtime actually parses them; Node 20's runner knows none of the
-  // threshold/exclude options, so on that floor the coverage report is informational
-  // and the enforced threshold gate runs on the CI leg with a modern runner.
-  if (supportsFlag("--experimental-test-coverage")) {
-    flags.push("--experimental-test-coverage");
-    for (const flag of [
-      "--test-coverage-lines=80",
-      "--test-coverage-branches=70",
-      "--test-coverage-functions=80",
-    ]) {
-      if (supportsFlag(flag)) flags.push(flag);
-    }
+  // Coverage gate (constitution: test-first with a threshold). Coverage instrumentation
+  // is enabled ONLY on runtimes that can enforce thresholds: the v20 runner accepts no
+  // --test-coverage-* options, and its experimental coverage REPORTER is itself buggy
+  // (crashes with "Could not report code coverage" when merging child-process coverage,
+  // exiting 1 despite all tests passing). On the engines-floor leg the suite therefore
+  // runs WITHOUT coverage instrumentation; the threshold gate is enforced on modern
+  // runners (CI matrix: 20.x + 24.x).
+  const thresholdFlags = [
+    "--test-coverage-lines=80",
+    "--test-coverage-branches=70",
+    "--test-coverage-functions=80",
+  ].filter(supportsFlag);
+  if (thresholdFlags.length > 0 && supportsFlag("--experimental-test-coverage")) {
+    flags.push("--experimental-test-coverage", ...thresholdFlags);
     const exclude = supportsFlag("--test-coverage-exclude=build/tests/**")
       ? "--test-coverage-exclude"
       : supportsFlag("--test-coverage-ignore=build/tests/**")
@@ -86,9 +85,10 @@ if (all) {
     if (exclude) {
       flags.push(`${exclude}=build/tests/**`, `${exclude}=**/index.js`);
     }
-  }
-  if (major < 22) {
-    console.log("run-tests: coverage thresholds unsupported on this runtime (informational report only; enforced on the modern-runner CI leg).");
+  } else {
+    console.log(
+      `run-tests: this runtime (v${process.versions.node}) supports no coverage thresholds — suite runs without coverage instrumentation; the gate is enforced on the modern-runner CI leg.`,
+    );
   }
 }
 
