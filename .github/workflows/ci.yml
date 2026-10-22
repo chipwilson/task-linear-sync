@@ -14,7 +14,8 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        node-version: ["20.x", "22.x"]
+        # Support-range guard: engines floor (20) and current LTS (24) run identical gates.
+        node-version: ["20.x", "24.x"]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4

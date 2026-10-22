@@ -50,11 +50,11 @@
     "typecheck": "tsc -p tsconfig.test.json --noEmit",
     "lint": "eslint .",
     "pretest": "npm run build && npm run compile:tests",
-    "test": "npm run pretest && sh -c 'node --test --experimental-test-coverage --test-coverage-lines=80 --test-coverage-branches=70 --test-coverage-functions=80 --test-coverage-exclude=\"build/tests/**\" --test-coverage-exclude=\"**/index.js\" \"$@\" build/tests/*/*.test.js' tls",
-    "test:unit": "sh -c 'node --test \"$@\" build/tests/unit/*.test.js' tls",
-    "test:contract": "sh -c 'node --test \"$@\" build/tests/contract/*.test.js' tls",
-    "test:integration": "sh -c 'node --test \"$@\" build/tests/integration/*.test.js' tls",
-    "test:e2e": "sh -c 'node --test \"$@\" build/tests/e2e/*.test.js' tls"
+    "test": "npm run pretest && node scripts/run-tests.mjs --all",
+    "test:unit": "node scripts/run-tests.mjs --tier unit",
+    "test:contract": "node scripts/run-tests.mjs --tier contract",
+    "test:integration": "node scripts/run-tests.mjs --tier integration",
+    "test:e2e": "node scripts/run-tests.mjs --tier e2e"
   },
   "devDependencies": {
     "@types/node": "^22.10.0",
