@@ -1,7 +1,10 @@
 # Validation record — feature 002-core-domain-contracts
 
 Executed 2026-10-22 against commit range implementing `specs/002-core-domain-contracts/tasks.md`
-(Node v22.14.0, Linux x64, non-root). Full suite: **111 tests, 0 failures**; coverage
+(Node v22.14.0, Linux x64, non-root; CI matrix additionally validates the engines floor on
+Node 20, where the coverage gate applies the line threshold only — branch/function
+thresholds require Node ≥ 22.3, see `scripts/run-tests.mjs`). Full suite: **111 tests,
+0 failures**; coverage
 lines 94.21% / branches 89.13% / functions 98.89% (gate: 80/70/80). Lint and typecheck
 clean.
 
