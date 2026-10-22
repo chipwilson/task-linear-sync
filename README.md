@@ -1,79 +1,87 @@
 # task-linear-sync
 
-Core domain contracts, configuration model, and run-state lifecycle — the Wave-1
-foundation consumed by every later feature (adapters, discovery, matching, sync engine,
-CLI, web, MCP surfaces). **Zero runtime dependencies; pure ESM; Node.js ≥ 20.**
+A reusable npm library + CLI that keeps spec-driven-development task files in a repository bidirectionally synced with **Linear** issues — maintaining a "golden thread" of traceability between the specs you plan with and the issues you track work in.
 
-This package contains **no tracker transport and no sync engine** — those are later
-features that consume the frozen contracts defined here (see
-`specs/002-core-domain-contracts/`).
+> **Status: foundation implemented.** Feature 002 (core domain contracts, configuration model, run-state lifecycle) is implemented, tested, and frozen; the sync engine, tracker transport, and user-facing surfaces (CLI, queue, web, MCP, CI) remain future features. See [Current Status](#current-status).
 
-## Install
+## Proposed Purpose
 
-```sh
-npm install task-linear-sync
+- **Discover** task files (`tasks.md` / `TASKS.md`) produced by spec frameworks such as **BMAD, GitHub Spec Kit, open-spec, Kiro, and generic Markdown** via pluggable framework adapters.
+- **Parse** heading/checklist tasks, derive deterministic stable identities (UUIDs), and **match** them to Linear issues using weighted scoring with globally optimal one-to-one assignment.
+- **Sync** both directions: mirror task content into issue descriptions, and write visible issue-key prefixes (e.g. `[KEY-123]`) back into the Markdown, with git-style conflict markers when both sides changed.
+- **Persist sync state durably** in a Linear attachment (deterministic URL scheme), outside the repo, encrypted (AES-256-GCM) and journaled — never in descriptions or in-file.
+- **Operate safely**: a single sync engine (`buildSyncPlan` / `applySyncPlan`) behind read-only plan surfaces, confirmation-gated apply, rollback of journaled runs, secret/PII screening, and idempotent byte-identical reruns.
+
+Planned surfaces, all layered on the same engine:
+
+| Surface | Description | Feature spec |
+|---|---|---|
+| Core library | Domain, contracts, discovery, parsing, matching, tracker port, engine | 002–008 |
+| Operator CLI | `plan` / `apply` / `rollback` with review reports and gates | 009 |
+| Background queue & hooks | Git hooks and agent hooks that enqueue syncs | 010 |
+| Sync History web page | Optional Next.js/React viewer of sync runs | 011 |
+| MCP server | AI-agent tool interface at `<pkg>/mcp` subpath | 012 |
+| CI enforcement | GitHub Action (`task-linear-sync-action`) | 013 |
+
+**Tech stack** (per the ratified constitution; in use since feature 002): TypeScript 5.x in strict mode, ESM with generated `.d.ts`, Node.js ≥ 20, runtime dependencies limited to Node built-ins (as of feature 002: zero) plus exactly one platform transport dependency (arrives with feature 006); `node:test` for testing.
+
+## Repository Layout
+
+This repo follows [GitHub Spec Kit](https://github.com/github/spec-kit) spec-driven development (`/speckit.*` workflow):
+
+```
+task-linear-sync/
+├── .opencode/commands/       # /speckit.* slash commands (specify, plan, tasks, implement, …)
+├── .specify/
+│   ├── memory/constitution.md # Ratified project constitution (v1.0.0)
+│   ├── scripts/              # Spec Kit bash helpers (feature/plan/tasks scaffolding)
+│   ├── templates/            # Spec/plan/tasks/checklist templates
+│   └── workflows/            # Workflow registry and definitions
+├── src/                      # Implemented by feature 002: contracts, config, run-state
+├── tests/                    # unit / contract / integration / e2e (hermetic, zero-network)
+├── docs/                     # Config reference, amendment rule, validation record
+├── package.json              # ESM package (zero runtime deps), npm scripts, engines ≥ 20
+└── specs/
+    ├── requirements.md       # Master requirements (R1–R29) + glossary
+    ├── ROADMAP.md            # Feature decomposition into waves
+    ├── 001-extract-functional-requirements/
+    │   └── spec.md           # FR-001…FR-097 traceability catalog
+    ├── 002-core-domain-contracts/   # Feature 002 — implemented; contracts frozen
+    │   ├── spec.md
+    │   ├── plan.md           # src/ layout, stack, constitution gates
+    │   ├── research.md       # Resolved design decisions (R1–R16)
+    │   ├── data-model.md     # ~20 canonical entities
+    │   ├── quickstart.md     # npm scripts and validation scenarios
+    │   └── contracts/        # Frozen contracts: task model, config, state,
+    │                         # URLs, gates, tracker port, plan-report schema
+    └── 003…013-*/            # Draft feature specs (one per capability)
 ```
 
-## Usage
+The **source** layout from `specs/002-core-domain-contracts/plan.md`, created by feature 002:
 
-```ts
-import { loadConfig, validateWorkspaceIdentity } from "task-linear-sync";
-import { createStateStore, acquireRunLock, releaseRunLock, systemClock } from "task-linear-sync/state";
-import { canonicalAttachmentUrl } from "task-linear-sync/urls";
-
-// Layered config: built-in defaults -> JSON file -> programmatic overrides.
-const config = loadConfig({ configFile: "task-linear-sync.json", overrides: { pageSize: 64 } });
-validateWorkspaceIdentity(config); // throws MissingIdentityError naming EVERY missing value
-
-// Run state lives OUTSIDE the repository (owner-only, atomic) — see docs/configuration.md.
-const store = createStateStore({ repositoryRoot: "/path/to/repo", config, clock: systemClock });
-await store.ensure();
-
-const lock = await acquireRunLock(store, "run-1");
-if (!lock.acquired) {
-  console.error(`another run holds the lock: ${lock.heldBy.runId} (${lock.reason})`);
-  process.exit(1);
-}
-try {
-  const url = canonicalAttachmentUrl(config, "5b8f1e2a-3c4d-5e6f-7a8b-9c0d1e2f3a4b");
-  // … engine work happens in later features against the frozen contracts …
-} finally {
-  if (lock.acquired) await releaseRunLock(store, lock.record);
-}
+```
+src/
+├── domain/    # canonical entities: task, match, routing, state, plan, records
+├── config/    # schema, defaults, merge, load, validate
+├── state/     # paths, fs, locking, manifest, intent, clock
+├── urls/      # attachment URL builders
+├── gates/     # confirmation-gate vocabulary
+└── ports/     # Linear_Port interface, buildSyncPlan / applySyncPlan signatures
+tests/
+└── unit | contract | integration | e2e (+ fixtures, helpers, negative-type tests)
 ```
 
-Subpath exports: `task-linear-sync` (root barrel), `/domain`, `/config`, `/state`,
-`/urls`, `/gates`, `/ports`.
+Later waves add `discovery`, `parsing`, `routing`, `matching`, `tracker`, `engine`, and `cli` modules.
 
-## What lives where
+## Current Status
 
-| Module group | Contents |
-| --- | --- |
-| `src/domain` | Frozen contract shapes: Task, TaskFile, Match, routing, SyncStatePayload, Checkpoint, Plan/StoredPlan (+ `derivePlanId`), run records |
-| `src/config` | `ResolvedConfig`/`ConfigOverrides`, layered `loadConfig` (three failure categories), `deepMerge`, `canonicalizeConfig`, `validateWorkspaceIdentity` |
-| `src/state` | Clock injection, owner-only atomic fs primitives, out-of-repo placement, advisory run lock, AES-256-GCM manifest envelope, create-intent store, reports + last-run marker |
-| `src/urls` | Canonical/continuation attachment-URL builders + parser |
-| `src/gates` | Gate vocabulary (`GateRequest`, `GateFailureCode`) and `validatePlanReference` |
-| `src/ports` | `LinearPort` + `SyncEngine` signatures — types only, implemented by later features |
+_Last updated: 2026-10-22 · branch `002-core-domain-contracts`_
 
-## Development
+- ✅ **Constitution ratified** — `.specify/memory/constitution.md` v1.0.0 (2026-10-20): safety-first, durable identity, overridable defaults, determinism/idempotency, one engine with additive surfaces, test-first quality gates.
+- ✅ **Requirements complete** — `specs/requirements.md` (29 requirements) and the 97-item FR traceability catalog (feature 001) reviewed and checklist-passed.
+- ✅ **Roadmap defined** — 12 build features (002–013) in 4 waves: contracts first (002), then discovery/parse/route/match/tracker in parallel (003–007), engine integration (008), then CLI/queue/web/MCP/CI (009–013).
+- ✅ **Feature 002 (core domain contracts) implemented** — all 54 tasks delivered: canonical entities, the config model with a secret-free provenanced baseline, the run-state lifecycle (manifests, durable intents, advisory locking, atomic state filesystem), the attachment URL scheme, the gate vocabulary, and the frozen `Linear_Port` / `buildSyncPlan` / `applySyncPlan` boundaries. Backed by 111 hermetic zero-network tests across four tiers, an enforced coverage threshold gate (80/70/80 lines/branches/functions), and CI on the Node 20–24 range. The frozen export surface is guarded by a checked-in snapshot; changes follow `docs/contract-amendments.md`. Usage and configuration docs: `docs/configuration.md`, `docs/validation-002.md`.
+- 📝 **Features 003–013 are draft specs only** — no tasks or plans yet; they are unblocked now that feature 002's contracts are frozen.
+- ✅ **The repo builds and tests** — `npm ci && npm test` (also `lint`, `typecheck`, `build`, and per-tier `test:unit|contract|integration|e2e` scripts). Note the scope: this is the foundation — no engine, discovery/parsing, or tracker transport yet; those arrive with features 003–008.
 
-```sh
-npm ci
-npm run build        # dist/ with per-module .d.ts (tests resolve via the exports map)
-npm run typecheck    # includes tests/types/*.test-d.ts negative assertions
-npm run lint
-npm test             # pretest (build + compile tests) -> unit/contract/integration/e2e + coverage gate
-```
-
-Tests are hermetic: injected clocks, temp directories, zero network, zero credentials.
-
-## Governance
-
-- The `src/{domain,config,state,urls,gates,ports}` surface is **frozen** (spec FR-008):
-  changes require a simultaneous contract-doc + module + snapshot amendment — see
-  [`docs/contract-amendments.md`](docs/contract-amendments.md).
-- Defaults carry **zero real organization identifiers**; workspace identities are
-  consumer-required — see [`docs/configuration.md`](docs/configuration.md).
-- Feature docs: `specs/002-core-domain-contracts/` (spec, plan, research, data-model,
-  contracts/, quickstart).
+**Next steps:** merge feature 002, then run Wave 2 in parallel — features 003 (framework adapters & discovery), 004 (task parsing & stable ids), 005 (routing), 006 (matching & tracker transport — first platform dependency lands here), 007 (confirmation gates) — each via `/speckit.tasks` and `/speckit.implement` on top of the frozen contracts.
