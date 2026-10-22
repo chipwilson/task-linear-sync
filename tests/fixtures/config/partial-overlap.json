@@ -1,0 +1,5 @@
+{
+  "pageSize": 500,
+  "skipDirectories": [".git", "vendor"],
+  "staleLockTakeoverSeconds": 90
+}

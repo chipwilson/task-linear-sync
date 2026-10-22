@@ -1,0 +1,18 @@
+{
+  "teams": {
+    "acme": {
+      "projects": [],
+      "workflowStates": {}
+    },
+    "bluesky": {
+      "projects": ["sky-net"],
+      "workflowStates": { "done": "Done" }
+    }
+  },
+  "projectByPath": [
+    { "prefix": "specs/a", "project": "proj-only" },
+    { "prefix": "specs/b", "teamKey": "acme" }
+  ],
+  "defaultTeamKey": "acme",
+  "defaultProject": ""
+}

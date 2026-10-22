@@ -1,0 +1,65 @@
+{
+  "name": "task-linear-sync",
+  "version": "0.2.0",
+  "description": "Core domain contracts, configuration model, and run-state lifecycle for task-linear-sync (Wave-1 foundation). Zero runtime dependencies.",
+  "type": "module",
+  "license": "MIT",
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./domain": {
+      "types": "./dist/domain/index.d.ts",
+      "default": "./dist/domain/index.js"
+    },
+    "./config": {
+      "types": "./dist/config/index.d.ts",
+      "default": "./dist/config/index.js"
+    },
+    "./state": {
+      "types": "./dist/state/index.d.ts",
+      "default": "./dist/state/index.js"
+    },
+    "./urls": {
+      "types": "./dist/urls/index.d.ts",
+      "default": "./dist/urls/index.js"
+    },
+    "./gates": {
+      "types": "./dist/gates/index.d.ts",
+      "default": "./dist/gates/index.js"
+    },
+    "./ports": {
+      "types": "./dist/ports/index.d.ts",
+      "default": "./dist/ports/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "docs"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "compile:tests": "tsc -p tsconfig.test.json",
+    "typecheck": "tsc -p tsconfig.test.json --noEmit",
+    "lint": "eslint .",
+    "pretest": "npm run build && npm run compile:tests",
+    "test": "npm run pretest && node scripts/run-tests.mjs --all",
+    "test:unit": "node scripts/run-tests.mjs --tier unit",
+    "test:contract": "node scripts/run-tests.mjs --tier contract",
+    "test:integration": "node scripts/run-tests.mjs --tier integration",
+    "test:e2e": "node scripts/run-tests.mjs --tier e2e"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "eslint": "^9.18.0",
+    "typescript": "^5.7.0",
+    "typescript-eslint": "^8.20.0"
+  }
+}

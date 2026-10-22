@@ -1,0 +1,34 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: Lint, typecheck, build, test
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        # Support-range guard: engines floor (20) and current LTS (24) run identical gates.
+        node-version: ["20.x", "24.x"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: npm
+      # Locked manifest; hermetic pipeline — no Linear credentials, no org identifiers (constitution)
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run build
+      - run: npm run typecheck
+      # Merge-blocking: any failure or coverage below the configured threshold fails the job.
+      # scripts/run-tests.mjs probes coverage-flag support per runtime: the engines-floor
+      # leg (20.x) runs the full suite without coverage instrumentation (its runner cannot
+      # gate thresholds); the gate is enforced on the modern-runner leg.
+      - run: npm test
