@@ -27,5 +27,7 @@ jobs:
       - run: npm run lint
       - run: npm run build
       - run: npm run typecheck
-      # Merge-blocking: any failure or coverage below the configured threshold fails the job
+      # Merge-blocking: any failure or coverage below the configured threshold fails the job.
+      # (Coverage threshold flags are probed per runtime by scripts/run-tests.mjs; the
+      # engines-floor leg (20.x) runs the full suite with the gate on modern runners.)
       - run: npm test
