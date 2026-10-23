@@ -23,3 +23,9 @@ export { deriveStableUuid } from "./identity.js";
 // ── Conflict-marker detection + renderer freeze set (research R7) ──────────────────
 export type { ConflictBlock } from "./conflict.js";
 export { scanConflictBlocks, blocksIntersecting, frozenLineSet } from "./conflict.js";
+
+// ── Extraction orchestrator (US1: FR-001…FR-010) ──────────────────────────────────
+export type { ExclusionRecord } from "./extract.js";
+export type { ParseWarning } from "./warnings.js";
+export type { ParseResult } from "./taskfile.js";
+export { parseTaskFile } from "./taskfile.js";

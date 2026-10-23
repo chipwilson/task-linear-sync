@@ -1,4 +1,4 @@
-# Auth tasks
+# Tasks
 
 ## Phase 1: Setup
 
