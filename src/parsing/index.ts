@@ -29,3 +29,15 @@ export type { ExclusionRecord } from "./extract.js";
 export type { ParseWarning } from "./warnings.js";
 export type { ParseResult } from "./taskfile.js";
 export { parseTaskFile } from "./taskfile.js";
+
+// ── Title cleaning + in-place line rendering (US2: FR-011…FR-013) ─────────────────
+export type { CleanTitleOptions } from "./title.js";
+export { cleanTitle } from "./title.js";
+export type {
+  LineAssignment,
+  LineRenderFailureReason,
+  RenderOptions,
+  RenderedLineChange,
+  RenderResult,
+} from "./render.js";
+export { LineRenderError, renderTaskLines } from "./render.js";
