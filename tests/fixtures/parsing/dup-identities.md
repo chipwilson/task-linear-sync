@@ -1,0 +1,5 @@
+- [ ] Task 2.1: Create login endpoint [SYNC-42]
+- [ ] Task 2.1: Create logout endpoint
+- [ ] Add request metrics [SYNC-42]
+- [ ] Add request tracing [SYNC-42]
+- [ ] 2.9: Unique item

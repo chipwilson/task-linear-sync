@@ -37,6 +37,10 @@
     "./ports": {
       "types": "./dist/ports/index.d.ts",
       "default": "./dist/ports/index.js"
+    },
+    "./parsing": {
+      "types": "./dist/parsing/index.d.ts",
+      "default": "./dist/parsing/index.js"
     }
   },
   "files": [

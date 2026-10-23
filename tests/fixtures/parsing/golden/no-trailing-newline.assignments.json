@@ -1,0 +1,24 @@
+[
+  {
+    "task": {
+      "stableUuid": "00000000-0000-5000-8000-000000000021",
+      "kind": "checklist",
+      "filePath": "specs/auth/tasks.md",
+      "lineNumber": 3,
+      "frameworkId": "generic",
+      "title": "Land the final change",
+      "childUuids": [],
+      "taskBody": {
+        "startLine": 3,
+        "endLine": 3
+      },
+      "unresolvedConflict": false,
+      "checked": false
+    },
+    "desiredTitle": "Land the final change",
+    "issueRef": {
+      "key": "SYNC",
+      "number": 220
+    }
+  }
+]

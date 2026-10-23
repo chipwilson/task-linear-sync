@@ -1,0 +1,69 @@
+[
+  {
+    "task": {
+      "stableUuid": "00000000-0000-5000-8000-000000000011",
+      "kind": "heading",
+      "filePath": "specs/auth/tasks.md",
+      "lineNumber": 1,
+      "frameworkId": "generic",
+      "title": "Sync notes",
+      "childUuids": [],
+      "taskBody": {
+        "startLine": 1,
+        "endLine": 1
+      },
+      "unresolvedConflict": false,
+      "localTaskId": "1.1"
+    },
+    "desiredTitle": "Sync notes",
+    "issueRef": {
+      "key": "SYNC",
+      "number": 210
+    }
+  },
+  {
+    "task": {
+      "stableUuid": "00000000-0000-5000-8000-000000000012",
+      "kind": "checklist",
+      "filePath": "specs/auth/tasks.md",
+      "lineNumber": 3,
+      "frameworkId": "generic",
+      "title": "Draft notes",
+      "childUuids": [],
+      "taskBody": {
+        "startLine": 3,
+        "endLine": 3
+      },
+      "unresolvedConflict": false,
+      "checked": false
+    },
+    "desiredTitle": "Draft notes",
+    "issueRef": {
+      "key": "SYNC",
+      "number": 211
+    },
+    "checked": true
+  },
+  {
+    "task": {
+      "stableUuid": "00000000-0000-5000-8000-000000000013",
+      "kind": "checklist",
+      "filePath": "specs/auth/tasks.md",
+      "lineNumber": 7,
+      "frameworkId": "generic",
+      "title": "Freeze assets",
+      "childUuids": [],
+      "taskBody": {
+        "startLine": 7,
+        "endLine": 7
+      },
+      "unresolvedConflict": false,
+      "checked": false
+    },
+    "desiredTitle": "Freeze assets",
+    "issueRef": {
+      "key": "SYNC",
+      "number": 212
+    }
+  }
+]
