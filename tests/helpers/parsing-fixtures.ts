@@ -12,6 +12,7 @@ import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 
 import { builtInDefaults, type ResolvedConfig } from "task-linear-sync/config";
+import type { TaskFileAdapter } from "task-linear-sync/parsing";
 
 /** Repository root as seen from the compiled helper (build/tests/helpers/ → repo root). */
 const pkgRoot = fileURLToPath(new URL("../../../", import.meta.url));
@@ -74,28 +75,24 @@ function prefixedFeatureName(prefix: string) {
 export const genericFixtureAdapter = {
   id: "generic" as const,
   featureName: genericFeatureName,
-};
-
+} satisfies TaskFileAdapter;
 // The four framework fixtures vary ONLY in interface-visible conventions (research R10).
 
 /** bmad: `bmad/<feature>/tasks.md` → `<feature>`; no grammar overrides. */
 export const bmadFixtureAdapter = {
   id: "bmad" as const,
   featureName: prefixedFeatureName("bmad/"),
-};
-
+} satisfies TaskFileAdapter;
 /** spec-kit: `specs/<feature>/tasks.md` → `<feature>`; no grammar overrides. */
 export const specKitFixtureAdapter = {
   id: "spec-kit" as const,
   featureName: prefixedFeatureName("specs/"),
-};
-
+} satisfies TaskFileAdapter;
 /** open-spec: `openspec/<feature>/tasks.md` → `<feature>`; no grammar overrides. */
 export const openSpecFixtureAdapter = {
   id: "open-spec" as const,
   featureName: prefixedFeatureName("openspec/"),
-};
-
+} satisfies TaskFileAdapter;
 /**
  * kiro: `.kiro/specs/<feature>/tasks.md` → `<feature>`, plus a superset heading
  * grammar override that additionally captures full `Task 1.2`-style ids. The
@@ -107,8 +104,7 @@ export const kiroFixtureAdapter = {
   featureName: kiroFeatureName,
   headingGrammar:
     "^\\s{0,3}#{1,6}\\s+(?:(?<id>Task\\s+[0-9]+(?:\\.[0-9]+)*|[0-9]+(?:\\.[0-9]+)*|[A-Za-z][A-Za-z0-9-]*\\d*)[.:]?\\s+)?(?<title>.+)$",
-};
-
+} satisfies TaskFileAdapter;
 /**
  * Strict custom grammar: ONLY `## Task <N.M>:` headings are task headings —
  * used by the override-precedence table (adapter-supplied grammar beats the
@@ -118,8 +114,7 @@ export const taskGrammarFixtureAdapter = {
   id: "generic" as const,
   featureName: () => undefined,
   headingGrammar: "^\\s{0,3}#{1,6}\\s+Task\\s+(?<id>[0-9]+(?:\\.[0-9]+)*):?\\s+(?<title>.+)$",
-};
-
+} satisfies TaskFileAdapter;
 /**
  * Minimal custom adapter (001 FR-026 shape): id + `headingGrammar` ONLY —
  * no featureName member beyond a trivially-derivable one is required beyond
@@ -129,4 +124,4 @@ export const minimalCustomAdapter = {
   id: "generic" as const,
   featureName: () => undefined,
   headingGrammar: "^\\s{0,3}#{1,6}\\s+(?:(?<id>[0-9]+(?:\\.[0-9]+)*)[.:]?\\s+)?(?<title>.+)$",
-};
+} satisfies TaskFileAdapter;
