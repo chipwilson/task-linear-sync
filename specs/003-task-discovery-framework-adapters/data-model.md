@@ -89,7 +89,7 @@ duplicated here. Field semantics:
 | `titleBehavior.stripPrefixes` | Default title strip prefixes (FR-007); hook for 005 derivation |
 | `siblingDocuments` | Per-adapter configured names (R9 table above) |
 | `agentHooksDirectory?` | kiro `.kiro/hooks/`, generic `.task-linear-sync/hooks/` (001 Glossary), others absent |
-| `agentHookTemplate` | `"kiro-json" \| "none"` (R11) |
+| `agentHookTemplate` | `"kiro-json" \| "command-json" \| "none"` (R11) |
 | `frameworkSpecificExclusions` | MUST be `[]` for `generic` (FR-010: "no framework-specific exclusions beyond the global summary/rollup defaults") |
 
 ## 4. AdapterRegistry, DetectionRecord, selection algorithm
@@ -141,7 +141,8 @@ no state between calls (pure per file).
   CustomAdapterDescriptor[] }` — highest precedence layer; every convention in §3 overridable
   here (SC-004: "a fixture suite overrides each convention at least once").
 - **`AgentHookScaffold`** (pure output of `agentHookScaffold(adapterId, { binName })`, R11):
-  `{ directory: string; fileName: string; contents: string }` for `"kiro-json"` adapters
+  `{ directory: string; fileName: string; contents: string }` for `"kiro-json"` and
+  `"command-json"` adapters (kiro + generic)
   (`command` action invoking `<binName> enqueue`; binName derives from `toolId` — zero org
   literals), or `undefined` when `agentHookTemplate: "none"`; 003 writes nothing (010 owns
   scaffolding).

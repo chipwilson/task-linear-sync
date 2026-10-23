@@ -64,7 +64,7 @@ export interface FrameworkAdapter {
   readonly titleBehavior?: { readonly stripPrefixes: readonly string[] }; // consumed by 005
   readonly siblingDocuments: readonly string[];         // configured sibling doc names (001 R7.5)
   readonly agentHooksDirectory?: string;                // e.g. ".kiro/hooks/"
-  readonly agentHookTemplate?: "kiro-json" | "none";    // research R11
+  readonly agentHookTemplate?: "kiro-json" | "command-json" | "none"; // research R11
   readonly frameworkSpecificExclusions?: readonly string[]; // MUST be empty for "generic" (FR-010)
 
   /** Pure predicate. Returns the best match for this adapter, or null. Deterministic; no I/O (ctx is pre-supplied). */
@@ -121,7 +121,7 @@ export interface CustomAdapterDescriptor {
   readonly phasePattern?: string; readonly summaryPattern?: string; readonly rollupPattern?: string;
   readonly titleBehavior?: { readonly stripPrefixes: readonly string[] };
   readonly siblingDocuments?: readonly string[];
-  readonly agentHooksDirectory?: string; readonly agentHookTemplate?: "kiro-json" | "none";
+  readonly agentHooksDirectory?: string; readonly agentHookTemplate?: "kiro-json" | "command-json" | "none";
 }
 
 export interface AdapterConventions {   // FR-011 overridable-convention subset for a known adapter
@@ -133,7 +133,7 @@ export interface AdapterConventions {   // FR-011 overridable-convention subset 
   readonly titleBehavior?: { readonly stripPrefixes: readonly string[] };
   readonly siblingDocuments?: readonly string[];
   readonly featureNameRule?: FeatureNameRule;
-  readonly agentHooksDirectory?: string; readonly agentHookTemplate?: "kiro-json" | "none";
+  readonly agentHooksDirectory?: string; readonly agentHookTemplate?: "kiro-json" | "command-json" | "none";
 }
 
 /** Programmatic override layer (highest precedence, research R7). */
@@ -169,10 +169,11 @@ export const builtInAdapters: Readonly<Record<FrameworkId, FrameworkAdapter>>;
 export function agentHookScaffold(
   frameworkId: FrameworkIdentity, binName: string,
 ): { readonly directory: string; readonly fileName: string; readonly contents: string } | undefined;
-//   kiro   -> { directory: ".kiro/hooks/", fileName: `<toolId>-sync.json`,
+//   kiro (template "kiro-json")  -> { directory: ".kiro/hooks/", fileName: `<toolId>-sync.json`,
 //               contents: JSON Agent_Hook whose `command` action runs `<binName> enqueue` }  (001 Glossary Agent_Hook)
-//   generic-> { directory: ".task-linear-sync/hooks/", ... }
-//   others -> undefined (no agentHookTemplate). Zero org literals (binName derives from toolId).
+//   generic ("command-json")     -> { directory: ".task-linear-sync/hooks/", fileName: `<toolId>-sync.json`,
+//               contents: same `command`-action enqueue record }  (001 Glossary Agent_Hooks_Directory)
+//   others ("none"/absent)       -> undefined. Zero org literals (binName derives from toolId).
 
 /**
  * Convenience: build the frozen 002 FrameworkMetadata field set from a discovered file

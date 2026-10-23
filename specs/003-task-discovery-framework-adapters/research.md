@@ -252,7 +252,7 @@ citations.
 ## R11 — Agent-hook template behavior (FR-007, FR-010; consumed by 010)
 
 - **Decision**: Adapters declare `agentHooksDirectory?` and `agentHookTemplate: "kiro-json" |
-  "none"`. `agentHookScaffold(adapterId, { binName })` (exported) returns a declarative record
+  "command-json" | "none"`. `agentHookScaffold(frameworkId, binName)` (exported) returns a declarative record
   `{ directory, fileName, contents }` for a Kiro hook-definition JSON whose `command` action
   invokes `<binName> enqueue` (binName derives from `toolId` per the frozen config), i.e., the
   001 Glossary `Agent_Hook` contract: ".kiro/hooks/*.json files whose `command` action can
