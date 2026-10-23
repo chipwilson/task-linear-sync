@@ -21,7 +21,6 @@ const VIRTUAL_PATH = "specs/auth/tasks.md"; // the path passed to renderTaskLine
 const CORPUS = ["multi-lf", "mixed-crlf", "no-trailing-newline", "conflict-untouched"] as const;
 
 function terminatorStyle(content: string): string {
-  const m = /\r?\n?$/u.exec(content.slice(-2));
   return content.endsWith("\r\n") ? "crlf" : content.endsWith("\n") ? "lf" : "none";
 }
 
