@@ -1,0 +1,65 @@
+[
+  {
+    "task": {
+      "stableUuid": "00000000-0000-5000-8000-000000000001",
+      "kind": "heading",
+      "filePath": "specs/auth/tasks.md",
+      "lineNumber": 3,
+      "frameworkId": "generic",
+      "title": "Prepare changelog",
+      "childUuids": [],
+      "taskBody": {
+        "startLine": 3,
+        "endLine": 3
+      },
+      "unresolvedConflict": false,
+      "localTaskId": "1.1"
+    },
+    "desiredTitle": "[SYNC-199] Prepare changelog",
+    "issueRef": {
+      "key": "SYNC",
+      "number": 201
+    }
+  },
+  {
+    "task": {
+      "stableUuid": "00000000-0000-5000-8000-000000000002",
+      "kind": "checklist",
+      "filePath": "specs/auth/tasks.md",
+      "lineNumber": 7,
+      "frameworkId": "generic",
+      "title": "Draft release notes",
+      "childUuids": [],
+      "taskBody": {
+        "startLine": 7,
+        "endLine": 8
+      },
+      "unresolvedConflict": false,
+      "checked": false
+    },
+    "desiredTitle": "Draft release notes [SYNC-9]",
+    "issueRef": {
+      "key": "SYNC",
+      "number": 202
+    },
+    "checked": true
+  },
+  {
+    "task": {
+      "stableUuid": "00000000-0000-5000-8000-000000000003",
+      "kind": "checklist",
+      "filePath": "specs/auth/tasks.md",
+      "lineNumber": 8,
+      "frameworkId": "generic",
+      "title": "Add migration guide",
+      "childUuids": [],
+      "taskBody": {
+        "startLine": 8,
+        "endLine": 8
+      },
+      "unresolvedConflict": false,
+      "checked": false
+    },
+    "desiredTitle": "Add the migration guide"
+  }
+]
