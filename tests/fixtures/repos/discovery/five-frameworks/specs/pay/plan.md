@@ -1,0 +1,3 @@
+# Plan
+
+Placeholder plan (fixture).

@@ -1,0 +1,3 @@
+# Specification
+
+Placeholder specification (fixture).
