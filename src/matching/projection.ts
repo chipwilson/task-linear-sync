@@ -17,6 +17,7 @@ import { parseSyncStatePayload } from "task-linear-sync/domain";
 import { parseAttachmentUrl } from "task-linear-sync/urls";
 import type { AttachmentView } from "task-linear-sync/ports";
 import { checkMatchingConfig } from "./config-check.js";
+import { DurableIdentityCollisionError } from "./errors.js";
 import type { MatchCandidate, ProjectCandidatesInput } from "./types.js";
 
 /** Identity-shape guard mirroring the frozen URL scheme's UUID constraint. */
@@ -89,20 +90,48 @@ function extractContext(
 }
 
 /**
- * INTEGRITY EXTENSION POINT (T013 stub — wired for real in US2/T033 per
- * contracts/candidate-projection.md §Integrity): duplicate durable task UUIDs across
- * issues (case a) or contradictory anchors on one issue (case b, visible through
- * `qualifyingUuidsByIssue`) MUST throw `DurableIdentityCollisionError` before any
- * scoring, so the abort "cannot be sidestepped by configuration".
+ * T033 [US2] — constitution-II hard abort per contracts/candidate-projection.md
+ * §Integrity. Two collision shapes (001 R5 c3 / spec US2 AC2):
  *
- * Kept as a documented no-op at the foundation checkpoint so the module boundary is
- * final while US2 owns the abort behavior (tasks.md T013/T033 sequential handoff).
+ *  - case a — the SAME qualifying task UUID is carried by ≥ 2 issues;
+ *  - case b — ONE issue carries contradictory anchors (≥ 2 distinct qualifying task
+ *    UUIDs, visible through `qualifyingUuidsByIssue`).
+ *
+ * The abort names the lexicographically-smallest offending `taskUuid` FIRST, carrying
+ * ALL issue ids conflicting for THAT uuid, sorted ascending. Invoked inside
+ * `projectCandidates` before any candidate list escapes to scoring — "the run aborts,
+ * applies no changes" is structural (a pure function that throws produces no
+ * `MatchingResult`), and no configuration can make the throw disappear.
  */
 function scanDurableCollisions(
   _candidates: readonly MatchCandidate[],
-  _qualifyingUuidsByIssue: ReadonlyMap<string, readonly string[]>,
+  qualifyingUuidsByIssue: ReadonlyMap<string, readonly string[]>,
 ): void {
-  // T033 (US2) implements the constitution-II hard abort.
+  // taskUuid → every issue id carrying it as a qualifying anchor (issue ids ascending by
+  // construction: qualifyingUuidsByIssue is populated while iterating candidates in
+  // issueId-ascending order, and add() never revisits an issue).
+  const issuesByUuid = new Map<string, string[]>();
+  const carriersByIssue = new Map<string, readonly string[]>();
+  for (const [issueId, uuids] of qualifyingUuidsByIssue) {
+    carriersByIssue.set(issueId, uuids);
+    for (const uuid of uuids) {
+      const list = issuesByUuid.get(uuid);
+      if (list === undefined) issuesByUuid.set(uuid, [issueId]);
+      else if (!list.includes(issueId)) list.push(issueId);
+    }
+  }
+
+  let offender: string | undefined;
+  for (const [uuid, issues] of issuesByUuid) {
+    const collides =
+      issues.length >= 2 || // case a — one uuid on multiple issues
+      (carriersByIssue.get(issues[0]!)?.length ?? 0) >= 2; // case b — one issue, many uuids
+    if (!collides) continue;
+    if (offender === undefined || uuid < offender) offender = uuid;
+  }
+  if (offender !== undefined) {
+    throw new DurableIdentityCollisionError(offender, [...issuesByUuid.get(offender)!].sort());
+  }
 }
 
 /**
