@@ -1,0 +1,78 @@
+{
+  "teams": [
+    {
+      "key": "acme-team",
+      "id": "team-acme",
+      "projects": [
+        {
+          "id": "prj-acme-alpha",
+          "name": "proj-alpha"
+        },
+        {
+          "id": "prj-acme-beta",
+          "name": "proj-beta"
+        }
+      ],
+      "workflowStates": [
+        {
+          "id": "st-acme-todo",
+          "name": "Todo",
+          "type": "unstarted"
+        },
+        {
+          "id": "st-acme-prog",
+          "name": "In Progress",
+          "type": "started"
+        },
+        {
+          "id": "st-acme-done",
+          "name": "Done",
+          "type": "completed"
+        },
+        {
+          "id": "st-acme-cancel",
+          "name": "Canceled",
+          "type": "canceled"
+        },
+        {
+          "id": "st-acme-dup",
+          "name": "Duplicate",
+          "type": "duplicate"
+        }
+      ]
+    },
+    {
+      "key": "globex-team",
+      "id": "team-globex",
+      "projects": [
+        {
+          "id": "prj-glx-main",
+          "name": "proj-main"
+        }
+      ],
+      "workflowStates": [
+        {
+          "id": "st-glx-todo",
+          "name": "Todo",
+          "type": "unstarted"
+        },
+        {
+          "id": "st-glx-done",
+          "name": "Done",
+          "type": "completed"
+        },
+        {
+          "id": "st-glx-cancel",
+          "name": "Canceled",
+          "type": "canceled"
+        },
+        {
+          "id": "st-glx-dup",
+          "name": "Duplicate",
+          "type": "duplicate"
+        }
+      ]
+    }
+  ],
+  "issues": []
+}

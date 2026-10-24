@@ -1,0 +1,79 @@
+{
+  "teams": [
+    {
+      "key": "acme-team",
+      "id": "team-acme",
+      "projects": [
+        {
+          "id": "prj-acme-alpha",
+          "name": "proj-alpha"
+        },
+        {
+          "id": "prj-acme-beta",
+          "name": "proj-beta"
+        }
+      ],
+      "workflowStates": [
+        {
+          "id": "st-acme-todo",
+          "name": "Todo",
+          "type": "unstarted"
+        },
+        {
+          "id": "st-acme-prog",
+          "name": "In Progress",
+          "type": "started"
+        },
+        {
+          "id": "st-acme-done",
+          "name": "Done",
+          "type": "completed"
+        },
+        {
+          "id": "st-acme-cancel",
+          "name": "Canceled",
+          "type": "canceled"
+        },
+        {
+          "id": "st-acme-dup",
+          "name": "Duplicate",
+          "type": "duplicate"
+        }
+      ]
+    }
+  ],
+  "issues": [
+    {
+      "id": "ac000000-0000-4000-8000-000000000701",
+      "key": "ACM-701",
+      "teamKey": "acme-team",
+      "projectId": "prj-acme-alpha",
+      "title": "Upsert host issue",
+      "description": "description body",
+      "stateType": "unstarted",
+      "updatedAt": "2026-10-01T00:00:00.000Z",
+      "archived": false
+    }
+  ],
+  "attachments": [
+    {
+      "issueId": "ac000000-0000-4000-8000-000000000701",
+      "id": "att-seed-10",
+      "url": "https://sync.example.invalid/task-linear-sync/ac000000-0000-4000-8000-000000000010",
+      "title": "seed attachment ten",
+      "metadata": {
+        "__task-linear-sync": "state-v1"
+      }
+    },
+    {
+      "issueId": "ac000000-0000-4000-8000-000000000701",
+      "id": "att-seed-11",
+      "url": "https://sync.example.invalid/task-linear-sync/ac000000-0000-4000-8000-000000000011",
+      "title": "seed attachment eleven",
+      "metadata": {
+        "__task-linear-sync": "state-v1"
+      }
+    }
+  ],
+  "pageSize": 2
+}

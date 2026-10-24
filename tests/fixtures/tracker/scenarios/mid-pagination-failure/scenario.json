@@ -1,0 +1,8 @@
+{
+  "name": "mid-pagination-failure",
+  "notes": "Edge case 'Mid-pagination failure': page 2 fails with 5xx through the whole retry budget; page-1 rows stay valid, zero page-2 rows consumed; terminal TrackerError category server, attempts maxRetries+1.",
+  "placeholderIdentities": [
+    "acme-team",
+    "proj-alpha"
+  ]
+}

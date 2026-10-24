@@ -1,0 +1,8 @@
+{
+  "name": "error-taxonomy",
+  "notes": "R12 taxonomy over scripted signals: 429/5xx/network exhausted (attempts maxRetries+1), graphql userError (attempts 1), creates IndeterminateCreateError attempts 1 (5xx and 429), unknown get null, unknown attachment update not-found.",
+  "placeholderIdentities": [
+    "acme-team",
+    "proj-alpha"
+  ]
+}

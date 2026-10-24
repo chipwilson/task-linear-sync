@@ -1,0 +1,8 @@
+{
+  "name": "adversarial-descriptions",
+  "notes": "SC-003 corpus: an issue embedding the canonical attachment URL (UUID-shaped) in its description but carrying NO attachment never matches; identity resolves 100% via attachment metadata.",
+  "placeholderIdentities": [
+    "acme-team",
+    "proj-alpha"
+  ]
+}

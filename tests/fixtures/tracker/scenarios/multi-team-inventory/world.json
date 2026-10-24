@@ -1,0 +1,255 @@
+{
+  "teams": [
+    {
+      "key": "acme-team",
+      "id": "team-acme",
+      "projects": [
+        {
+          "id": "prj-acme-alpha",
+          "name": "proj-alpha"
+        },
+        {
+          "id": "prj-acme-beta",
+          "name": "proj-beta"
+        }
+      ],
+      "workflowStates": [
+        {
+          "id": "st-acme-todo",
+          "name": "Todo",
+          "type": "unstarted"
+        },
+        {
+          "id": "st-acme-prog",
+          "name": "In Progress",
+          "type": "started"
+        },
+        {
+          "id": "st-acme-done",
+          "name": "Done",
+          "type": "completed"
+        },
+        {
+          "id": "st-acme-cancel",
+          "name": "Canceled",
+          "type": "canceled"
+        },
+        {
+          "id": "st-acme-dup",
+          "name": "Duplicate",
+          "type": "duplicate"
+        }
+      ]
+    },
+    {
+      "key": "globex-team",
+      "id": "team-globex",
+      "projects": [
+        {
+          "id": "prj-glx-main",
+          "name": "proj-main"
+        }
+      ],
+      "workflowStates": [
+        {
+          "id": "st-glx-todo",
+          "name": "Todo",
+          "type": "unstarted"
+        },
+        {
+          "id": "st-glx-done",
+          "name": "Done",
+          "type": "completed"
+        },
+        {
+          "id": "st-glx-cancel",
+          "name": "Canceled",
+          "type": "canceled"
+        },
+        {
+          "id": "st-glx-dup",
+          "name": "Duplicate",
+          "type": "duplicate"
+        }
+      ]
+    },
+    {
+      "key": "initech-team",
+      "id": "team-initech",
+      "projects": [
+        {
+          "id": "prj-ini-core",
+          "name": "proj-core"
+        }
+      ],
+      "workflowStates": [
+        {
+          "id": "st-ini-todo",
+          "name": "Todo",
+          "type": "unstarted"
+        },
+        {
+          "id": "st-ini-done",
+          "name": "Done",
+          "type": "completed"
+        }
+      ]
+    }
+  ],
+  "issues": [
+    {
+      "id": "ac000000-0000-4000-8000-000000000101",
+      "key": "ACM-101",
+      "teamKey": "acme-team",
+      "projectId": "prj-acme-alpha",
+      "title": "Sync inventory task A",
+      "description": "description body",
+      "stateType": "unstarted",
+      "updatedAt": "2026-10-01T00:00:00.000Z",
+      "archived": false
+    },
+    {
+      "id": "ac000000-0000-4000-8000-000000000102",
+      "key": "ACM-102",
+      "teamKey": "acme-team",
+      "projectId": "prj-acme-alpha",
+      "title": "Sync inventory task B",
+      "description": "description body",
+      "stateType": "started",
+      "updatedAt": "2026-10-01T00:00:00.000Z",
+      "archived": false
+    },
+    {
+      "id": "ac000000-0000-4000-8000-000000000103",
+      "key": "ACM-103",
+      "teamKey": "acme-team",
+      "projectId": "prj-acme-alpha",
+      "title": "Sync inventory task C",
+      "description": "description body",
+      "stateType": "unstarted",
+      "updatedAt": "2026-10-01T00:00:00.000Z",
+      "archived": false
+    },
+    {
+      "id": "ac000000-0000-4000-8000-000000000104",
+      "key": "ACM-104",
+      "teamKey": "acme-team",
+      "projectId": "prj-acme-alpha",
+      "title": "Sync inventory task D",
+      "description": "description body",
+      "stateType": "completed",
+      "updatedAt": "2026-10-01T00:00:00.000Z",
+      "archived": false
+    },
+    {
+      "id": "ac000000-0000-4000-8000-000000000105",
+      "key": "ACM-105",
+      "teamKey": "acme-team",
+      "projectId": "prj-acme-beta",
+      "title": "Foreign-project row (excluded)",
+      "description": "description body",
+      "stateType": "unstarted",
+      "updatedAt": "2026-10-01T00:00:00.000Z",
+      "archived": false
+    },
+    {
+      "id": "ac000000-0000-4000-8000-000000000106",
+      "key": "ACM-106",
+      "teamKey": "acme-team",
+      "projectId": "prj-acme-alpha",
+      "title": "Ignored state canceled (excluded)",
+      "description": "description body",
+      "stateType": "canceled",
+      "updatedAt": "2026-10-01T00:00:00.000Z",
+      "archived": false
+    },
+    {
+      "id": "ac000000-0000-4000-8000-000000000107",
+      "key": "ACM-107",
+      "teamKey": "acme-team",
+      "projectId": "prj-acme-alpha",
+      "title": "Ignored state duplicate (excluded)",
+      "description": "description body",
+      "stateType": "duplicate",
+      "updatedAt": "2026-10-01T00:00:00.000Z",
+      "archived": false
+    },
+    {
+      "id": "ac000000-0000-4000-8000-000000000201",
+      "key": "GLX-201",
+      "teamKey": "globex-team",
+      "projectId": "prj-glx-main",
+      "title": "Globex task one",
+      "description": "description body",
+      "stateType": "unstarted",
+      "updatedAt": "2026-10-01T00:00:00.000Z",
+      "archived": false
+    },
+    {
+      "id": "ac000000-0000-4000-8000-000000000202",
+      "key": "GLX-202",
+      "teamKey": "globex-team",
+      "projectId": "prj-glx-main",
+      "title": "Globex task two",
+      "description": "description body",
+      "stateType": "unstarted",
+      "updatedAt": "2026-10-01T00:00:00.000Z",
+      "archived": false
+    },
+    {
+      "id": "ac000000-0000-4000-8000-000000000203",
+      "key": "GLX-203",
+      "teamKey": "globex-team",
+      "projectId": "prj-glx-main",
+      "title": "Globex task three",
+      "description": "description body",
+      "stateType": "started",
+      "updatedAt": "2026-10-01T00:00:00.000Z",
+      "archived": false
+    },
+    {
+      "id": "ac000000-0000-4000-8000-000000000204",
+      "key": "GLX-204",
+      "teamKey": "globex-team",
+      "projectId": "prj-glx-main",
+      "title": "Globex task four",
+      "description": "description body",
+      "stateType": "completed",
+      "updatedAt": "2026-10-01T00:00:00.000Z",
+      "archived": false
+    },
+    {
+      "id": "ac000000-0000-4000-8000-000000000205",
+      "key": "GLX-205",
+      "teamKey": "globex-team",
+      "projectId": "prj-glx-main",
+      "title": "Globex task five",
+      "description": "description body",
+      "stateType": "unstarted",
+      "updatedAt": "2026-10-01T00:00:00.000Z",
+      "archived": false
+    },
+    {
+      "id": "ac000000-0000-4000-8000-000000000206",
+      "key": "GLX-206",
+      "teamKey": "globex-team",
+      "projectId": "prj-acme-alpha",
+      "title": "Cross-team trap row (excluded: team B row with team A project)",
+      "description": "description body",
+      "stateType": "unstarted",
+      "updatedAt": "2026-10-01T00:00:00.000Z",
+      "archived": false
+    },
+    {
+      "id": "ac000000-0000-4000-8000-000000000301",
+      "key": "INI-301",
+      "teamKey": "initech-team",
+      "projectId": "prj-ini-core",
+      "title": "Initech single task",
+      "description": "description body",
+      "stateType": "unstarted",
+      "updatedAt": "2026-10-01T00:00:00.000Z",
+      "archived": false
+    }
+  ]
+}
