@@ -1,0 +1,46 @@
+[
+  {
+    "task": {
+      "stableUuid": "00000000-0000-5000-8000-000000000042",
+      "kind": "checklist",
+      "filePath": "specs/auth/tasks.md",
+      "lineNumber": 3,
+      "frameworkId": "generic",
+      "title": "Support item",
+      "childUuids": [],
+      "taskBody": {
+        "startLine": 3,
+        "endLine": 3
+      },
+      "unresolvedConflict": false,
+      "checked": false
+    },
+    "desiredTitle": "Support item",
+    "issueRef": {
+      "key": "SYNC",
+      "number": 241
+    }
+  },
+  {
+    "task": {
+      "stableUuid": "00000000-0000-5000-8000-000000000041",
+      "kind": "heading",
+      "filePath": "specs/auth/tasks.md",
+      "lineNumber": 1,
+      "frameworkId": "generic",
+      "title": "Prepare changelog",
+      "childUuids": [],
+      "taskBody": {
+        "startLine": 1,
+        "endLine": 1
+      },
+      "unresolvedConflict": false,
+      "localTaskId": "1.1"
+    },
+    "desiredTitle": "Prepare changelog",
+    "issueRef": {
+      "key": "SYNC",
+      "number": 240
+    }
+  }
+]

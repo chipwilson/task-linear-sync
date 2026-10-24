@@ -1,0 +1,85 @@
+{
+  "parsing/adapter": [
+    "TaskFileAdapter"
+  ],
+  "parsing/conflict": [
+    "ConflictBlock",
+    "blocksIntersecting",
+    "frozenLineSet",
+    "scanConflictBlocks"
+  ],
+  "parsing/content": [
+    "CheckboxMatch",
+    "ContentLine",
+    "LOCAL_ID_SPAN_RE",
+    "escapeRegExp",
+    "headingLevelOf",
+    "lineIsFenced",
+    "markerWithState",
+    "matchCheckbox",
+    "splitLines",
+    "stripLeadingLocalId",
+    "visualIndentWidth"
+  ],
+  "parsing/extract": [
+    "ExclusionRecord",
+    "ExtractOutput",
+    "ResolvedConventions",
+    "TaskDraft",
+    "detectFlatDocument",
+    "extractTasks",
+    "parseIssueRefAndCleanTitle",
+    "resolveConventions"
+  ],
+  "parsing/extent": [
+    "deriveExtents"
+  ],
+  "parsing/identity": [
+    "deriveStableUuid"
+  ],
+  "parsing/index": [
+    "CleanTitleOptions",
+    "ConflictBlock",
+    "ContentLine",
+    "ExclusionRecord",
+    "LineAssignment",
+    "LineRenderError",
+    "LineRenderFailureReason",
+    "ParseResult",
+    "ParseWarning",
+    "RenderOptions",
+    "RenderResult",
+    "RenderedLineChange",
+    "TaskFileAdapter",
+    "blocksIntersecting",
+    "cleanTitle",
+    "deriveStableUuid",
+    "frozenLineSet",
+    "lineIsFenced",
+    "parseTaskFile",
+    "renderTaskLines",
+    "scanConflictBlocks",
+    "splitLines"
+  ],
+  "parsing/render": [
+    "LineAssignment",
+    "LineRenderError",
+    "LineRenderFailureReason",
+    "RenderOptions",
+    "RenderResult",
+    "RenderedLineChange",
+    "renderTaskLines"
+  ],
+  "parsing/taskfile": [
+    "ParseResult",
+    "parseTaskFile"
+  ],
+  "parsing/title": [
+    "CleanTitleOptions",
+    "cleanTitle"
+  ],
+  "parsing/warnings": [
+    "ParseWarning",
+    "collectDuplicateWarnings"
+  ]
+}

@@ -38,6 +38,10 @@
       "types": "./dist/ports/index.d.ts",
       "default": "./dist/ports/index.js"
     },
+    "./parsing": {
+      "types": "./dist/parsing/index.d.ts",
+      "default": "./dist/parsing/index.js"
+    },
     "./matching": {
       "types": "./dist/matching/index.d.ts",
       "default": "./dist/matching/index.js"

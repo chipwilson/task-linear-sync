@@ -1,0 +1,3 @@
+- [ ] 1: Write the parser tests
+- [x] 2: Implement the parser
+	- [ ] 2.1: Cover nested rules
