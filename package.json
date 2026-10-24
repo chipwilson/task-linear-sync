@@ -41,6 +41,10 @@
     "./parsing": {
       "types": "./dist/parsing/index.d.ts",
       "default": "./dist/parsing/index.js"
+    },
+    "./matching": {
+      "types": "./dist/matching/index.d.ts",
+      "default": "./dist/matching/index.js"
     }
   },
   "files": [

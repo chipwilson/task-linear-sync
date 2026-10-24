@@ -1,0 +1,302 @@
+{
+  "comment": "Hand-computed signal sums per contracts/confidence-scoring.md §1 (frozen default weights: durableUuid 1000, issueRefExact 500, titleExact 60, titleTokenOverlap 30; derived localTaskId 250 = max(1, round(0.5x500)), titleContained 39 = round(0.65x60), sameProject/sameFramework 10).",
+  "goldens": [
+    {
+      "name": "full stack: durable + issue-ref + local-id + decorated exact title + same project + same framework",
+      "task": {
+        "stableUuid": "0f1e2d3c-4b5a-4978-8675-4321fedca101",
+        "title": "Sync engine nightly report",
+        "localTaskId": "Task 1.2",
+        "frameworkId": "spec-kit",
+        "featureName": "demo-feature",
+        "issueRef": {
+          "key": "SYNC",
+          "number": 42
+        },
+        "routing": {
+          "teamKey": "acme-team",
+          "project": "proj-alpha",
+          "defaulted": false
+        }
+      },
+      "candidate": {
+        "issueId": "i-0001",
+        "issueKey": "ACM-42",
+        "teamKey": "acme-team",
+        "projectRef": "proj-alpha",
+        "title": "demo-feature: Sync engine nightly report",
+        "durableTaskUuid": "0f1e2d3c-4b5a-4978-8675-4321fedca101",
+        "frameworkId": "spec-kit",
+        "featureName": "demo-feature",
+        "filePath": "specs/demo-feature/tasks.md",
+        "localTaskId": "Task 1.2"
+      },
+      "expected": {
+        "total": 1830,
+        "contributions": [
+          {
+            "signal": "durable-uuid",
+            "points": 1000
+          },
+          {
+            "signal": "issue-ref-exact",
+            "points": 500
+          },
+          {
+            "signal": "local-task-id",
+            "points": 250
+          },
+          {
+            "signal": "title-exact",
+            "points": 60
+          },
+          {
+            "signal": "same-project",
+            "points": 10
+          },
+          {
+            "signal": "same-framework",
+            "points": 10
+          }
+        ]
+      }
+    },
+    {
+      "name": "visible [SYNC-42] prefix stripped; issue-ref + exact title, project mismatch earns nothing",
+      "task": {
+        "stableUuid": "0f1e2d3c-4b5a-4978-8675-4321fedca102",
+        "title": "Implement login form",
+        "frameworkId": "spec-kit",
+        "issueRef": {
+          "key": "SYNC",
+          "number": 42
+        },
+        "routing": {
+          "teamKey": "acme-team",
+          "project": "proj-beta",
+          "defaulted": false
+        }
+      },
+      "candidate": {
+        "issueId": "i-0002",
+        "issueKey": "ENG-42",
+        "teamKey": "acme-team",
+        "projectRef": "proj-alpha",
+        "title": "[SYNC-42] Implement login form"
+      },
+      "expected": {
+        "total": 560,
+        "contributions": [
+          {
+            "signal": "issue-ref-exact",
+            "points": 500
+          },
+          {
+            "signal": "title-exact",
+            "points": 60
+          }
+        ]
+      }
+    },
+    {
+      "name": "contained normalized title (contiguous subsequence, not equal) — contained 39 only, fuzzy skipped",
+      "task": {
+        "stableUuid": "0f1e2d3c-4b5a-4978-8675-4321fedca103",
+        "title": "login form",
+        "frameworkId": "spec-kit"
+      },
+      "candidate": {
+        "issueId": "i-0003",
+        "issueKey": "ENG-103",
+        "teamKey": "acme-team",
+        "projectRef": "proj-alpha",
+        "title": "Implement login form today"
+      },
+      "expected": {
+        "total": 39,
+        "contributions": [
+          {
+            "signal": "title-contained",
+            "points": 39
+          }
+        ]
+      }
+    },
+    {
+      "name": "fuzzy scaled by Dice ratio 0.5 (2 common of 4+4 tokens) -> round(30 * 0.5) = 15",
+      "task": {
+        "stableUuid": "0f1e2d3c-4b5a-4978-8675-4321fedca104",
+        "title": "implement the login form",
+        "frameworkId": "spec-kit"
+      },
+      "candidate": {
+        "issueId": "i-0004",
+        "issueKey": "ENG-104",
+        "teamKey": "acme-team",
+        "projectRef": "proj-alpha",
+        "title": "implement the signup page"
+      },
+      "expected": {
+        "total": 15,
+        "contributions": [
+          {
+            "signal": "title-fuzzy",
+            "points": 15
+          }
+        ]
+      }
+    },
+    {
+      "name": "fuzzy scaled by Dice ratio 4/7 (non-contiguous common tokens) -> round(30 * 4/7) = 17",
+      "task": {
+        "stableUuid": "0f1e2d3c-4b5a-4978-8675-4321fedca104",
+        "title": "alpha bravo",
+        "frameworkId": "spec-kit"
+      },
+      "candidate": {
+        "issueId": "i-0005",
+        "issueKey": "ENG-105",
+        "teamKey": "acme-team",
+        "projectRef": "proj-alpha",
+        "title": "alpha charlie bravo delta echo"
+      },
+      "expected": {
+        "total": 17,
+        "contributions": [
+          {
+            "signal": "title-fuzzy",
+            "points": 17
+          }
+        ]
+      }
+    },
+    {
+      "name": "exact title takes the strictest form only — no fuzzy contribution on top",
+      "task": {
+        "stableUuid": "0f1e2d3c-4b5a-4978-8675-4321fedca105",
+        "title": "Deploy cache sweeper",
+        "frameworkId": "spec-kit"
+      },
+      "candidate": {
+        "issueId": "i-0006",
+        "issueKey": "ENG-106",
+        "teamKey": "acme-team",
+        "projectRef": "proj-alpha",
+        "title": "Deploy cache sweeper"
+      },
+      "expected": {
+        "total": 60,
+        "contributions": [
+          {
+            "signal": "title-exact",
+            "points": 60
+          }
+        ]
+      }
+    },
+    {
+      "name": "zero-signal pair: disjoint tokens, no ids, unknown candidate container signals all silent",
+      "task": {
+        "stableUuid": "0f1e2d3c-4b5a-4978-8675-4321fedca105",
+        "title": "alpha bravo cache",
+        "frameworkId": "spec-kit"
+      },
+      "candidate": {
+        "issueId": "i-0007",
+        "issueKey": "ENG-107",
+        "teamKey": "acme-team",
+        "projectRef": "proj-alpha",
+        "title": "unrelated title"
+      },
+      "expected": {
+        "total": 0,
+        "contributions": []
+      }
+    },
+    {
+      "name": "local task ID only (byte-equal ids, derived weight 250)",
+      "task": {
+        "stableUuid": "0f1e2d3c-4b5a-4978-8675-4321fedca108",
+        "title": "Completely different wording here",
+        "frameworkId": "spec-kit",
+        "localTaskId": "T007"
+      },
+      "candidate": {
+        "issueId": "i-0008",
+        "issueKey": "ENG-108",
+        "teamKey": "acme-team",
+        "projectRef": "proj-alpha",
+        "title": "Nothing alike on this side",
+        "localTaskId": "T007"
+      },
+      "expected": {
+        "total": 250,
+        "contributions": [
+          {
+            "signal": "local-task-id",
+            "points": 250
+          }
+        ]
+      }
+    },
+    {
+      "name": "same-project + same-framework only, empty normalized titles earn no title credit",
+      "task": {
+        "stableUuid": "0f1e2d3c-4b5a-4978-8675-4321fedca109",
+        "title": "   ",
+        "frameworkId": "kiro",
+        "routing": {
+          "teamKey": "acme-team",
+          "project": "proj-alpha",
+          "defaulted": false
+        }
+      },
+      "candidate": {
+        "issueId": "i-0009",
+        "issueKey": "ENG-109",
+        "teamKey": "acme-team",
+        "projectRef": "proj-alpha",
+        "title": "",
+        "frameworkId": "kiro"
+      },
+      "expected": {
+        "total": 20,
+        "contributions": [
+          {
+            "signal": "same-project",
+            "points": 10
+          },
+          {
+            "signal": "same-framework",
+            "points": 10
+          }
+        ]
+      }
+    },
+    {
+      "name": "durable uuid on the candidate belonging to ANOTHER task is not identity — title only",
+      "task": {
+        "stableUuid": "0f1e2d3c-4b5a-4978-8675-4321fedca10a",
+        "title": "Journal index rebuild",
+        "frameworkId": "spec-kit"
+      },
+      "candidate": {
+        "issueId": "i-0010",
+        "issueKey": "ENG-110",
+        "teamKey": "acme-team",
+        "projectRef": "proj-alpha",
+        "title": "Journal index rebuild",
+        "durableTaskUuid": "0f1e2d3c-4b5a-4978-8675-4321fedca109"
+      },
+      "expected": {
+        "total": 60,
+        "contributions": [
+          {
+            "signal": "title-exact",
+            "points": 60
+          }
+        ]
+      }
+    }
+  ]
+}

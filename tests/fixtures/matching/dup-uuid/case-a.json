@@ -1,0 +1,100 @@
+{
+  "comment": "Case a — two independent collisions; the abort must name the lexicographically-smallest offending taskUuid (group A) with ALL conflicting issue ids sorted ascending.",
+  "issues": [
+    {
+      "id": "i-201",
+      "key": "ENG-201",
+      "teamKey": "acme-team",
+      "projectId": "proj-alpha",
+      "title": "First carrier",
+      "description": "Body text for First carrier",
+      "stateType": "todo",
+      "updatedAt": "2026-01-02T00:00:00.000Z",
+      "archived": false
+    },
+    {
+      "id": "i-202",
+      "key": "ENG-202",
+      "teamKey": "acme-team",
+      "projectId": "proj-alpha",
+      "title": "Second carrier",
+      "description": "Body text for Second carrier",
+      "stateType": "todo",
+      "updatedAt": "2026-01-02T00:00:00.000Z",
+      "archived": false
+    },
+    {
+      "id": "i-203",
+      "key": "ENG-203",
+      "teamKey": "acme-team",
+      "projectId": "proj-alpha",
+      "title": "Third carrier",
+      "description": "Body text for Third carrier",
+      "stateType": "todo",
+      "updatedAt": "2026-01-02T00:00:00.000Z",
+      "archived": false
+    },
+    {
+      "id": "i-204",
+      "key": "ENG-204",
+      "teamKey": "acme-team",
+      "projectId": "proj-alpha",
+      "title": "Fourth carrier",
+      "description": "Body text for Fourth carrier",
+      "stateType": "todo",
+      "updatedAt": "2026-01-02T00:00:00.000Z",
+      "archived": false
+    }
+  ],
+  "attachmentsByIssue": {
+    "i-201": [
+      {
+        "id": "att-201",
+        "url": "https://sync.example.invalid/task-linear-sync/0f1e2d3c-4b5a-4978-8675-4321fedcc301",
+        "title": "task-linear-sync sync state",
+        "metadata": {
+          "__task-linear-sync": "{\"cursors\":{\"lastSyncAt\":\"2026-01-01T00:00:00.000Z\"},\"descriptionContentHash\":\"0000000000000000000000000000000000000000000000000000000000000000\",\"frameworkMetadata\":{\"filePath\":\"specs/demo-feature/tasks.md\",\"frameworkId\":\"spec-kit\"},\"history\":[{\"at\":\"2026-01-01T00:00:00.000Z\",\"description\":\"baseline\",\"kind\":\"matched\"}],\"taskUuid\":\"0f1e2d3c-4b5a-4978-8675-4321fedcc301\"}"
+        }
+      }
+    ],
+    "i-202": [
+      {
+        "id": "att-202",
+        "url": "https://sync.example.invalid/task-linear-sync/0f1e2d3c-4b5a-4978-8675-4321fedcc301",
+        "title": "task-linear-sync sync state",
+        "metadata": {
+          "__task-linear-sync": "{\"cursors\":{\"lastSyncAt\":\"2026-01-01T00:00:00.000Z\"},\"descriptionContentHash\":\"0000000000000000000000000000000000000000000000000000000000000000\",\"frameworkMetadata\":{\"filePath\":\"specs/demo-feature/tasks.md\",\"frameworkId\":\"spec-kit\"},\"history\":[{\"at\":\"2026-01-01T00:00:00.000Z\",\"description\":\"baseline\",\"kind\":\"matched\"}],\"taskUuid\":\"0f1e2d3c-4b5a-4978-8675-4321fedcc301\"}"
+        }
+      }
+    ],
+    "i-203": [
+      {
+        "id": "att-203",
+        "url": "https://sync.example.invalid/task-linear-sync/0f1e2d3c-4b5a-4978-8675-4321fedcc302",
+        "title": "task-linear-sync sync state",
+        "metadata": {
+          "__task-linear-sync": "{\"cursors\":{\"lastSyncAt\":\"2026-01-01T00:00:00.000Z\"},\"descriptionContentHash\":\"0000000000000000000000000000000000000000000000000000000000000000\",\"frameworkMetadata\":{\"filePath\":\"specs/demo-feature/tasks.md\",\"frameworkId\":\"spec-kit\"},\"history\":[{\"at\":\"2026-01-01T00:00:00.000Z\",\"description\":\"baseline\",\"kind\":\"matched\"}],\"taskUuid\":\"0f1e2d3c-4b5a-4978-8675-4321fedcc302\"}"
+        }
+      }
+    ],
+    "i-204": [
+      {
+        "id": "att-204",
+        "url": "https://sync.example.invalid/task-linear-sync/0f1e2d3c-4b5a-4978-8675-4321fedcc302",
+        "title": "task-linear-sync sync state",
+        "metadata": {
+          "__task-linear-sync": "{\"cursors\":{\"lastSyncAt\":\"2026-01-01T00:00:00.000Z\"},\"descriptionContentHash\":\"0000000000000000000000000000000000000000000000000000000000000000\",\"frameworkMetadata\":{\"filePath\":\"specs/demo-feature/tasks.md\",\"frameworkId\":\"spec-kit\"},\"history\":[{\"at\":\"2026-01-01T00:00:00.000Z\",\"description\":\"baseline\",\"kind\":\"matched\"}],\"taskUuid\":\"0f1e2d3c-4b5a-4978-8675-4321fedcc302\"}"
+        }
+      }
+    ]
+  },
+  "expected": {
+    "taskUuid": "0f1e2d3c-4b5a-4978-8675-4321fedcc301",
+    "issueIds": [
+      "i-201",
+      "i-202"
+    ],
+    "smaller": "0f1e2d3c-4b5a-4978-8675-4321fedcc301",
+    "larger": "0f1e2d3c-4b5a-4978-8675-4321fedcc302"
+  }
+}

@@ -75,6 +75,32 @@ tests/
 
 Wave 2 adds `discovery`, `parsing`, `routing`, `matching`, and `tracker` modules — `parsing` has landed with feature 004; later waves add `engine` and `cli`.
 
+## Matching usage (feature 006)
+
+`task-linear-sync/matching` is a pure task ↔ issue matching brain: it turns fetched
+tracker views into scored, banded, one-to-one matches — deterministic, explainable,
+durable-identity aware. Full reference: [`docs/matching.md`](docs/matching.md).
+
+```ts
+import { loadConfig } from "task-linear-sync/config";
+import {
+  projectCandidates,
+  matchAllTasks,
+  serializeMatchingResult,
+} from "task-linear-sync/matching";
+
+const config = loadConfig({});
+const candidates = projectCandidates({ issues, attachmentsByIssue, config }); // identity from canonical page-0 attachments only
+const result = matchAllTasks([{ task }], candidates, config); // tasks + candidate issue views
+console.log(serializeMatchingResult(result)); // stable-key-sorted JSON (byte-identical re-runs)
+```
+
+Every match carries `score`, `margin`, `confidence` (`high`/`medium`/`low`),
+`durableIdentity`, machine-readable `reasons`, and up to three ranked `alternatives`.
+An issue carrying a task's durable identity matches across team/project/framework moves
+and renames; two issues claiming one task UUID abort the run with
+`DurableIdentityCollisionError` and no changes.
+
 ## Current Status
 
 _Last updated: 2026-10-23 · branch `main` (Wave-2 implementation in flight)_
