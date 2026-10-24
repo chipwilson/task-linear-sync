@@ -3,7 +3,8 @@
  * Frozen types (`Task`, `RoutingResolution`, `Match`, `MatchAlternative`, `Confidence`,
  * `IssueView`, `AttachmentView`, `ResolvedConfig`) are imported and NEVER restated
  * (002 FR-008 freeze rule). 005's routing output enters as the frozen
- * `RoutingResolution` *value* — never an import of `src/routing` (research R6).
+ * `RoutingResolution` *value* — never as a module import of the sibling 005 tree
+ * (research R6).
  */
 import type { ResolvedConfig } from "task-linear-sync/config";
 import type {

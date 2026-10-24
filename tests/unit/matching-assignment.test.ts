@@ -115,8 +115,8 @@ test("matching assignment: preference is task-side-first — contested single is
 
 test("matching assignment: tasks/issues with no usable cell stay unmatched (dummy 0-weight semantics)", () => {
   const t1 = "e5000000-0000-4000-8000-000000000001";
-  const t2 = "e6000000-0000-4000-8000-000000000002";
-  const selected = assignUsable([makePair(t1, "i-0001", 25)]); // t2 has NO pairs at all
+  const _t2 = "e6000000-0000-4000-8000-000000000002"; // has NO pairs at all (unmatched)
+  const selected = assignUsable([makePair(t1, "i-0001", 25)]);
   assert.deepEqual(selectedSet(selected), [`${t1}→i-0001`], "t2 lands unresolved via dummy weight 0");
 });
 

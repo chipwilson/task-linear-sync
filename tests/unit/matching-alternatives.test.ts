@@ -37,7 +37,7 @@ function corpus() {
     makeCandidate({ issueId: "i-0001", issueKey: "ENG-1000", title: TITLE_A }), // ref 500 + exact 60
     makeCandidate({ issueId: "i-0002", issueKey: "ENG-2002", title: TITLE_A }), // exact 60
     makeCandidate({ issueId: "i-0003", issueKey: "ENG-2003", title: "alpha bravo charlie delta" }), // contained 39
-    makeCandidate({ issueId: "i-0004", issueKey: "ENG-2004", title: "alpha bravo delta echo" }), // fuzzy 20
+    makeCandidate({ issueId: "i-0004", issueKey: "ENG-2004", title: "alpha bravo delta echo" }), // fuzzy round(30·2·2/7) = 17
     makeCandidate({ issueId: "i-0005", issueKey: "ENG-2005", title: "x ray Quebec" }), // zero signals
     makeCandidate({ issueId: "i-0006", issueKey: "ENG-2006", title: "zulu echo" }), // B's match
   ];
@@ -53,7 +53,7 @@ test("matching alternatives: ≤3, descending score, tie-break issueId, excludes
   assert.deepEqual(matchA.alternatives, [
     { issueId: "i-0002", score: 60, mapped: true }, // C is assigned i-0002 ⇒ mapped
     { issueId: "i-0003", score: 39, mapped: false },
-    { issueId: "i-0004", score: 20, mapped: false },
+    { issueId: "i-0004", score: 17, mapped: false },
     // i-0005 (score 0) is fourth ⇒ truncated at three
   ]);
   assert.ok(matchA.alternatives.length <= 3);
@@ -87,7 +87,8 @@ test("matching alternatives: gated and below-plausible candidates may appear as 
     makeCandidate({ issueId: "i-0001", issueKey: "ENG-1001", title: TITLE_A, teamKey: "acme-team", projectRef: "proj-alpha" }),
     // High-scoring but gated-out (differing project) — excluded from selection, kept as alternative.
     makeCandidate({ issueId: "i-0002", issueKey: "ENG-1002", title: "alpha bravo charlie delta echo foxtrot", teamKey: "acme-team", projectRef: "proj-beta" }),
-    // Below-plausible (zero signals) — still an alternative candidate.
+    // Below-plausible (no title signal; only the factory-default same-project +10,
+    // still < plausible 18) — retained as an alternative candidate.
     makeCandidate({ issueId: "i-0003", issueKey: "ENG-1003", title: "oscar pigeon romeo" }),
   ];
   const result = matchAllTasks(tasks, candidates, config);
@@ -98,7 +99,7 @@ test("matching alternatives: gated and below-plausible candidates may appear as 
   assert.ok(alt1.score >= 30, "carries its raw score");
   const alt2 = match.alternatives.find((a) => a.issueId === "i-0003");
   assert.ok(alt2, "below-plausible retained as alternative");
-  assert.equal(alt2.score, 0);
+  assert.ok(alt2.score < config.confidenceFloors.plausible, "below the plausible floor, yet surfaced");
 });
 
 test("matching alternatives: ordering and mapped annotations are stable across input permutations (AC6)", () => {

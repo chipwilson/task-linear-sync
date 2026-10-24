@@ -101,7 +101,7 @@ test("matching fake pipeline: ZERO mutating LinearPort calls on the entire 006-r
   for await (const issue of fake.listIssues(scope)) issues.push(issue);
   const attachmentsByIssue: Record<string, AttachmentView[]> = {};
   for (const issue of issues) {
-    attachmentsByIssue[issue.id] = (await fake.listAttachments(issue.id)).items;
+    attachmentsByIssue[issue.id] = [...(await fake.listAttachments(issue.id)).items];
   }
   const candidates = projectCandidates({ issues, attachmentsByIssue, config });
   const durable = candidates.find((c) => c.durableTaskUuid !== undefined)!;

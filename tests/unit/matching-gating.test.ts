@@ -103,7 +103,13 @@ test("matching gating: sub-plausible candidates stay scored (they may surface as
 
 test("matching gating: container gate wins the machine-readable exclusion over below-plausible", () => {
   const inp = input(makeRouting("acme-team", "proj-alpha"), { title: "alpha bravo" });
-  const candidate = makeCandidate({ teamKey: "glob-team", title: "alpha charlie bravo delta echo" });
+  // teamKey AND projectRef differ, but the team gate is checked first (FR-003 order);
+  // projectRef must differ too so no same-project credit lifts the pair above the floor.
+  const candidate = makeCandidate({
+    teamKey: "glob-team",
+    projectRef: "proj-beta",
+    title: "alpha charlie bravo delta echo",
+  });
   const pair = gated(scorePair(inp, candidate, weights), inp, candidate);
   assert.equal(pair.total, 17, "also below plausible");
   assert.equal(pair.exclusion, "gated-team", "documented precedence: gating reason first");

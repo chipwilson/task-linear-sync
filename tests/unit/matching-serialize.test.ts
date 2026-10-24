@@ -28,7 +28,8 @@ test("matching serialize: stable key-sorted JSON (canonical 002 discipline)", ()
         confidence: "high",
         durableIdentity: false,
         reasons: ["title-exact"],
-        alternatives: [{ issueId: "i2", score: 0, mapped: false }],
+        alternatives: [], // kept empty: a nested alternatives entry would nest its own
+        // "issueId" key and collide with the Match-level key-order probes below.
       },
     ],
     unresolved: [{ taskUuid: "u", band: "unmatched", bestScore: 3 }],

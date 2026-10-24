@@ -26,7 +26,6 @@ const T1 = "b1000000-0000-4000-8000-000000000001";
 const T2 = "b2000000-0000-4000-8000-000000000002";
 const I1 = "i-0001";
 const I2 = "i-0002";
-const I3 = "i-0003";
 
 function bands(pairs: readonly PairScore[], cfg = config) {
   const matches = bandAndMargin(pairs, pairs, cfg);

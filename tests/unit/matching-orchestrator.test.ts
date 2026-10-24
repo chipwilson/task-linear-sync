@@ -40,15 +40,14 @@ test("matching empty pool: unresolved bestScore is the best USABLE total (absent
   const rival = makeTask({ stableUuid: "d0000000-0000-4000-8000-0000000000d4", title: "alpha bravo charlie" });
   const candidates = [
     makeCandidate({ issueId: "i-0001", issueKey: "ENG-1001", title: "alpha bravo charlie" }),
-    makeCandidate({ issueId: "i-0002", issueKey: "ENG-1002", title: "alpha bravo charlie" }),
   ];
   const result = matchAllTasks([{ task: t }, { task: rival }], candidates, config);
-  assert.equal(result.matches.length, 1, "one winner takes one issue");
+  assert.equal(result.matches.length, 1, "one winner takes the single contested issue");
   assert.equal(result.unresolved.length, 1);
   const loser = result.unresolved[0]!;
   assert.equal(loser.band, "unmatched");
   assert.equal(loser.bestScore, 60, "best usable total (exact title) — diagnostic only");
-  assert.deepEqual(result.unmappedIssues, [], "both issues consumed");
+  assert.deepEqual(result.unmappedIssues, [], "the contested issue was consumed");
 });
 
 test("matching orchestrator: unmatched issue ids surface sorted in unmappedIssues (013 input)", () => {
