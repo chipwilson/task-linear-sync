@@ -72,8 +72,8 @@ test("titles strip — configured titleStripPrefixes are removed after the featu
 
 test("titles strip — default strip removes ONLY the local-ID prefix and redundant issue prefix (001 R6.7)", () => {
   const withLocal = makeTask({ localTaskId: "Task 1.2", title: "ignored" });
-  assert.equal(stripTitleForRender("Task 1.2: Wire session store", withLocal, makeTitleSlice()), "Wire session store");
-  assert.equal(stripTitleForRender("[SYNC-7] Fix token refresh", withLocal, makeTitleSlice()), "Fix token refresh");
+  assert.equal(stripTitleForRender(localIdPrefixedTitle, withLocal, makeTitleSlice()), "Wire session store");
+  assert.equal(stripTitleForRender(issuePrefixedTitle, withLocal, makeTitleSlice()), "Fix token refresh");
   // No other prefix is touched by the built-in default strip…
   assert.equal(
     stripTitleForRender("[CUSTOM] other: Task 1.2: mid", withLocal, makeTitleSlice()),
@@ -83,8 +83,8 @@ test("titles strip — default strip removes ONLY the local-ID prefix and redund
   // …and with no localTaskId the duplicate local-ID removal does not apply ("only when the
   // preserved line already carries that identifier" — 001 R5.2/R6.7).
   assert.equal(
-    stripTitleForRender("Task 1.2: Wire session store", makeTask({ title: "ignored" }), makeTitleSlice()),
-    "Task 1.2: Wire session store",
+    stripTitleForRender(localIdPrefixedTitle, makeTask({ title: "ignored" }), makeTitleSlice()),
+    localIdPrefixedTitle,
   );
 });
 

@@ -198,7 +198,7 @@ test("titles roundtrip — preset prefixed titles normalize once, then stay byte
       // Converges by cycle 2 and never regrows (strip removes prefixes; nothing stacks).
       const settled = history.slice(1);
       settled.forEach((mirrored, i) =>
-        assert.equal(mirrored, settled[0], `[${label}/${cfgName}] not stable after first normalize: ${JSON.stringify(history)}`),
+        assert.equal(mirrored, settled[0], `[${label}/${cfgName}] unstable after first normalize (cycle ${i + 2}): ${JSON.stringify(history)}`),
       );
       assert.ok(
         history.every((mirrored, i) => i === 0 || mirrored.length <= (history[i - 1]?.length ?? 0)),
