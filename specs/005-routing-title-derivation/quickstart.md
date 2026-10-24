@@ -107,3 +107,31 @@ emits ESM + per-module declarations for `src/routing` and `src/titles`; every qu
 above observed. 006 can then consume `RoutingResolution`, and 008/004/009 can consume
 `TitleDerivation` / `stripTitleForRender`, wired in Wave-3 integration — none importing 005
 internals.
+
+## Validation results (T031) — recorded 2026-10-24 on branch `005-routing-title-derivation-impl`
+
+Environment: Node v22.14.0 (local; CI matrix 20.x + 24.x), zero network, zero credentials,
+zero real organization identifiers. All commands run from this worktree's root.
+
+| Scenario | Command | Result |
+| --- | --- | --- |
+| US1.1 longest prefix | `npm run test:unit -- --test-name-pattern "routing"` | ✅ `routing nested prefixes …` — deepest match selects team+project, `matchedPrefix` set, `defaulted:false` |
+| US1.2 equal-length tie | same pattern | ✅ `routing tie …` — first-by-`projectByPath`-index wins, `tieBreak:"first-by-map-order"`, re-run identical |
+| US1.3 defaults / empty map | same pattern | ✅ `routing defaults …` — unmatched → `defaulted:true`; empty map → default for every task |
+| US1.4 unassigned + continuation | same pattern | ✅ `routing unassigned …` — `{teamKey:"",project:"",defaulted:false,unassigned:true}`; multi-unrouted corpus all resolve, no abort |
+| US1.5 SC-001 determinism | `npm run test:integration -- --test-name-pattern "routing corpus"` | ✅ 10-row corpus 100% as designed; three independent passes byte-identical |
+| US2.1 first-match + substitution + indicator | `npm run test:unit -- --test-name-pattern "title"` | ✅ `titles derive` / `titles template` — first matching rule applied; absent attr → `""` + `unresolvedPlaceholders`, never literal |
+| US2.2 pass-through | same pattern | ✅ `titles pass-through` — `baseTitle = task.title`, `matchedRuleIndex:-1`, `defaulted:true` |
+| US2.3 decorate exactly once, stable re-derive | same pattern | ✅ `titles decorate` / `titles derive idempotent` — prefix exactly once on all three paths; already-prefixed title unchanged |
+| US2.4 render-back strip | same pattern | ✅ `titles strip` — feature + configured + `[SYNC-N]` + duplicate local-ID removed in order; all other chars preserved |
+| US2.5 no-feature ⇒ unprefixed | same pattern | ✅ `titles no-feature` — final title equals derived base |
+| US2.6 SC-002 round trip | `npm run test:integration -- --test-name-pattern "roundtrip"` | ✅ property-based (seeded PRNG, 96 tasks × 4 rule/strip pairs) × 10 cycles: byte-stable from cycle 1; **0** duplicated/compounding prefixes; preset prefixed titles normalize once then stabilize |
+| Contract: routing frozen-shape | `npm run test:contract` | ✅ `routing-resolution-shape` — key set exactly `RoutingResolution`'s frozen keys, no extras/widening; `frozen imports 005` — no re-declaration of `RoutingResolution`/`ProjectByPathEntry`/`Task` |
+| Contract: zero-literal scan | `npm run test:contract` | ✅ `defaults scan 005` — pass-through/default-strip behaviors + all `tests/fixtures/routing-titles/` + 005 sources: benign placeholders only |
+| Whole-feature gate | `npm test` | ✅ 57 005 tests (36 unit / 11 contract / 7 integration / 3 e2e) — suite total 240 pass / 0 fail; coverage 96.70% lines / 91.65% branches / 99.36% functions vs thresholds 80/70/80; `build` emits per-module `.js` + `.d.ts` for `src/routing` and `src/titles`; `lint` + `typecheck` green |
+
+**Success-criteria traceability outcome**: SC-001 ✅ (US1.1–US1.5), SC-002 ✅ (US2.3/US2.4/US2.6).
+FR-001 ✅ US1.1+US1.2 · FR-002 ✅ US1.3+US1.4 · FR-003 ✅ US2.1+US2.2 · FR-004 ✅ US2.3+US2.4+US2.6 ·
+FR-005 ✅ US2.5. Zero diff under `src/{domain,config,state,urls,gates,ports}`; no
+`package.json`/`src/index.ts` edits (research R3 — Wave-3 integration registers the public
+subpath exports).
