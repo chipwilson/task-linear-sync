@@ -267,7 +267,11 @@ export function mutateCorpus(corpus: Corpus, seed: number, options: MutationOpti
       : candidate.frameworkId;
     return {
       ...candidate,
-      ...(renamed ? { title: `${titleWords(rng, "renamed")} re-synced` } : {}),
+      // Rename EXEMPLAR mirrors the committed `moved/` fixture ("Vault token rotation —
+      // refreshed"): Linear rewrites are token-preserving edits, not total replacements —
+      // a complete replacement would delete the pairing's only remaining evidence, which
+      // no scoring contract could recover.
+      ...(renamed ? { title: `${candidate.title} — re-synced` } : {}),
       ...(moved ? { teamKey: movedTeam, projectRef: movedProject, frameworkId: movedFramework } : {}),
     };
   });
