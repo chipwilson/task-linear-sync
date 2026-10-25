@@ -18,7 +18,7 @@ import type {
   FrameworkAdapter,
 } from "./adapter.js";
 import { CustomAdapterError, SelectionOverrideError } from "./adapter.js";
-import { genericConventions } from "./adapters/generic.js";
+import { builtInAdapterRows } from "./adapters/index.js";
 import {
   customDescriptorConventions,
   defineFrameworkAdapter,
@@ -33,12 +33,11 @@ import type { FrameworkIdentity } from "./types.js";
 export const DEFAULT_PRECEDENCE: readonly string[] = ["kiro", "open-spec", "spec-kit", "bmad", "generic"];
 
 /**
- * Built-in conventions rows (defaults layer, FR-007). US1 lands `generic` only
- * (T018/T019); T031 completes the five-adapter table in `adapters/index.ts`
- * (`builtInAdapters`).
+ * Built-in conventions rows (defaults layer, FR-007) — the five-adapter table from
+ * `adapters/index.ts` (T031), gated by T023's table tests and the T007 surface snapshot.
  */
 export function builtInConventionRows(): readonly { readonly id: FrameworkIdentity; readonly conventions: ResolvedConventions }[] {
-  return [{ id: "generic", conventions: genericConventions }];
+  return builtInAdapterRows;
 }
 
 function toAdapter(
@@ -55,13 +54,17 @@ function addCustomAdapter(
   config: ResolvedConfig,
 ): void {
   validateCustomDescriptor(descriptor); // lists EVERY missing required part at once (FR-011)
-  if (isShadowingBuiltInId(descriptor.id) && descriptor.shadowBuiltInId !== true) {
-    throw new CustomAdapterError(descriptor.id, []); // shadows a built-in without the explicit opt-in
+  const shadowing = isShadowingBuiltInId(descriptor.id);
+  if (shadowing && descriptor.shadowBuiltInId !== true) {
+    throw new CustomAdapterError(descriptor.id, []); // shadows a built-in without the explicit opt-in (data-model §5)
   }
-  if (pool.some((adapter) => adapter.id === descriptor.id)) {
-    throw new CustomAdapterError(descriptor.id, []); // duplicate adapter id
+  const at = pool.findIndex((adapter) => adapter.id === descriptor.id);
+  if (at >= 0 && !shadowing) {
+    throw new CustomAdapterError(descriptor.id, []); // duplicate custom adapter id
   }
-  pool.push(defineFrameworkAdapter(customDescriptorConventions(descriptor, config)));
+  const adapter = defineFrameworkAdapter(customDescriptorConventions(descriptor, config));
+  if (at >= 0) pool[at] = adapter; // shadowBuiltInId opt-in — the custom row REPLACES the built-in row
+  else pool.push(adapter);
 }
 
 /**

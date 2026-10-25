@@ -44,3 +44,10 @@ export { discoverTaskFiles } from "./discover.js";
 export { discoverGitContext } from "./git.js";
 export { createAdapterRegistry, selectAdapter } from "./registry.js";
 export { SelectionOverrideError } from "./adapter.js";
+
+// ── US2 adapter-conventions tier (T034): the built-in table, custom-adapter error,
+//    the agent-hook scaffold, and the FrameworkMetadata convenience. ──
+export { CustomAdapterError } from "./adapter.js";
+export { agentHookScaffold } from "./agent-hooks.js";
+export { builtInAdapters } from "./adapters/index.js";
+export { frameworkMetadataFragment } from "./conventions.js";
