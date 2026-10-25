@@ -1,0 +1,15 @@
+{
+  "request": {
+    "operationName": "issues",
+    "variables": {
+      "teamKey": "acme-team",
+      "after": "mid-cursor-1"
+    }
+  },
+  "response": {
+    "status": 503,
+    "body": {
+      "__rawText": "upstream unavailable"
+    }
+  }
+}

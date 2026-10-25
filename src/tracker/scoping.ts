@@ -55,6 +55,13 @@ export function issueInScope(
  * `page-size-clamped` diagnostic naming the `pageSize` config key (never a value).
  */
 export function clampPageSize(raw: number, report: (d: TrackerDiagnostic) => void): number {
+  if (raw === Number.POSITIVE_INFINITY) {
+    report({
+      code: "page-size-clamped",
+      message: `pageSize exceeds the platform connection maximum — clamped to ${PLATFORM_CONNECTION_MAX}`,
+    });
+    return PLATFORM_CONNECTION_MAX;
+  }
   if (!Number.isFinite(raw) || raw < 1) {
     report({
       code: "page-size-clamped",

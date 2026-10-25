@@ -1,0 +1,41 @@
+{
+  "request": {
+    "operationName": "issues",
+    "variables": {
+      "teamKey": "initech-team",
+      "after": null
+    }
+  },
+  "response": {
+    "status": 200,
+    "body": {
+      "data": {
+        "issues": {
+          "nodes": [
+            {
+              "id": "ac000000-0000-4000-8000-000000000301",
+              "identifier": "INI-301",
+              "title": "Initech single task",
+              "description": "description body",
+              "updatedAt": "2026-10-01T00:00:00.000Z",
+              "archivedAt": null,
+              "team": {
+                "key": "initech-team"
+              },
+              "project": {
+                "id": "prj-ini-core"
+              },
+              "state": {
+                "type": "unstarted"
+              }
+            }
+          ],
+          "pageInfo": {
+            "hasNextPage": false,
+            "endCursor": "initech-team-cursor-1"
+          }
+        }
+      }
+    }
+  }
+}

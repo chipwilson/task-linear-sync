@@ -1,0 +1,75 @@
+{
+  "request": {
+    "operationName": "issues",
+    "variables": {
+      "teamKey": "globex-team",
+      "after": null
+    }
+  },
+  "response": {
+    "status": 200,
+    "body": {
+      "data": {
+        "issues": {
+          "nodes": [
+            {
+              "id": "ac000000-0000-4000-8000-000000000201",
+              "identifier": "GLX-201",
+              "title": "Globex task one",
+              "description": "description body",
+              "updatedAt": "2026-10-01T00:00:00.000Z",
+              "archivedAt": null,
+              "team": {
+                "key": "globex-team"
+              },
+              "project": {
+                "id": "prj-glx-main"
+              },
+              "state": {
+                "type": "unstarted"
+              }
+            },
+            {
+              "id": "ac000000-0000-4000-8000-000000000202",
+              "identifier": "GLX-202",
+              "title": "Globex task two",
+              "description": "description body",
+              "updatedAt": "2026-10-01T00:00:00.000Z",
+              "archivedAt": null,
+              "team": {
+                "key": "globex-team"
+              },
+              "project": {
+                "id": "prj-glx-main"
+              },
+              "state": {
+                "type": "unstarted"
+              }
+            },
+            {
+              "id": "ac000000-0000-4000-8000-000000000203",
+              "identifier": "GLX-203",
+              "title": "Globex task three",
+              "description": "description body",
+              "updatedAt": "2026-10-01T00:00:00.000Z",
+              "archivedAt": null,
+              "team": {
+                "key": "globex-team"
+              },
+              "project": {
+                "id": "prj-glx-main"
+              },
+              "state": {
+                "type": "started"
+              }
+            }
+          ],
+          "pageInfo": {
+            "hasNextPage": true,
+            "endCursor": "globex-team-cursor-1"
+          }
+        }
+      }
+    }
+  }
+}
