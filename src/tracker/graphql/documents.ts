@@ -65,16 +65,18 @@ export const GRAPHQL_DOCUMENTS: Readonly<Record<GraphQLOperationName, GraphQlDoc
   }
 }`,
   },
+  // Flat named variables throughout (recorded-fixture matching pins top-level keys —
+  // data-model §8); the platform input object is assembled inside the operation.
   issueCreate: {
     operationName: "issueCreate",
-    source: `mutation issueCreate($input: IssueCreateInput!) {
-  issueCreate(input: $input) { success userError issue { ${ISSUE_FIELDS} } }
+    source: `mutation issueCreate($teamId: ID!, $projectId: ID, $title: String!, $description: String, $stateId: ID, $parentId: ID) {
+  issueCreate(input: { teamId: $teamId, projectId: $projectId, title: $title, description: $description, stateId: $stateId, parentId: $parentId }) { success userError issue { ${ISSUE_FIELDS} } }
 }`,
   },
   issueUpdate: {
     operationName: "issueUpdate",
-    source: `mutation issueUpdate($id: ID!, $input: IssueUpdateInput!) {
-  issueUpdate(id: $id, input: $input) { success userError issue { ${ISSUE_FIELDS} } }
+    source: `mutation issueUpdate($id: ID!, $title: String, $description: String, $stateId: ID) {
+  issueUpdate(id: $id, input: { title: $title, description: $description, stateId: $stateId }) { success userError issue { ${ISSUE_FIELDS} } }
 }`,
   },
   issueArchive: {
@@ -95,14 +97,14 @@ export const GRAPHQL_DOCUMENTS: Readonly<Record<GraphQLOperationName, GraphQlDoc
   // updates the original attachment in place — no client-side read-before-write.
   attachmentCreate: {
     operationName: "attachmentCreate",
-    source: `mutation attachmentCreate($input: AttachmentCreateInput!) {
-  attachmentCreate(input: $input) { success userError attachment { ${ATTACHMENT_FIELDS} } }
+    source: `mutation attachmentCreate($issueId: ID!, $url: String!, $title: String!, $subtitle: String, $iconUrl: String, $metadata: AttachmentMetadataInput) {
+  attachmentCreate(input: { issueId: $issueId, url: $url, title: $title, subtitle: $subtitle, iconUrl: $iconUrl, metadata: $metadata }) { success userError attachment { ${ATTACHMENT_FIELDS} } }
 }`,
   },
   attachmentUpdate: {
     operationName: "attachmentUpdate",
-    source: `mutation attachmentUpdate($id: ID!, $input: AttachmentUpdateInput!) {
-  attachmentUpdate(id: $id, input: $input) { success userError attachment { ${ATTACHMENT_FIELDS} } }
+    source: `mutation attachmentUpdate($id: ID!, $metadata: AttachmentMetadataInput) {
+  attachmentUpdate(id: $id, input: { metadata: $metadata }) { success userError attachment { ${ATTACHMENT_FIELDS} } }
 }`,
   },
   issueAttachments: {

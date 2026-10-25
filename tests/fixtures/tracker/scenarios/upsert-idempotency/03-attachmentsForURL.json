@@ -1,0 +1,44 @@
+{
+  "request": {
+    "operationName": "attachmentsForURL",
+    "variables": {
+      "url": "https://sync.example.invalid/task-linear-sync/ac000000-0000-4000-8000-000000000009"
+    }
+  },
+  "response": {
+    "status": 200,
+    "body": {
+      "data": {
+        "attachmentsForURL": [
+          {
+            "id": "att-701-9",
+            "url": "https://sync.example.invalid/task-linear-sync/ac000000-0000-4000-8000-000000000009",
+            "title": "sync state",
+            "subtitle": "canonical updated",
+            "metadata": {
+              "v": 2,
+              "tag": "second"
+            },
+            "issue": {
+              "id": "ac000000-0000-4000-8000-000000000701",
+              "identifier": "ACM-701",
+              "title": "Upsert host issue",
+              "description": "description body",
+              "updatedAt": "2026-10-01T00:00:00.000Z",
+              "archivedAt": null,
+              "team": {
+                "key": "acme-team"
+              },
+              "project": {
+                "id": "prj-acme-alpha"
+              },
+              "state": {
+                "type": "unstarted"
+              }
+            }
+          }
+        ]
+      }
+    }
+  }
+}

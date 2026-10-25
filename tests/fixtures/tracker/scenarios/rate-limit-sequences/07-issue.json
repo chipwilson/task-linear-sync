@@ -1,0 +1,32 @@
+{
+  "request": {
+    "operationName": "issue",
+    "variables": {
+      "id": "1003"
+    }
+  },
+  "response": {
+    "status": 200,
+    "body": {
+      "data": {
+        "issue": {
+          "id": "ac000000-0000-4000-8000-000000001003",
+          "identifier": "SEQ-1003",
+          "title": "5xx twice then success",
+          "description": "seq fixture",
+          "updatedAt": "2026-10-01T00:00:00.000Z",
+          "archivedAt": null,
+          "team": {
+            "key": "acme-team"
+          },
+          "project": {
+            "id": "prj-acme-alpha"
+          },
+          "state": {
+            "type": "unstarted"
+          }
+        }
+      }
+    }
+  }
+}

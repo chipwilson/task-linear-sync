@@ -1,0 +1,34 @@
+{
+  "request": {
+    "operationName": "issueAttachments",
+    "variables": {
+      "id": "ac000000-0000-4000-8000-000000000501"
+    }
+  },
+  "response": {
+    "status": 200,
+    "body": {
+      "data": {
+        "issue": {
+          "attachments": {
+            "nodes": [
+              {
+                "id": "att-acme-501",
+                "url": "https://sync.example.invalid/task-linear-sync/ac000000-0000-4000-8000-000000000001",
+                "title": "task-linear-sync sync state",
+                "subtitle": null,
+                "metadata": {
+                  "__task-linear-sync": "state-v1"
+                }
+              }
+            ],
+            "pageInfo": {
+              "hasNextPage": false,
+              "endCursor": null
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -141,6 +141,11 @@ export class DiscoveryCache {
     return this.teams.get(teamKey);
   }
 
+  /** All warmed team records (state-type resolution may search discovered teams). */
+  records(): IterableIterator<TeamDiscoveryRecord> {
+    return this.teams.values();
+  }
+
   requireTeam(teamKey: string): TeamDiscoveryRecord {
     const record = this.teams.get(teamKey);
     if (!record) {

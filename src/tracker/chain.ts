@@ -9,7 +9,7 @@
  * higher pages inside the bounded `orphanProbeLimit` window are REPORTED, never skipped.
  * (T039 adds the identity helpers consumed by 006/008.)
  */
-import type { AttachmentView, LinearPort } from "../ports/linear-port.js";
+import type { AttachmentView, IssueView, LinearPort } from "../ports/linear-port.js";
 import { canonicalAttachmentUrl, continuationAttachmentUrl } from "../urls/attachment-url.js";
 import type { AttachmentUrlConfig } from "../urls/attachment-url.js";
 import { DEFAULT_ORPHAN_PROBE_LIMIT } from "./options.js";
@@ -62,4 +62,50 @@ export async function enumerateAttachmentChain(
     }
   }
   return { taskUuid, canonical, pages, orphans };
+}
+
+// ── Identity helpers (T039; design §2.5/§2.6) — consumed by 006/008 ───────────────
+
+/**
+ * Resolve the issue(s) addressed by a task's page-0 canonical URL (Principle II: the URL IS
+ * the identity). `0 carriers ⇒ null`; `≥1 ⇒ ALL carriers` returned — the port never hides a
+ * multi-carrier integrity violation (constitution II), deciding on it is the caller's job.
+ * Addressed purely by URL: no search, no description content, ever (FR-004).
+ */
+export async function resolveIssueByTaskIdentity(
+  port: Pick<LinearPort, "findIssuesByAttachmentUrl">,
+  urlConfig: AttachmentUrlConfig,
+  taskUuid: string,
+): Promise<readonly IssueView[] | null> {
+  const carriers = await port.findIssuesByAttachmentUrl(canonicalAttachmentUrl(urlConfig, taskUuid));
+  return carriers.length === 0 ? null : carriers;
+}
+
+/** Hard bound on a cursor scan so a pathological connection can never spin the walk. */
+const MAX_SCAN_PAGES = 1000;
+
+/**
+ * Scan route (FR-004): does this issue's attachment connection carry the task's canonical
+ * URL? Walks `listAttachments` opaque cursors until found or exhausted — content is never a
+ * filter; only URL equality under the frozen scheme decides.
+ */
+export async function issueCarriesTaskIdentity(
+  port: Pick<LinearPort, "listAttachments">,
+  urlConfig: AttachmentUrlConfig,
+  issueId: string,
+  taskUuid: string,
+): Promise<boolean> {
+  const target = canonicalAttachmentUrl(urlConfig, taskUuid);
+  let cursor: string | null = null;
+  let pages = 0;
+  for (;;) {
+    const page = await port.listAttachments(issueId, cursor);
+    if (page.items.some((attachment) => attachment.url === target)) return true;
+    if (page.nextCursor === null) return false;
+    cursor = page.nextCursor;
+    pages += 1;
+    if (pages >= MAX_SCAN_PAGES) {
+      throw new TrackerConfigError(`identity scan for issue '${issueId}' exceeded ${MAX_SCAN_PAGES} pages — inconsistent tracker state`);
+    }
+  }
 }

@@ -1,0 +1,20 @@
+{
+  "request": {
+    "operationName": "issueCreate",
+    "variables": {
+      "teamId": "team-acme",
+      "projectId": "prj-acme-alpha",
+      "title": "Created by conformance"
+    }
+  },
+  "response": {
+    "status": 429,
+    "body": {
+      "errors": [
+        {
+          "message": "rate limited (synthetic fixture)"
+        }
+      ]
+    }
+  }
+}

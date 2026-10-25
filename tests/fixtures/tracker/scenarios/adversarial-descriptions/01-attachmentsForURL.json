@@ -1,0 +1,43 @@
+{
+  "request": {
+    "operationName": "attachmentsForURL",
+    "variables": {
+      "url": "https://sync.example.invalid/task-linear-sync/ac000000-0000-4000-8000-000000000001"
+    }
+  },
+  "response": {
+    "status": 200,
+    "body": {
+      "data": {
+        "attachmentsForURL": [
+          {
+            "id": "att-acme-501",
+            "url": "https://sync.example.invalid/task-linear-sync/ac000000-0000-4000-8000-000000000001",
+            "title": "task-linear-sync sync state",
+            "subtitle": null,
+            "metadata": {
+              "__task-linear-sync": "state-v1"
+            },
+            "issue": {
+              "id": "ac000000-0000-4000-8000-000000000501",
+              "identifier": "ACM-501",
+              "title": "Carrier issue",
+              "description": "carries the tool attachment",
+              "updatedAt": "2026-10-01T00:00:00.000Z",
+              "archivedAt": null,
+              "team": {
+                "key": "acme-team"
+              },
+              "project": {
+                "id": "prj-acme-alpha"
+              },
+              "state": {
+                "type": "unstarted"
+              }
+            }
+          }
+        ]
+      }
+    }
+  }
+}

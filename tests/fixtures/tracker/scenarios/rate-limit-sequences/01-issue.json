@@ -1,0 +1,21 @@
+{
+  "request": {
+    "operationName": "issue",
+    "variables": {
+      "id": "1001"
+    }
+  },
+  "response": {
+    "status": 429,
+    "headers": {
+      "Retry-After": "3"
+    },
+    "body": {
+      "errors": [
+        {
+          "message": "rate limited (synthetic fixture)"
+        }
+      ]
+    }
+  }
+}

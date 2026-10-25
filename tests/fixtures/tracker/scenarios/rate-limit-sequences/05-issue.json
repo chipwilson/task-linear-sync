@@ -1,0 +1,12 @@
+{
+  "request": {
+    "operationName": "issue",
+    "variables": {
+      "id": "1003"
+    }
+  },
+  "response": {
+    "status": 502,
+    "body": {}
+  }
+}

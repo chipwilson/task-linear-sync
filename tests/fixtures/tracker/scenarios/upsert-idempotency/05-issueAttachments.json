@@ -1,0 +1,35 @@
+{
+  "request": {
+    "operationName": "issueAttachments",
+    "variables": {
+      "id": "ac000000-0000-4000-8000-000000000701",
+      "after": "attcur-1"
+    }
+  },
+  "response": {
+    "status": 200,
+    "body": {
+      "data": {
+        "issue": {
+          "attachments": {
+            "nodes": [
+              {
+                "id": "att-701-9",
+                "url": "https://sync.example.invalid/task-linear-sync/ac000000-0000-4000-8000-000000000009",
+                "title": "sync state",
+                "subtitle": null,
+                "metadata": {
+                  "v": 1
+                }
+              }
+            ],
+            "pageInfo": {
+              "hasNextPage": false,
+              "endCursor": null
+            }
+          }
+        }
+      }
+    }
+  }
+}

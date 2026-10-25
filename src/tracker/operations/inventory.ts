@@ -15,26 +15,9 @@ import { TrackerConfigError, TrackerError } from "../errors.js";
 import { buildIssuesFilterVariables, clampPageSize, issueInScope } from "../scoping.js";
 import { paginate } from "../pagination.js";
 import type { PageSlice } from "../pagination.js";
-import { asList, asRecord, mapIssueNodes, mapTeamNodeFull, nodesOf, type TeamDiscoveryRecord } from "../graphql/mapping.js";
+import { asList, asRecord, mapIssueNodes } from "../graphql/mapping.js";
+import { fetchTeamRecords, warmDiscovery } from "../internal/discovery.js";
 import type { TrackerContext } from "../internal/request.js";
-
-/** ONE `teamMetadata` query for `teamKeys`; mapped, uncached team records. */
-async function fetchTeamRecords(ctx: TrackerContext, teamKeys: readonly string[]): Promise<TeamDiscoveryRecord[]> {
-  const data = await ctx.exec.exec(
-    "teamMetadata",
-    { teamKeys: [...teamKeys] },
-    (d) => nodesOf(asRecord(d["teams"]) ?? null).map(mapTeamNodeFull),
-    { retryClass: "non-create" },
-  );
-  return data;
-}
-
-/** R10: "empty → warm(per-team)" — one batched discovery for every not-yet-resolved team. */
-async function warmDiscovery(ctx: TrackerContext, teamKeys: readonly string[]): Promise<void> {
-  const missing = teamKeys.filter((key) => !ctx.discovery.has(key));
-  if (missing.length === 0) return;
-  ctx.discovery.warm(await fetchTeamRecords(ctx, missing));
-}
 
 function scopeViolation(ctx: TrackerContext, teamKey: string, row: IssueView): TrackerError {
   return new TrackerError({

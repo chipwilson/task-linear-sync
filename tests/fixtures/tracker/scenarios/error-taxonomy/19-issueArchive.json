@@ -1,0 +1,19 @@
+{
+  "request": {
+    "operationName": "issueArchive",
+    "variables": {
+      "id": "ac000000-0000-4000-8000-000000000901"
+    }
+  },
+  "response": {
+    "status": 200,
+    "body": {
+      "data": {
+        "issueArchive": {
+          "success": false,
+          "userError": "archive denied (synthetic fixture)"
+        }
+      }
+    }
+  }
+}

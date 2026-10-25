@@ -88,4 +88,4 @@ export {
 export { GRAPHQL_DOCUMENTS, GRAPHQL_OPERATION_NAMES, type GraphQLOperationName } from "./graphql/documents.js";
 
 // ── Chain enumeration (R8) ──
-export { enumerateAttachmentChain, type AttachmentChainResult, type ChainOptions } from "./chain.js";
+export { enumerateAttachmentChain, resolveIssueByTaskIdentity, issueCarriesTaskIdentity, type AttachmentChainResult, type ChainOptions } from "./chain.js";

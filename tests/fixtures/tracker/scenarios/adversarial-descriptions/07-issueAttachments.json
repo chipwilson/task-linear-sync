@@ -1,0 +1,24 @@
+{
+  "request": {
+    "operationName": "issueAttachments",
+    "variables": {
+      "id": "ac000000-0000-4000-8000-000000000502"
+    }
+  },
+  "response": {
+    "status": 200,
+    "body": {
+      "data": {
+        "issue": {
+          "attachments": {
+            "nodes": [],
+            "pageInfo": {
+              "hasNextPage": false,
+              "endCursor": null
+            }
+          }
+        }
+      }
+    }
+  }
+}
