@@ -45,6 +45,10 @@
     "./matching": {
       "types": "./dist/matching/index.d.ts",
       "default": "./dist/matching/index.js"
+    },
+    "./discovery": {
+      "types": "./dist/discovery/index.d.ts",
+      "default": "./dist/discovery/index.js"
     }
   },
   "files": [
