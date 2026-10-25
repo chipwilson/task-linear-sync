@@ -113,10 +113,10 @@
 
 **Purpose**: Whole-feature enforcement, packaging proof, documentation duty.
 
-- [ ] T035 [P] Create the scripted e2e walkthrough `tests/e2e/discovery-user-stories.test.ts`: five-frameworks discovery → assert identities + siblings + git context in one flow; repeat-run byte-identity (SC-002); an override run where a custom adapter (`flows/` + `todo-*.md`) wins over built-ins (FR-011); escape fixture refused with 0 out-of-root opens (SC-003); final recursive stat of all fixture repos → 0 created files/dirs (read-only posture) — spec user stories end-to-end, zero network
-- [ ] T036 [P] Author documentation per constitution "Documentation duty" in NEW files only (do NOT edit `README.md` or 002's `docs/*.md` — parallel-safety): `docs/framework-adapters.md` (built-in adapter table, detection precedence + ranking, the three override layers, minimal custom-adapter configuration example using placeholder identifiers only) and `docs/discovery.md` (safety model: canonical root, skip/symlink rules, escape refusals; git-context omissions; `task-linear-sync/discovery` usage snippet for consumers incl. 004's adapter-interface import)
-- [ ] T037 Packaging + isolation verification: `npm run build` emits `dist/discovery/**` `.js` + `.d.ts`; extend `tests/contract/discovery-surface.test.ts` with a packaging case asserting the `./discovery` entry resolves types-first and both dist files exist (mirrors 002's `package-surface.test.ts` rules without editing it); confirm `package.json` has zero runtime dependencies added; run `git diff main --name-only` and confirm the change set touches only `specs/003-task-discovery-framework-adapters/**`, `src/discovery/**`, new `tests/**` files, new `docs/framework-adapters.md` + `docs/discovery.md`, and `package.json` (one additive exports key) — no frozen 002 file modified
-- [ ] T038 Run the full quickstart.md validation checklist — US1 scenarios 1–8, US2 scenarios 1–7, cross-feature safety checks 1–3 — and record SC-001–SC-004 traceability results in the PR description; `npm test` (all tiers + coverage threshold gate) green per constitution "Merge-blocking validation"
+- [X] T035 [P] Create the scripted e2e walkthrough `tests/e2e/discovery-user-stories.test.ts`: five-frameworks discovery → assert identities + siblings + git context in one flow; repeat-run byte-identity (SC-002); an override run where a custom adapter (`flows/` + `todo-*.md`) wins over built-ins (FR-011); escape fixture refused with 0 out-of-root opens (SC-003); final recursive stat of all fixture repos → 0 created files/dirs (read-only posture) — spec user stories end-to-end, zero network
+- [X] T036 [P] Author documentation per constitution "Documentation duty" in NEW files only (do NOT edit `README.md` or 002's `docs/*.md` — parallel-safety): `docs/framework-adapters.md` (built-in adapter table, detection precedence + ranking, the three override layers, minimal custom-adapter configuration example using placeholder identifiers only) and `docs/discovery.md` (safety model: canonical root, skip/symlink rules, escape refusals; git-context omissions; `task-linear-sync/discovery` usage snippet for consumers incl. 004's adapter-interface import)
+- [X] T037 Packaging + isolation verification: `npm run build` emits `dist/discovery/**` `.js` + `.d.ts`; extend `tests/contract/discovery-surface.test.ts` with a packaging case asserting the `./discovery` entry resolves types-first and both dist files exist (mirrors 002's `package-surface.test.ts` rules without editing it); confirm `package.json` has zero runtime dependencies added; run `git diff main --name-only` and confirm the change set touches only `specs/003-task-discovery-framework-adapters/**`, `src/discovery/**`, new `tests/**` files, new `docs/framework-adapters.md` + `docs/discovery.md`, and `package.json` (one additive exports key) — no frozen 002 file modified
+- [X] T038 Run the full quickstart.md validation checklist — US1 scenarios 1–8, US2 scenarios 1–7, cross-feature safety checks 1–3 — and record SC-001–SC-004 traceability results in the PR description; `npm test` (all tiers + coverage threshold gate) green per constitution "Merge-blocking validation"
 
 ---
 
@@ -236,3 +236,40 @@ Task: "Wire discover.ts to full conventions; suites green"           # T034
 - `discoverGitContext` carries two INTERNAL optional parameters (`observe`, `diagnostics`)
   beyond the contract signature `discoverGitContext(canonicalRoot)` — pure wiring consumed
   by `discoverTaskFiles`; the public one-argument shape is unchanged (snapshot-gated name).
+- T031: `adapters/index.ts` lands the five-row table + the frozen `builtInAdapters` record;
+  `registry.ts`'s `builtInConventionRows()` now reads the table. Ranking arithmetic itself
+  shipped with T018 (documented above) and is now gated by the T022 matrix.
+- T032: `conventions.ts` was seeded in the US1 phase (frozen-config layer); US2 completes
+  the three-layer story — programmatic `DiscoveryOverrides` (incl. the programmatic
+  `featureName` function, R9) beat the frozen-config layer ("when set" realized as "when
+  deviating from `builtInDefaults`") beat the built-in rows — and the T024 override matrix +
+  T025 custom-descriptor tests gate the full contract including `CustomAdapterError`
+  every-miss-at-once and `shadowBuiltInId` opt-in (a shadowing custom row REPLACES the
+  built-in row in the enabled pool).
+- T034 surface note: the barrel exports `CustomAdapterError` and `frameworkMetadataFragment`
+  (framework-adapter.md contract surface); `createAdapterRegistry`/`selectAdapter`/
+  `frameworkMetadataFragment` are DECLARED in `adapter.ts` (interface-only file) and
+  IMPLEMENTED in `registry.ts`/`conventions.ts` — the barrel re-exports the implementations
+  (documented deviation; snapshot name set unchanged).
+- US2 result: 214 tests / 214 pass / 0 fail / 0 skip — the T007 snapshot `builtInAdapters`
+  keys test is now ACTIVE (five frozen FrameworkIds), 002 suites unmodified-green.
+- T037 fix note: the worktree setup commit (T001–T004) accidentally tracked the
+  `node_modules` worktree SYMLINK (002's `.gitignore` directory rule missed the symlink —
+  the identical pitfall 006 fixed in main's `6d14a36`). Follow-up commit `git rm
+  --cached node_modules` (symlink itself untouched on disk); `git diff main --name-only`
+  now covers only 003-owned paths.
+- T038 quickstart validation record (all commands run from the worktree root, Node v22.14.0):
+  - US1 (scenarios 1–8): `npm run test:unit -- --test-name-pattern "discovery"` → 85/85;
+    `npm run test:integration -- --test-name-pattern "discovery"` → 18/18. ✅
+  - US2 (scenarios 1–7): `npm run test:unit -- --test-name-pattern "selection|adapters|overrides"`
+    → 41/41; `npm run test:integration -- --test-name-pattern "adapters"` → 8/8;
+    `npm run test:contract` → 31/31 (surface snapshot + adapter contract + 002 suites). ✅
+  - Cross-feature checks: (1) 002 `frozen-surface`/`package-surface`/`defaults-scan` green
+    UNMODIFIED (contract tier above; `git diff main --name-only` touches no 002 file);
+    (2) zero org literals (`acme`/`example.invalid` placeholders only); (3) zero writes
+    (e2e + integration recursive-stat post-conditions over all eight fixture repos). ✅
+  - Traceability: SC-001 (US2 #6 / `discovery adapters` 9-file identity matrix, 0 missed/0
+    false), SC-002 (US1 #6 determinism byte-compare incl. identities), SC-003 (escape +
+    open-counting probe suites), SC-004 (override matrix + adapter contract) — all green.
+  - `npm run lint` ✅, `npm run build` ✅, `npm run typecheck` ✅, `npm test` full tiers +
+    coverage thresholds → **221 tests / 221 pass / 0 fail / 0 skip**, exit 0. ✅
