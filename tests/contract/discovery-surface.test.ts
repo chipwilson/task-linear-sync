@@ -142,3 +142,23 @@ test("discovery surface: builtInAdapters keys === the five frozen FrameworkIds (
   const builtIn = mod.builtInAdapters as Record<string, unknown>;
   assert.deepEqual(Object.keys(builtIn).sort(), ["bmad", "generic", "kiro", "open-spec", "spec-kit"]);
 });
+
+// ── T037 packaging proof (mirrors 002's package-surface.test.ts rules WITHOUT editing it) ──
+
+test("discovery surface: packaging — the ./discovery entry resolves types-first with both dist artifacts emitted", () => {
+  const pkg = JSON.parse(readFileSync(pkgRoot + "package.json", "utf8")) as {
+    exports: Record<string, Record<string, string>>;
+  };
+  const entry = pkg.exports["./discovery"];
+  assert.ok(entry, "./discovery exports key exists");
+  assert.equal(Object.keys(entry)[0], "types", "./discovery types condition must be listed first (002 package-surface rule)");
+  assert.equal(entry.types, "./dist/discovery/index.d.ts");
+  assert.equal(entry.default, "./dist/discovery/index.js");
+  assert.ok(existsSync(pkgRoot + entry.types.slice(2)), "dist/discovery/index.d.ts emitted by the build");
+  assert.ok(existsSync(pkgRoot + entry.default.slice(2)), "dist/discovery/index.js emitted by the build");
+});
+
+test("discovery surface: packaging — zero runtime dependencies added (constitution technology-stack constraint)", () => {
+  const pkg = JSON.parse(readFileSync(pkgRoot + "package.json", "utf8")) as { dependencies?: Record<string, string> };
+  assert.ok(pkg.dependencies === undefined || Object.keys(pkg.dependencies).length === 0, "003 must not add runtime dependencies");
+});
