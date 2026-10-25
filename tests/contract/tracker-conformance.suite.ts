@@ -277,6 +277,7 @@ export const SCENARIOS: readonly ScenarioDef[] = [
       try {
         for await (const row of h.port.listIssues(scope)) yielded.push(row.key);
       } catch (e) {
+        if (isNotImplemented(e)) throw e; // placeholder skip signal must surface, not become the "terminal error"
         if (e instanceof TrackerError) error = { category: e.category, attempts: e.attempts };
         else throw e;
       }

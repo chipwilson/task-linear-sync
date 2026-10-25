@@ -82,25 +82,32 @@ function readJson(filePath: string): unknown {
   return JSON.parse(readFileSync(filePath, "utf8")) as unknown;
 }
 
+/** Bare scenario names resolve under tests/fixtures/tracker/scenarios/; absolute dirs pass through. */
+function resolveScenario(p: string): string {
+  return existsSync(p) ? p : scenarioDir(p);
+}
+
 /** scenario.json for a scenario directory. */
 export function loadScenarioMeta(scenarioDir: string): ScenarioMeta {
-  const meta = readJson(join(scenarioDir, "scenario.json")) as ScenarioMeta;
+  const dir = resolveScenario(scenarioDir);
+  const meta = readJson(join(dir, "scenario.json")) as ScenarioMeta;
   if (typeof meta.name !== "string" || !Array.isArray(meta.placeholderIdentities)) {
-    throw new Error(`fixture miss: '${scenarioDir}/scenario.json' lacks name/placeholderIdentities`);
+    throw new Error(`fixture miss: '${dir}/scenario.json' lacks name/placeholderIdentities`);
   }
   return meta;
 }
 
 /** Ordered recorded pairs of a scenario directory: every `NN-*.json` file, NN ascending. */
 export function loadScenarioPairs(scenarioDir: string): RecordedPair[] {
-  const files = readdirSync(scenarioDir)
+  const dir = resolveScenario(scenarioDir);
+  const files = readdirSync(dir)
     .filter((f) => /^\d{2}-.+\.json$/.test(f))
     .sort();
-  if (files.length === 0) throw new Error(`fixture miss: no ordered NN-*.json pairs under '${scenarioDir}'`);
+  if (files.length === 0) throw new Error(`fixture miss: no ordered NN-*.json pairs under '${dir}'`);
   return files.map((f) => {
-    const pair = readJson(join(scenarioDir, f)) as RecordedPair;
+    const pair = readJson(join(dir, f)) as RecordedPair;
     if (!pair.request?.operationName || !pair.response || typeof pair.response.status !== "number") {
-      throw new Error(`fixture miss: '${join(scenarioDir, f)}' is not a { request, response } pair`);
+      throw new Error(`fixture miss: '${join(dir, f)}' is not a { request, response } pair`);
     }
     return pair;
   });
@@ -108,7 +115,7 @@ export function loadScenarioPairs(scenarioDir: string): RecordedPair[] {
 
 /** Optional world.json fake seed for a scenario directory (undefined when absent). */
 export function loadWorld(scenarioDir: string): WorldSeed | undefined {
-  const p = join(scenarioDir, "world.json");
+  const p = join(resolveScenario(scenarioDir), "world.json");
   return existsSync(p) ? (readJson(p) as WorldSeed) : undefined;
 }
 

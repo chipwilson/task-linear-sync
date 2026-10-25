@@ -10,7 +10,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 
 import { createFakeLinearPort, syntheticUuid, issueInScope as testingGuard, type FakeWorldSeed } from "task-linear-sync/tracker/testing";
-import { issueInScope as coreGuard, TrackerError, TrackerConfigError, IndeterminateCreateError, type LinearPort, type IssueScope } from "task-linear-sync/tracker";
+import { issueInScope as coreGuard, TrackerError, TrackerConfigError, IndeterminateCreateError, type IssueScope } from "task-linear-sync/tracker";
 import type { LinearPort as FrozenPort } from "task-linear-sync/ports";
 
 const HOST = "https://sync.example.invalid/task-linear-sync";
