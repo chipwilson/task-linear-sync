@@ -85,3 +85,13 @@ _Last updated: 2026-10-22 · branch `002-core-domain-contracts`_
 - ✅ **The repo builds and tests** — `npm ci && npm test` (also `lint`, `typecheck`, `build`, and per-tier `test:unit|contract|integration|e2e` scripts). Note the scope: this is the foundation — no engine, discovery/parsing, or tracker transport yet; those arrive with features 003–008.
 
 **Next steps:** merge feature 002, then run Wave 2 in parallel — features 003 (framework adapters & discovery), 004 (task parsing & stable ids), 005 (routing), 006 (matching & tracker transport — first platform dependency lands here), 007 (confirmation gates) — each via `/speckit.tasks` and `/speckit.implement` on top of the frozen contracts.
+
+## Tracker integration port (feature 007)
+
+The Linear adapter implementing the frozen `Linear_Port` contract now ships at the
+`task-linear-sync/tracker` and `task-linear-sync/tracker/testing` subpath exports — the
+complete GraphQL surface with the built-in-retry posture, the attachment-URL identity
+machinery (canonical/continuation chain walk), the credential pre-flight, and the
+fake-port + recorded-replay testing harness that drives both under one conformance suite.
+Usage, configuration, resilience posture, and fixture-corpus guide:
+[`docs/tracker-integration.md`](docs/tracker-integration.md).
