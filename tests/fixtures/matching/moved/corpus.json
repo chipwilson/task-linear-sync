@@ -1,0 +1,124 @@
+{
+  "comment": "Spec US2 Independent Test: issues relocated across teams/projects/frameworks and renamed, carrying canonical page-0 attachment identity. Candidate state here is POST-move/rename; tasks keep their routed containers.",
+  "tasks": [
+    {
+      "name": "relocated across team+project+framework and renamed",
+      "task": {
+        "stableUuid": "0f1e2d3c-4b5a-4978-8675-4321fedcb201",
+        "title": "Implement login form",
+        "frameworkId": "spec-kit",
+        "featureName": "auth",
+        "filePath": "specs/demo-feature/tasks.md"
+      },
+      "routing": {
+        "teamKey": "acme-team",
+        "project": "proj-alpha",
+        "defaulted": false
+      }
+    },
+    {
+      "name": "relocated across project only",
+      "task": {
+        "stableUuid": "0f1e2d3c-4b5a-4978-8675-4321fedcb202",
+        "title": "Sync engine report",
+        "frameworkId": "spec-kit"
+      },
+      "routing": {
+        "teamKey": "acme-team",
+        "project": "proj-alpha",
+        "defaulted": false
+      }
+    },
+    {
+      "name": "renamed in place",
+      "task": {
+        "stableUuid": "0f1e2d3c-4b5a-4978-8675-4321fedcb203",
+        "title": "Vault token rotation",
+        "frameworkId": "kiro"
+      },
+      "routing": {
+        "teamKey": "acme-team",
+        "project": "proj-alpha",
+        "defaulted": false
+      }
+    }
+  ],
+  "issues": [
+    {
+      "id": "i-101",
+      "key": "ENG-101",
+      "teamKey": "glob-team",
+      "projectId": "proj-gamma",
+      "title": "RENAMED login form v2 (linear)",
+      "description": "Body text for RENAMED login form v2 (linear)",
+      "stateType": "todo",
+      "updatedAt": "2026-01-02T00:00:00.000Z",
+      "archived": false
+    },
+    {
+      "id": "i-102",
+      "key": "ENG-102",
+      "teamKey": "acme-team",
+      "projectId": "proj-alpha",
+      "title": "Implement login form",
+      "description": "Body text for Implement login form",
+      "stateType": "todo",
+      "updatedAt": "2026-01-02T00:00:00.000Z",
+      "archived": false
+    },
+    {
+      "id": "i-103",
+      "key": "ENG-103",
+      "teamKey": "acme-team",
+      "projectId": "proj-beta",
+      "title": "Sync engine report",
+      "description": "Body text for Sync engine report",
+      "stateType": "todo",
+      "updatedAt": "2026-01-02T00:00:00.000Z",
+      "archived": false
+    },
+    {
+      "id": "i-104",
+      "key": "ENG-104",
+      "teamKey": "acme-team",
+      "projectId": "proj-alpha",
+      "title": "Vault token rotation — refreshed",
+      "description": "Body text for Vault token rotation — refreshed",
+      "stateType": "todo",
+      "updatedAt": "2026-01-02T00:00:00.000Z",
+      "archived": false
+    }
+  ],
+  "attachmentsByIssue": {
+    "i-101": [
+      {
+        "id": "att-101",
+        "url": "https://sync.example.invalid/task-linear-sync/0f1e2d3c-4b5a-4978-8675-4321fedcb201",
+        "title": "task-linear-sync sync state",
+        "metadata": {
+          "__task-linear-sync": "{\"cursors\":{\"lastSyncAt\":\"2026-01-01T00:00:00.000Z\"},\"descriptionContentHash\":\"0000000000000000000000000000000000000000000000000000000000000000\",\"frameworkMetadata\":{\"featureName\":\"auth\",\"filePath\":\"specs/demo-feature/tasks.md\",\"frameworkId\":\"kiro\"},\"history\":[{\"at\":\"2026-01-01T00:00:00.000Z\",\"description\":\"baseline\",\"kind\":\"matched\"}],\"taskUuid\":\"0f1e2d3c-4b5a-4978-8675-4321fedcb201\"}"
+        }
+      }
+    ],
+    "i-103": [
+      {
+        "id": "att-103",
+        "url": "https://sync.example.invalid/task-linear-sync/0f1e2d3c-4b5a-4978-8675-4321fedcb202",
+        "title": "task-linear-sync sync state",
+        "metadata": {
+          "__task-linear-sync": "{\"cursors\":{\"lastSyncAt\":\"2026-01-01T00:00:00.000Z\"},\"descriptionContentHash\":\"0000000000000000000000000000000000000000000000000000000000000000\",\"frameworkMetadata\":{\"filePath\":\"specs/demo-feature/tasks.md\",\"frameworkId\":\"spec-kit\"},\"history\":[{\"at\":\"2026-01-01T00:00:00.000Z\",\"description\":\"baseline\",\"kind\":\"matched\"}],\"taskUuid\":\"0f1e2d3c-4b5a-4978-8675-4321fedcb202\"}"
+        }
+      }
+    ],
+    "i-104": [
+      {
+        "id": "att-104",
+        "url": "https://sync.example.invalid/task-linear-sync/0f1e2d3c-4b5a-4978-8675-4321fedcb203",
+        "title": "task-linear-sync sync state",
+        "metadata": {
+          "__task-linear-sync": "{\"cursors\":{\"lastSyncAt\":\"2026-01-01T00:00:00.000Z\"},\"descriptionContentHash\":\"0000000000000000000000000000000000000000000000000000000000000000\",\"frameworkMetadata\":{\"filePath\":\"specs/demo-feature/tasks.md\",\"frameworkId\":\"kiro\"},\"history\":[{\"at\":\"2026-01-01T00:00:00.000Z\",\"description\":\"baseline\",\"kind\":\"matched\"}],\"taskUuid\":\"0f1e2d3c-4b5a-4978-8675-4321fedcb203\"}"
+        }
+      }
+    ]
+  }
+}

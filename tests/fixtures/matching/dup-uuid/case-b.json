@@ -1,0 +1,43 @@
+{
+  "comment": "Case b — contradictory anchors on ONE issue: two qualifying canonical attachments carrying different task UUIDs. Abort names the lexicographically-smallest offending taskUuid with that issue id as the conflict set.",
+  "issues": [
+    {
+      "id": "i-301",
+      "key": "ENG-301",
+      "teamKey": "acme-team",
+      "projectId": "proj-alpha",
+      "title": "Contradictory anchors",
+      "description": "Body text for Contradictory anchors",
+      "stateType": "todo",
+      "updatedAt": "2026-01-02T00:00:00.000Z",
+      "archived": false
+    }
+  ],
+  "attachmentsByIssue": {
+    "i-301": [
+      {
+        "id": "att-301a",
+        "url": "https://sync.example.invalid/task-linear-sync/0f1e2d3c-4b5a-4978-8675-4321fedcc309",
+        "title": "task-linear-sync sync state",
+        "metadata": {
+          "__task-linear-sync": "{\"cursors\":{\"lastSyncAt\":\"2026-01-01T00:00:00.000Z\"},\"descriptionContentHash\":\"0000000000000000000000000000000000000000000000000000000000000000\",\"frameworkMetadata\":{\"filePath\":\"specs/demo-feature/tasks.md\",\"frameworkId\":\"spec-kit\"},\"history\":[{\"at\":\"2026-01-01T00:00:00.000Z\",\"description\":\"baseline\",\"kind\":\"matched\"}],\"taskUuid\":\"0f1e2d3c-4b5a-4978-8675-4321fedcc309\"}"
+        }
+      },
+      {
+        "id": "att-301b",
+        "url": "https://sync.example.invalid/task-linear-sync/0f1e2d3c-4b5a-4978-8675-4321fedcc307",
+        "title": "task-linear-sync sync state",
+        "metadata": {
+          "__task-linear-sync": "{\"cursors\":{\"lastSyncAt\":\"2026-01-01T00:00:00.000Z\"},\"descriptionContentHash\":\"0000000000000000000000000000000000000000000000000000000000000000\",\"frameworkMetadata\":{\"filePath\":\"specs/demo-feature/tasks.md\",\"frameworkId\":\"kiro\"},\"history\":[{\"at\":\"2026-01-01T00:00:00.000Z\",\"description\":\"baseline\",\"kind\":\"matched\"}],\"taskUuid\":\"0f1e2d3c-4b5a-4978-8675-4321fedcc307\"}"
+        }
+      }
+    ]
+  },
+  "expected": {
+    "taskUuid": "0f1e2d3c-4b5a-4978-8675-4321fedcc307",
+    "issueIds": [
+      "i-301"
+    ],
+    "other": "0f1e2d3c-4b5a-4978-8675-4321fedcc309"
+  }
+}

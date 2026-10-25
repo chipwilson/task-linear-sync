@@ -1,0 +1,46 @@
+[
+  {
+    "task": {
+      "stableUuid": "00000000-0000-5000-8000-000000000031",
+      "kind": "heading",
+      "filePath": "specs/auth/tasks.md",
+      "lineNumber": 1,
+      "frameworkId": "generic",
+      "title": "Keep the block",
+      "childUuids": [],
+      "taskBody": {
+        "startLine": 1,
+        "endLine": 1
+      },
+      "unresolvedConflict": false,
+      "localTaskId": "1.1"
+    },
+    "desiredTitle": "Keep the block",
+    "issueRef": {
+      "key": "SYNC",
+      "number": 230
+    }
+  },
+  {
+    "task": {
+      "stableUuid": "00000000-0000-5000-8000-000000000032",
+      "kind": "checklist",
+      "filePath": "specs/auth/tasks.md",
+      "lineNumber": 3,
+      "frameworkId": "generic",
+      "title": "Assigned above block",
+      "childUuids": [],
+      "taskBody": {
+        "startLine": 3,
+        "endLine": 3
+      },
+      "unresolvedConflict": false,
+      "checked": false
+    },
+    "desiredTitle": "Assigned above block",
+    "issueRef": {
+      "key": "SYNC",
+      "number": 231
+    }
+  }
+]
