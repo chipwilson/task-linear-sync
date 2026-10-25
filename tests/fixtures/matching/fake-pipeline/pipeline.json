@@ -1,0 +1,116 @@
+{
+  "comment": "Fake-port integration fixtures: i-401 durable via page-0 canonical attachment; i-402 continuation-only + description-embedded uuid + foreign metadata key (ALL non-identity); i-403 canonical URL with malformed payload (non-durable, never partially trusted).",
+  "issues": [
+    {
+      "id": "i-401",
+      "key": "ENG-401",
+      "teamKey": "acme-team",
+      "projectId": "proj-alpha",
+      "title": "Rotate signing keys",
+      "description": "Body text for Rotate signing keys",
+      "stateType": "todo",
+      "updatedAt": "2026-01-02T00:00:00.000Z",
+      "archived": false
+    },
+    {
+      "id": "i-402",
+      "key": "ENG-402",
+      "teamKey": "acme-team",
+      "projectId": "proj-alpha",
+      "title": "Rebuild search index",
+      "description": "legacy import; mentions taskUuid 0f1e2d3c-4b5a-4978-8675-4321fedcd406 in plain text only",
+      "stateType": "todo",
+      "updatedAt": "2026-01-02T00:00:00.000Z",
+      "archived": false
+    },
+    {
+      "id": "i-403",
+      "key": "ENG-403",
+      "teamKey": "acme-team",
+      "projectId": "proj-alpha",
+      "title": "Prune stale journals",
+      "description": "Body text for Prune stale journals",
+      "stateType": "todo",
+      "updatedAt": "2026-01-02T00:00:00.000Z",
+      "archived": false
+    }
+  ],
+  "attachmentsByIssue": {
+    "i-401": [
+      {
+        "id": "att-401",
+        "url": "https://sync.example.invalid/task-linear-sync/0f1e2d3c-4b5a-4978-8675-4321fedcd405",
+        "title": "task-linear-sync sync state",
+        "metadata": {
+          "__task-linear-sync": "{\"cursors\":{\"lastSyncAt\":\"2026-01-01T00:00:00.000Z\"},\"descriptionContentHash\":\"0000000000000000000000000000000000000000000000000000000000000000\",\"frameworkMetadata\":{\"featureName\":\"auth\",\"filePath\":\"specs/demo-feature/tasks.md\",\"frameworkId\":\"spec-kit\",\"localTaskId\":\"Task 2.1\"},\"history\":[{\"at\":\"2026-01-01T00:00:00.000Z\",\"description\":\"baseline\",\"kind\":\"matched\"}],\"taskUuid\":\"0f1e2d3c-4b5a-4978-8675-4321fedcd405\"}"
+        }
+      },
+      {
+        "id": "att-402",
+        "url": "https://sync.example.invalid/task-linear-sync/0f1e2d3c-4b5a-4978-8675-4321fedcd405/1",
+        "title": "task-linear-sync sync state (page 1)",
+        "metadata": {
+          "__task-linear-sync": "{\"cursors\":{\"lastSyncAt\":\"2026-01-01T00:00:00.000Z\"},\"descriptionContentHash\":\"0000000000000000000000000000000000000000000000000000000000000000\",\"frameworkMetadata\":{\"filePath\":\"specs/demo-feature/tasks.md\",\"frameworkId\":\"spec-kit\"},\"history\":[{\"at\":\"2026-01-01T00:00:00.000Z\",\"description\":\"baseline\",\"kind\":\"matched\"}],\"taskUuid\":\"0f1e2d3c-4b5a-4978-8675-4321fedcd405\"}"
+        }
+      }
+    ],
+    "i-402": [
+      {
+        "id": "att-403",
+        "url": "https://sync.example.invalid/task-linear-sync/0f1e2d3c-4b5a-4978-8675-4321fedcd406/2",
+        "title": "task-linear-sync sync state (page 2)",
+        "metadata": {
+          "__task-linear-sync": "{\"cursors\":{\"lastSyncAt\":\"2026-01-01T00:00:00.000Z\"},\"descriptionContentHash\":\"0000000000000000000000000000000000000000000000000000000000000000\",\"frameworkMetadata\":{\"filePath\":\"specs/demo-feature/tasks.md\",\"frameworkId\":\"kiro\"},\"history\":[{\"at\":\"2026-01-01T00:00:00.000Z\",\"description\":\"baseline\",\"kind\":\"matched\"}],\"taskUuid\":\"0f1e2d3c-4b5a-4978-8675-4321fedcd406\"}"
+        }
+      },
+      {
+        "id": "att-404",
+        "url": "https://files.example.invalid/report.pdf",
+        "title": "unrelated",
+        "metadata": {
+          "__other-tool": "{\"cursors\":{\"lastSyncAt\":\"2026-01-01T00:00:00.000Z\"},\"descriptionContentHash\":\"0000000000000000000000000000000000000000000000000000000000000000\",\"frameworkMetadata\":{\"filePath\":\"x\",\"frameworkId\":\"bmad\"},\"history\":[{\"at\":\"2026-01-01T00:00:00.000Z\",\"description\":\"baseline\",\"kind\":\"matched\"}],\"taskUuid\":\"0f1e2d3c-4b5a-4978-8675-4321fedcd406\"}",
+          "note": 7
+        }
+      }
+    ],
+    "i-403": [
+      {
+        "id": "att-405",
+        "url": "https://sync.example.invalid/task-linear-sync/0f1e2d3c-4b5a-4978-8675-4321fedcd407",
+        "title": "task-linear-sync sync state",
+        "metadata": {
+          "__task-linear-sync": "{not-json",
+          "other": 1
+        }
+      }
+    ]
+  },
+  "expectedCandidates": [
+    {
+      "issueId": "i-401",
+      "issueKey": "ENG-401",
+      "teamKey": "acme-team",
+      "projectRef": "proj-alpha",
+      "title": "Rotate signing keys",
+      "durableTaskUuid": "0f1e2d3c-4b5a-4978-8675-4321fedcd405",
+      "frameworkId": "spec-kit",
+      "featureName": "auth",
+      "filePath": "specs/demo-feature/tasks.md",
+      "localTaskId": "Task 2.1"
+    },
+    {
+      "issueId": "i-402",
+      "issueKey": "ENG-402",
+      "teamKey": "acme-team",
+      "projectRef": "proj-alpha",
+      "title": "Rebuild search index"
+    },
+    {
+      "issueId": "i-403",
+      "issueKey": "ENG-403",
+      "teamKey": "acme-team",
+      "projectRef": "proj-alpha",
+      "title": "Prune stale journals"
+    }
+  ]
+}

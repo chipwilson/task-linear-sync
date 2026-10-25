@@ -21,8 +21,13 @@ const pkg = JSON.parse(readFileSync(new URL(`file://${pkgRoot}package.json`), "u
 const FROZEN_SUBPATHS = [".", "./domain", "./config", "./state", "./urls", "./gates", "./ports"];
 const NEW_SUBPATHS = ["./tracker", "./tracker/testing"];
 
-test("the two new subpath entries are the ONLY diff to the frozen exports map", () => {
-  assert.deepEqual(Object.keys(pkg.exports), [...FROZEN_SUBPATHS, ...NEW_SUBPATHS], "exports key set = frozen + the two new tracker subpaths, in order");
+test("002's frozen exports map stays byte-shape-identical; the two tracker entries are additive", () => {
+  const keys = Object.keys(pkg.exports);
+  assert.deepEqual(keys.slice(0, FROZEN_SUBPATHS.length), FROZEN_SUBPATHS, "the frozen subpaths keep their exact leading order");
+  assert.ok(
+    NEW_SUBPATHS.every((sub) => keys.includes(sub)),
+    "the two new tracker subpaths are present — sibling features (003/004/006) may add their own AFTER them",
+  );
   for (const sub of FROZEN_SUBPATHS) {
     const entry = pkg.exports[sub];
     assert.deepEqual(Object.keys(entry), ["types", "default"], `'${sub}' condition object untouched`);
