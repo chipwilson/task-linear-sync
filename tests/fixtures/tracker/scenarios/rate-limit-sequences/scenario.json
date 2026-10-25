@@ -1,0 +1,8 @@
+{
+  "name": "rate-limit-sequences",
+  "notes": "T034 real-adapter scenarios: 429 + Retry-After delta-seconds then success; 429 + HTTP-date Retry-After vs fake clock; 5xx twice then success; maxRetries 0 single attempt.",
+  "placeholderIdentities": [
+    "acme-team",
+    "proj-alpha"
+  ]
+}

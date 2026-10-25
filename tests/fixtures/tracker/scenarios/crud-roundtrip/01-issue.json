@@ -1,0 +1,32 @@
+{
+  "request": {
+    "operationName": "issue",
+    "variables": {
+      "id": "ac000000-0000-4000-8000-000000000401"
+    }
+  },
+  "response": {
+    "status": 200,
+    "body": {
+      "data": {
+        "issue": {
+          "id": "ac000000-0000-4000-8000-000000000401",
+          "identifier": "ACM-401",
+          "title": "Original title",
+          "description": "description body",
+          "updatedAt": "2026-10-23T12:00:00.000Z",
+          "archivedAt": null,
+          "team": {
+            "key": "acme-team"
+          },
+          "project": {
+            "id": "prj-acme-alpha"
+          },
+          "state": {
+            "type": "unstarted"
+          }
+        }
+      }
+    }
+  }
+}

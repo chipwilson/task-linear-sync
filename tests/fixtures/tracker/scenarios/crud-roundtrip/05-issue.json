@@ -1,0 +1,32 @@
+{
+  "request": {
+    "operationName": "issue",
+    "variables": {
+      "id": "ac000000-0000-4000-8000-000000001402"
+    }
+  },
+  "response": {
+    "status": 200,
+    "body": {
+      "data": {
+        "issue": {
+          "id": "ac000000-0000-4000-8000-000000001402",
+          "identifier": "ACM-402",
+          "title": "Created by conformance",
+          "description": "created body",
+          "updatedAt": "2026-10-23T12:00:00.000Z",
+          "archivedAt": null,
+          "team": {
+            "key": "acme-team"
+          },
+          "project": {
+            "id": "prj-acme-alpha"
+          },
+          "state": {
+            "type": "unstarted"
+          }
+        }
+      }
+    }
+  }
+}

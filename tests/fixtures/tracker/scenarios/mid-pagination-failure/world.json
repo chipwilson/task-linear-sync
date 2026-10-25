@@ -1,0 +1,130 @@
+{
+  "teams": [
+    {
+      "key": "acme-team",
+      "id": "team-acme",
+      "projects": [
+        {
+          "id": "prj-acme-alpha",
+          "name": "proj-alpha"
+        },
+        {
+          "id": "prj-acme-beta",
+          "name": "proj-beta"
+        }
+      ],
+      "workflowStates": [
+        {
+          "id": "st-acme-todo",
+          "name": "Todo",
+          "type": "unstarted"
+        },
+        {
+          "id": "st-acme-prog",
+          "name": "In Progress",
+          "type": "started"
+        },
+        {
+          "id": "st-acme-done",
+          "name": "Done",
+          "type": "completed"
+        },
+        {
+          "id": "st-acme-cancel",
+          "name": "Canceled",
+          "type": "canceled"
+        },
+        {
+          "id": "st-acme-dup",
+          "name": "Duplicate",
+          "type": "duplicate"
+        }
+      ]
+    }
+  ],
+  "issues": [
+    {
+      "id": "ac000000-0000-4000-8000-000000000801",
+      "key": "ACM-801",
+      "teamKey": "acme-team",
+      "projectId": "prj-acme-alpha",
+      "title": "Mid page one a",
+      "description": "description body",
+      "stateType": "unstarted",
+      "updatedAt": "2026-10-01T00:00:00.000Z",
+      "archived": false
+    },
+    {
+      "id": "ac000000-0000-4000-8000-000000000802",
+      "key": "ACM-802",
+      "teamKey": "acme-team",
+      "projectId": "prj-acme-alpha",
+      "title": "Mid page one b",
+      "description": "description body",
+      "stateType": "unstarted",
+      "updatedAt": "2026-10-01T00:00:00.000Z",
+      "archived": false
+    },
+    {
+      "id": "ac000000-0000-4000-8000-000000000803",
+      "key": "ACM-803",
+      "teamKey": "acme-team",
+      "projectId": "prj-acme-alpha",
+      "title": "Mid page one c",
+      "description": "description body",
+      "stateType": "unstarted",
+      "updatedAt": "2026-10-01T00:00:00.000Z",
+      "archived": false
+    },
+    {
+      "id": "ac000000-0000-4000-8000-000000000804",
+      "key": "ACM-804",
+      "teamKey": "acme-team",
+      "projectId": "prj-acme-alpha",
+      "title": "Mid page two a",
+      "description": "description body",
+      "stateType": "unstarted",
+      "updatedAt": "2026-10-01T00:00:00.000Z",
+      "archived": false
+    },
+    {
+      "id": "ac000000-0000-4000-8000-000000000805",
+      "key": "ACM-805",
+      "teamKey": "acme-team",
+      "projectId": "prj-acme-alpha",
+      "title": "Mid page two b",
+      "description": "description body",
+      "stateType": "unstarted",
+      "updatedAt": "2026-10-01T00:00:00.000Z",
+      "archived": false
+    },
+    {
+      "id": "ac000000-0000-4000-8000-000000000806",
+      "key": "ACM-806",
+      "teamKey": "acme-team",
+      "projectId": "prj-acme-alpha",
+      "title": "Mid page two c",
+      "description": "description body",
+      "stateType": "unstarted",
+      "updatedAt": "2026-10-01T00:00:00.000Z",
+      "archived": false
+    },
+    {
+      "id": "ac000000-0000-4000-8000-000000000807",
+      "key": "ACM-807",
+      "teamKey": "acme-team",
+      "projectId": "prj-acme-alpha",
+      "title": "Mid page three a",
+      "description": "description body",
+      "stateType": "unstarted",
+      "updatedAt": "2026-10-01T00:00:00.000Z",
+      "archived": false
+    }
+  ],
+  "scriptedFailures": {
+    "listIssues": {
+      "atCall": 2,
+      "kind": "http-5xx"
+    }
+  }
+}

@@ -1,0 +1,31 @@
+{
+  "request": {
+    "operationName": "attachmentCreate",
+    "variables": {
+      "issueId": "ac000000-0000-4000-8000-000000000701",
+      "url": "https://sync.example.invalid/task-linear-sync/ac000000-0000-4000-8000-000000000009",
+      "title": "sync state"
+    }
+  },
+  "response": {
+    "status": 200,
+    "body": {
+      "data": {
+        "attachmentCreate": {
+          "success": true,
+          "userError": null,
+          "attachment": {
+            "id": "att-701-9",
+            "url": "https://sync.example.invalid/task-linear-sync/ac000000-0000-4000-8000-000000000009",
+            "title": "sync state",
+            "subtitle": "canonical updated",
+            "metadata": {
+              "v": 2,
+              "tag": "second"
+            }
+          }
+        }
+      }
+    }
+  }
+}

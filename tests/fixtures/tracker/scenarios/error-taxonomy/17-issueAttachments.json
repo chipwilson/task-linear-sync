@@ -1,0 +1,12 @@
+{
+  "request": {
+    "operationName": "issueAttachments",
+    "variables": {
+      "id": "ac000000-0000-4000-8000-000000000901"
+    }
+  },
+  "response": {
+    "status": 0,
+    "body": {}
+  }
+}

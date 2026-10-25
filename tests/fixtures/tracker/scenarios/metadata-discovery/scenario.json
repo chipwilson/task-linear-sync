@@ -1,0 +1,10 @@
+{
+  "name": "metadata-discovery",
+  "notes": "FR-002: team key, projects, workflow states as three collections per requested team, in requested order.",
+  "placeholderIdentities": [
+    "acme-team",
+    "globex-team",
+    "proj-alpha",
+    "proj-main"
+  ]
+}

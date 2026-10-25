@@ -1,0 +1,44 @@
+{
+  "request": {
+    "operationName": "issueAttachments",
+    "variables": {
+      "id": "ac000000-0000-4000-8000-000000000701",
+      "after": null
+    }
+  },
+  "response": {
+    "status": 200,
+    "body": {
+      "data": {
+        "issue": {
+          "attachments": {
+            "nodes": [
+              {
+                "id": "att-seed-10",
+                "url": "https://sync.example.invalid/task-linear-sync/ac000000-0000-4000-8000-000000000010",
+                "title": "seed attachment ten",
+                "subtitle": null,
+                "metadata": {
+                  "__task-linear-sync": "state-v1"
+                }
+              },
+              {
+                "id": "att-seed-11",
+                "url": "https://sync.example.invalid/task-linear-sync/ac000000-0000-4000-8000-000000000011",
+                "title": "seed attachment eleven",
+                "subtitle": null,
+                "metadata": {
+                  "__task-linear-sync": "state-v1"
+                }
+              }
+            ],
+            "pageInfo": {
+              "hasNextPage": true,
+              "endCursor": "attcur-1"
+            }
+          }
+        }
+      }
+    }
+  }
+}

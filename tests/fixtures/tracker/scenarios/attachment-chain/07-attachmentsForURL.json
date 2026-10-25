@@ -1,0 +1,16 @@
+{
+  "request": {
+    "operationName": "attachmentsForURL",
+    "variables": {
+      "url": "https://sync.example.invalid/task-linear-sync/ac000000-0000-4000-8000-000000000007/6"
+    }
+  },
+  "response": {
+    "status": 200,
+    "body": {
+      "data": {
+        "attachmentsForURL": []
+      }
+    }
+  }
+}

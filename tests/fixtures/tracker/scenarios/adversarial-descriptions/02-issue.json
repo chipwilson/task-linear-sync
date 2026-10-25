@@ -1,0 +1,32 @@
+{
+  "request": {
+    "operationName": "issue",
+    "variables": {
+      "id": "ac000000-0000-4000-8000-000000000502"
+    }
+  },
+  "response": {
+    "status": 200,
+    "body": {
+      "data": {
+        "issue": {
+          "id": "ac000000-0000-4000-8000-000000000502",
+          "identifier": "ACM-502",
+          "title": "Adversarial issue",
+          "description": "See history at https://sync.example.invalid/task-linear-sync/ac000000-0000-4000-8000-000000000001 for sync state ac000000-0000-4000-8000-000000000001 (this UUID-like text is data, never an identity route).",
+          "updatedAt": "2026-10-01T00:00:00.000Z",
+          "archivedAt": null,
+          "team": {
+            "key": "acme-team"
+          },
+          "project": {
+            "id": "prj-acme-alpha"
+          },
+          "state": {
+            "type": "unstarted"
+          }
+        }
+      }
+    }
+  }
+}

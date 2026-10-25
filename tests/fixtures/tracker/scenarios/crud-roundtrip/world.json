@@ -1,0 +1,58 @@
+{
+  "teams": [
+    {
+      "key": "acme-team",
+      "id": "team-acme",
+      "projects": [
+        {
+          "id": "prj-acme-alpha",
+          "name": "proj-alpha"
+        },
+        {
+          "id": "prj-acme-beta",
+          "name": "proj-beta"
+        }
+      ],
+      "workflowStates": [
+        {
+          "id": "st-acme-todo",
+          "name": "Todo",
+          "type": "unstarted"
+        },
+        {
+          "id": "st-acme-prog",
+          "name": "In Progress",
+          "type": "started"
+        },
+        {
+          "id": "st-acme-done",
+          "name": "Done",
+          "type": "completed"
+        },
+        {
+          "id": "st-acme-cancel",
+          "name": "Canceled",
+          "type": "canceled"
+        },
+        {
+          "id": "st-acme-dup",
+          "name": "Duplicate",
+          "type": "duplicate"
+        }
+      ]
+    }
+  ],
+  "issues": [
+    {
+      "id": "ac000000-0000-4000-8000-000000000401",
+      "key": "ACM-401",
+      "teamKey": "acme-team",
+      "projectId": "prj-acme-alpha",
+      "title": "Original title",
+      "description": "description body",
+      "stateType": "unstarted",
+      "updatedAt": "2026-10-01T00:00:00.000Z",
+      "archived": false
+    }
+  ]
+}

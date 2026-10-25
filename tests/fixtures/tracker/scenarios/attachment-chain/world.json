@@ -1,0 +1,96 @@
+{
+  "teams": [
+    {
+      "key": "acme-team",
+      "id": "team-acme",
+      "projects": [
+        {
+          "id": "prj-acme-alpha",
+          "name": "proj-alpha"
+        },
+        {
+          "id": "prj-acme-beta",
+          "name": "proj-beta"
+        }
+      ],
+      "workflowStates": [
+        {
+          "id": "st-acme-todo",
+          "name": "Todo",
+          "type": "unstarted"
+        },
+        {
+          "id": "st-acme-prog",
+          "name": "In Progress",
+          "type": "started"
+        },
+        {
+          "id": "st-acme-done",
+          "name": "Done",
+          "type": "completed"
+        },
+        {
+          "id": "st-acme-cancel",
+          "name": "Canceled",
+          "type": "canceled"
+        },
+        {
+          "id": "st-acme-dup",
+          "name": "Duplicate",
+          "type": "duplicate"
+        }
+      ]
+    }
+  ],
+  "issues": [
+    {
+      "id": "ac000000-0000-4000-8000-000000000601",
+      "key": "ACM-601",
+      "teamKey": "acme-team",
+      "projectId": "prj-acme-alpha",
+      "title": "Chain host issue",
+      "description": "description body",
+      "stateType": "unstarted",
+      "updatedAt": "2026-10-01T00:00:00.000Z",
+      "archived": false
+    }
+  ],
+  "attachments": [
+    {
+      "issueId": "ac000000-0000-4000-8000-000000000601",
+      "id": "att-601-0",
+      "url": "https://sync.example.invalid/task-linear-sync/ac000000-0000-4000-8000-000000000007",
+      "title": "page0",
+      "metadata": {
+        "__task-linear-sync": "state-v1"
+      }
+    },
+    {
+      "issueId": "ac000000-0000-4000-8000-000000000601",
+      "id": "att-601-1",
+      "url": "https://sync.example.invalid/task-linear-sync/ac000000-0000-4000-8000-000000000007/1",
+      "title": "page-1",
+      "metadata": {
+        "__task-linear-sync": "state-v1"
+      }
+    },
+    {
+      "issueId": "ac000000-0000-4000-8000-000000000601",
+      "id": "att-601-2",
+      "url": "https://sync.example.invalid/task-linear-sync/ac000000-0000-4000-8000-000000000007/2",
+      "title": "page-2",
+      "metadata": {
+        "__task-linear-sync": "state-v1"
+      }
+    },
+    {
+      "issueId": "ac000000-0000-4000-8000-000000000601",
+      "id": "att-601-4",
+      "url": "https://sync.example.invalid/task-linear-sync/ac000000-0000-4000-8000-000000000007/4",
+      "title": "page-4",
+      "metadata": {
+        "__task-linear-sync": "state-v1"
+      }
+    }
+  ]
+}

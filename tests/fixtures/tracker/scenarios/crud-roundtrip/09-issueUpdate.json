@@ -1,0 +1,20 @@
+{
+  "request": {
+    "operationName": "issueUpdate",
+    "variables": {
+      "id": "ac000000-0000-4000-8000-000000004099"
+    }
+  },
+  "response": {
+    "status": 200,
+    "body": {
+      "data": {
+        "issueUpdate": {
+          "success": true,
+          "userError": null,
+          "issue": null
+        }
+      }
+    }
+  }
+}

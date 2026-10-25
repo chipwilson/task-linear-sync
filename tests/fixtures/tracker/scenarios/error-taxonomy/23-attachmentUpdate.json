@@ -1,0 +1,12 @@
+{
+  "request": {
+    "operationName": "attachmentUpdate",
+    "variables": {
+      "id": "att-missing"
+    }
+  },
+  "response": {
+    "status": 404,
+    "body": {}
+  }
+}

@@ -1,0 +1,43 @@
+{
+  "request": {
+    "operationName": "attachmentsForURL",
+    "variables": {
+      "url": "https://sync.example.invalid/task-linear-sync/ac000000-0000-4000-8000-000000000007/1"
+    }
+  },
+  "response": {
+    "status": 200,
+    "body": {
+      "data": {
+        "attachmentsForURL": [
+          {
+            "id": "att-601-1",
+            "url": "https://sync.example.invalid/task-linear-sync/ac000000-0000-4000-8000-000000000007/1",
+            "title": "page-1",
+            "subtitle": null,
+            "metadata": {
+              "__task-linear-sync": "state-v1"
+            },
+            "issue": {
+              "id": "ac000000-0000-4000-8000-000000000601",
+              "identifier": "ACM-601",
+              "title": "Chain host issue",
+              "description": "description body",
+              "updatedAt": "2026-10-01T00:00:00.000Z",
+              "archivedAt": null,
+              "team": {
+                "key": "acme-team"
+              },
+              "project": {
+                "id": "prj-acme-alpha"
+              },
+              "state": {
+                "type": "unstarted"
+              }
+            }
+          }
+        ]
+      }
+    }
+  }
+}

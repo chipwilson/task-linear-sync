@@ -1,0 +1,97 @@
+{
+  "teams": [
+    {
+      "key": "acme-team",
+      "id": "team-acme",
+      "projects": [
+        {
+          "id": "prj-acme-alpha",
+          "name": "proj-alpha"
+        },
+        {
+          "id": "prj-acme-beta",
+          "name": "proj-beta"
+        }
+      ],
+      "workflowStates": [
+        {
+          "id": "st-acme-todo",
+          "name": "Todo",
+          "type": "unstarted"
+        },
+        {
+          "id": "st-acme-prog",
+          "name": "In Progress",
+          "type": "started"
+        },
+        {
+          "id": "st-acme-done",
+          "name": "Done",
+          "type": "completed"
+        },
+        {
+          "id": "st-acme-cancel",
+          "name": "Canceled",
+          "type": "canceled"
+        },
+        {
+          "id": "st-acme-dup",
+          "name": "Duplicate",
+          "type": "duplicate"
+        }
+      ]
+    }
+  ],
+  "issues": [
+    {
+      "id": "ac000000-0000-4000-8000-000000000901",
+      "key": "ACM-901",
+      "teamKey": "acme-team",
+      "projectId": "prj-acme-alpha",
+      "title": "Taxonomy host issue",
+      "description": "description body",
+      "stateType": "unstarted",
+      "updatedAt": "2026-10-01T00:00:00.000Z",
+      "archived": false
+    }
+  ],
+  "attachments": [
+    {
+      "issueId": "ac000000-0000-4000-8000-000000000901",
+      "id": "att-acme-901",
+      "url": "https://sync.example.invalid/task-linear-sync/ac000000-0000-4000-8000-000000000012",
+      "title": "taxonomy attachment",
+      "metadata": {
+        "__task-linear-sync": "state-v1"
+      }
+    }
+  ],
+  "scriptedFailures": {
+    "getIssue": {
+      "atCall": 1,
+      "kind": "http-429-retryAfter"
+    },
+    "updateIssue": {
+      "atCall": 1,
+      "kind": "http-5xx"
+    },
+    "listAttachments": {
+      "atCall": 1,
+      "kind": "network"
+    },
+    "archiveIssue": {
+      "atCall": 1,
+      "kind": "graphql-userError"
+    },
+    "createIssue": [
+      {
+        "atCall": 1,
+        "kind": "http-5xx"
+      },
+      {
+        "atCall": 2,
+        "kind": "http-429-retryAfter"
+      }
+    ]
+  }
+}

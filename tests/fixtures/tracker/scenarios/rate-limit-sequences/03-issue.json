@@ -1,0 +1,21 @@
+{
+  "request": {
+    "operationName": "issue",
+    "variables": {
+      "id": "1002"
+    }
+  },
+  "response": {
+    "status": 429,
+    "headers": {
+      "Retry-After": "Fri, 23 Oct 2026 12:00:07 GMT"
+    },
+    "body": {
+      "errors": [
+        {
+          "message": "rate limited (synthetic fixture)"
+        }
+      ]
+    }
+  }
+}

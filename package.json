@@ -38,6 +38,14 @@
       "types": "./dist/ports/index.d.ts",
       "default": "./dist/ports/index.js"
     },
+    "./tracker": {
+      "types": "./dist/tracker/index.d.ts",
+      "default": "./dist/tracker/index.js"
+    },
+    "./tracker/testing": {
+      "types": "./dist/tracker/testing/index.d.ts",
+      "default": "./dist/tracker/testing/index.js"
+    },
     "./parsing": {
       "types": "./dist/parsing/index.d.ts",
       "default": "./dist/parsing/index.js"

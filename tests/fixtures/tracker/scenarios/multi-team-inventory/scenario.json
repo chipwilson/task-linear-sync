@@ -1,0 +1,13 @@
+{
+  "name": "multi-team-inventory",
+  "notes": "SC-001 corpus: 4+5+1 in-scope issues across three teams at pageSize 3; one foreign-project, one canceled, one duplicate, one cross-team trap row (all excluded).",
+  "placeholderIdentities": [
+    "acme-team",
+    "globex-team",
+    "initech-team",
+    "proj-alpha",
+    "proj-beta",
+    "proj-main",
+    "proj-core"
+  ]
+}

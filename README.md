@@ -115,3 +115,13 @@ _Last updated: 2026-10-23 · branch `main` (Wave-2 implementation in flight)_
 - ✅ **The repo builds and tests** — `npm ci && npm test` (also `lint`, `typecheck`, `build`, and per-tier `test:unit|contract|integration|e2e` scripts). Note the scope: contracts, configuration, run-state, and task parsing are real — discovery/routing/matching/tracker land with the remaining Wave-2 PRs; the engine arrives with feature 008.
 
 **Next steps:** merge the remaining Wave-2 PRs as they land (003, 005, 006, 007), then run Wave 3 — feature 008 (sync engine: conflicts, state, apply, rollback) composes 003–007 into the single gated engine — followed by Wave 4's parallel surfaces (009 operator CLI, 010 background queue & hooks, 011 sync-history web page, 012 AI-agent tool interface, 013 CI enforcement), each via `/speckit.tasks` and `/speckit.implement` on top of the frozen contracts.
+
+## Tracker integration port (feature 007)
+
+The Linear adapter implementing the frozen `Linear_Port` contract now ships at the
+`task-linear-sync/tracker` and `task-linear-sync/tracker/testing` subpath exports — the
+complete GraphQL surface with the built-in-retry posture, the attachment-URL identity
+machinery (canonical/continuation chain walk), the credential pre-flight, and the
+fake-port + recorded-replay testing harness that drives both under one conformance suite.
+Usage, configuration, resilience posture, and fixture-corpus guide:
+[`docs/tracker-integration.md`](docs/tracker-integration.md).

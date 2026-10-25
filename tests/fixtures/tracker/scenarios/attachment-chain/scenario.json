@@ -1,0 +1,8 @@
+{
+  "name": "attachment-chain",
+  "notes": "FR-006 gap world: canonical + pages 1..2 contiguous; page 3 absent (walk stops); page 4 present within the bounded orphan probe window, reported as orphan; pages 5..11 absent.",
+  "placeholderIdentities": [
+    "acme-team",
+    "proj-alpha"
+  ]
+}

@@ -1,0 +1,8 @@
+{
+  "name": "create-failure",
+  "notes": "Constitution Resilience: issueCreate failing with 429/5xx/network produces exactly ONE request (attempts 1) and an IndeterminateCreateError; never replayed. status 0 = synthetic network error.",
+  "placeholderIdentities": [
+    "acme-team",
+    "proj-alpha"
+  ]
+}

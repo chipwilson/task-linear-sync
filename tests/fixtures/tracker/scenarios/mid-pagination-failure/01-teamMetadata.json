@@ -1,0 +1,66 @@
+{
+  "request": {
+    "operationName": "teamMetadata",
+    "variables": {
+      "teamKeys": [
+        "acme-team"
+      ]
+    }
+  },
+  "response": {
+    "status": 200,
+    "body": {
+      "data": {
+        "teams": {
+          "nodes": [
+            {
+              "id": "team-acme",
+              "key": "acme-team",
+              "projects": {
+                "nodes": [
+                  {
+                    "id": "prj-acme-alpha",
+                    "name": "proj-alpha"
+                  },
+                  {
+                    "id": "prj-acme-beta",
+                    "name": "proj-beta"
+                  }
+                ]
+              },
+              "states": {
+                "nodes": [
+                  {
+                    "id": "st-acme-todo",
+                    "name": "Todo",
+                    "type": "unstarted"
+                  },
+                  {
+                    "id": "st-acme-prog",
+                    "name": "In Progress",
+                    "type": "started"
+                  },
+                  {
+                    "id": "st-acme-done",
+                    "name": "Done",
+                    "type": "completed"
+                  },
+                  {
+                    "id": "st-acme-cancel",
+                    "name": "Canceled",
+                    "type": "canceled"
+                  },
+                  {
+                    "id": "st-acme-dup",
+                    "name": "Duplicate",
+                    "type": "duplicate"
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      }
+    }
+  }
+}

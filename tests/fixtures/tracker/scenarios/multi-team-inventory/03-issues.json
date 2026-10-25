@@ -1,0 +1,41 @@
+{
+  "request": {
+    "operationName": "issues",
+    "variables": {
+      "teamKey": "acme-team",
+      "after": "acme-team-cursor-1"
+    }
+  },
+  "response": {
+    "status": 200,
+    "body": {
+      "data": {
+        "issues": {
+          "nodes": [
+            {
+              "id": "ac000000-0000-4000-8000-000000000104",
+              "identifier": "ACM-104",
+              "title": "Sync inventory task D",
+              "description": "description body",
+              "updatedAt": "2026-10-01T00:00:00.000Z",
+              "archivedAt": null,
+              "team": {
+                "key": "acme-team"
+              },
+              "project": {
+                "id": "prj-acme-alpha"
+              },
+              "state": {
+                "type": "completed"
+              }
+            }
+          ],
+          "pageInfo": {
+            "hasNextPage": false,
+            "endCursor": "acme-team-cursor-2"
+          }
+        }
+      }
+    }
+  }
+}

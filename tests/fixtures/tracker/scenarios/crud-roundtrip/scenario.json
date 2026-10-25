@@ -1,0 +1,8 @@
+{
+  "name": "crud-roundtrip",
+  "notes": "FR-003 round-trips: get known/unknown, create, update title+state, archive, not-found update.",
+  "placeholderIdentities": [
+    "acme-team",
+    "proj-alpha"
+  ]
+}

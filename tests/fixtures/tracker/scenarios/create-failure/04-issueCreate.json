@@ -1,0 +1,14 @@
+{
+  "request": {
+    "operationName": "issueCreate",
+    "variables": {
+      "teamId": "team-acme",
+      "projectId": "prj-acme-alpha",
+      "title": "Never replayed"
+    }
+  },
+  "response": {
+    "status": 0,
+    "body": {}
+  }
+}

@@ -1,0 +1,58 @@
+{
+  "request": {
+    "operationName": "issues",
+    "variables": {
+      "teamKey": "globex-team",
+      "after": "globex-team-cursor-1"
+    }
+  },
+  "response": {
+    "status": 200,
+    "body": {
+      "data": {
+        "issues": {
+          "nodes": [
+            {
+              "id": "ac000000-0000-4000-8000-000000000204",
+              "identifier": "GLX-204",
+              "title": "Globex task four",
+              "description": "description body",
+              "updatedAt": "2026-10-01T00:00:00.000Z",
+              "archivedAt": null,
+              "team": {
+                "key": "globex-team"
+              },
+              "project": {
+                "id": "prj-glx-main"
+              },
+              "state": {
+                "type": "completed"
+              }
+            },
+            {
+              "id": "ac000000-0000-4000-8000-000000000205",
+              "identifier": "GLX-205",
+              "title": "Globex task five",
+              "description": "description body",
+              "updatedAt": "2026-10-01T00:00:00.000Z",
+              "archivedAt": null,
+              "team": {
+                "key": "globex-team"
+              },
+              "project": {
+                "id": "prj-glx-main"
+              },
+              "state": {
+                "type": "unstarted"
+              }
+            }
+          ],
+          "pageInfo": {
+            "hasNextPage": false,
+            "endCursor": "globex-team-cursor-2"
+          }
+        }
+      }
+    }
+  }
+}

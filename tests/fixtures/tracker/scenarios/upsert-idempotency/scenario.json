@@ -1,0 +1,8 @@
+{
+  "name": "upsert-idempotency",
+  "notes": "SC-002: two upserts of one canonical URL update in place (1 attachment, 0 duplicates); listAttachments walks opaque cursor pages and the scan route finds the identity-bearing attachment (FR-004 scan).",
+  "placeholderIdentities": [
+    "acme-team",
+    "proj-alpha"
+  ]
+}
