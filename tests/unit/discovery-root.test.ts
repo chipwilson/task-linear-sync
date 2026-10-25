@@ -28,10 +28,10 @@ test("discovery root: canonicalize returns an absolute, link-resolved path (FR-0
 });
 
 test("discovery root: relative segments and relative input paths are resolved (FR-001)", async () => {
-  await withTempTree("root-relative", [{ kind: "dir", path: "a/b" }], async (tree) => {
+  await withTempTree("root-relative", [{ kind: "dir", path: "a/b" }, { kind: "dir", path: "c" }], async (tree) => {
     assert.equal(
-      await canonicalizeRepositoryRoot(join(tree, "a", "..", "b", ".")),
-      await canonicalizeRepositoryRoot(join(tree, "b")),
+      await canonicalizeRepositoryRoot(join(tree, "a", "..", "c", ".")),
+      await canonicalizeRepositoryRoot(join(tree, "c")),
       "relative segments removed",
     );
   });

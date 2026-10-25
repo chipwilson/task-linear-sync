@@ -34,6 +34,8 @@ const EXPECTED_FOUNDATIONAL: readonly string[] = [
   "DiscoveredFile",
   "DiscoveryDiagnostic",
   "DiscoveryOptions",
+  "DiscoveryOverrides",
+  "DiscoveryResult",
   "DiscoveryRootError",
   "FeatureNameRule",
   "FrameworkAdapter",

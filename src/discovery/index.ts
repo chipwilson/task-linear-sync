@@ -4,7 +4,34 @@
  *
  * Export-surface is amendment-gated: tests/contract/discovery-surface.test.ts snapshots
  * the exact exported-name set (002 R15 precedent; contracts/README.md amendment rule).
- * Modules land by phase: foundational (T008–T012), US1 discovery (T016–T020),
+ * Named re-exports ONLY (the snapshot test forbids `export *`) so the public surface is
+ * explicit. Tiers land deliberately: foundational (T008–T012), US1 discovery (T016–T021),
  * US2 adapters/registry/conventions (T027–T034).
  */
-export {};
+
+// ── Foundational (T012): 003 records, the FROZEN adapter interface (004's seam),
+//    the zero-dependency matcher, and the safe-path root primitives ──
+export { DiscoveryRootError, isBuiltInFrameworkId } from "./types.js";
+export type {
+  DiscoveredFile,
+  DiscoveryDiagnostic,
+  DiscoveryOptions,
+  DiscoveryResult,
+  DiscoverOptions,
+  FrameworkIdentity,
+  GitContext,
+  Refusal,
+} from "./types.js";
+export type {
+  AdapterConventions,
+  AdapterRegistry,
+  CustomAdapterDescriptor,
+  DetectionContext,
+  DetectionMatch,
+  DetectionRecord,
+  FeatureNameRule,
+  FrameworkAdapter,
+  DiscoveryOverrides,
+} from "./adapter.js";
+export { compileNamePattern } from "./patterns.js";
+export { canonicalizeRepositoryRoot, verifyInsideRoot } from "./root.js";
