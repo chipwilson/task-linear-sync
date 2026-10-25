@@ -35,3 +35,12 @@ export type {
 } from "./adapter.js";
 export { compileNamePattern } from "./patterns.js";
 export { canonicalizeRepositoryRoot, verifyInsideRoot } from "./root.js";
+
+// ── US1 discovery tier (T021): the entry point, git context, registry + selection, and
+//    the selection error. `createAdapterRegistry`/`selectAdapter` are DECLARED in the
+//    frozen interface file (adapter.ts) and implemented in registry.ts (that file is
+//    interface + types only) — the barrel exports the implementations. ──
+export { discoverTaskFiles } from "./discover.js";
+export { discoverGitContext } from "./git.js";
+export { createAdapterRegistry, selectAdapter } from "./registry.js";
+export { SelectionOverrideError } from "./adapter.js";

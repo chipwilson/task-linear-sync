@@ -69,7 +69,7 @@ const EXPECTED_US2: readonly string[] = [
  * THE SNAPSHOT — extended deliberately at each phase checkpoint (T012 foundational,
  * T021 adds EXPECTED_US1, T034 adds EXPECTED_US2), never silently.
  */
-const EXPECTED: readonly string[] = [...EXPECTED_FOUNDATIONAL];
+const EXPECTED: readonly string[] = [...EXPECTED_FOUNDATIONAL, ...EXPECTED_US1];
 
 /** Parse every name re-exported from the compiled barrel declaration. */
 function exportedNames(dts: string): string[] {
