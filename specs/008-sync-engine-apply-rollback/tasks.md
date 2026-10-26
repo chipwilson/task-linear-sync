@@ -31,9 +31,9 @@ Single npm package: `src/engine/` (008's disjoint module group), `tests/{unit,co
 
 **Purpose**: Packaging surface and test scaffolding for the engine module group
 
-- [ ] T001 Add one additive `"./engine"` subpath export to `package.json` (types `./dist/engine/index.d.ts`, default `./dist/engine/index.js`) — zero dependency changes, zero other manifest edits (research R1)
-- [ ] T002 [P] Create `tests/fixtures/engine/README.md` (fixture conventions: placeholders only, zero real organization identifiers/team keys/tokens/UUIDs) and the ten world directories under `tests/fixtures/engine/worlds/`: `first-run-bootstrap/`, `linear-changed/`, `spec-changed/`, `both-changed/`, `unresolved-block/`, `completion-toggle/`, `indeterminate-create/`, `history-rollover/`, `formatting-noise/`, `rollback-full/`, `rollback-interrupted/`
-- [ ] T003 Create `tests/helpers/engine-harness.ts`: fixture-repo builder (reads `tests/fixtures/engine/worlds/<world>/`), seeded fake `LinearPort` world builder, temp-directory `StateStore`, fixed injected `Clock`, `createSyncEngine` factory against the frozen `SyncEngine` interface, and injectors for scripted create failures and rollback interruption at an exact step index (per quickstart.md Harness section)
+- [X] T001 Add one additive `"./engine"` subpath export to `package.json` (types `./dist/engine/index.d.ts`, default `./dist/engine/index.js`) — zero dependency changes, zero other manifest edits (research R1)
+- [X] T002 [P] Create `tests/fixtures/engine/README.md` (fixture conventions: placeholders only, zero real organization identifiers/team keys/tokens/UUIDs) and the ten world directories under `tests/fixtures/engine/worlds/`: `first-run-bootstrap/`, `linear-changed/`, `spec-changed/`, `both-changed/`, `unresolved-block/`, `completion-toggle/`, `indeterminate-create/`, `history-rollover/`, `formatting-noise/`, `rollback-full/`, `rollback-interrupted/`
+- [X] T003 Create `tests/helpers/engine-harness.ts`: fixture-repo builder (reads `tests/fixtures/engine/worlds/<world>/`), seeded fake `LinearPort` world builder, temp-directory `StateStore`, fixed injected `Clock`, `createSyncEngine` factory against the frozen `SyncEngine` interface, and injectors for scripted create failures and rollback interruption at an exact step index (per quickstart.md Harness section)
 
 **Checkpoint**: Packaging entry + harness skeleton exist (harness types against the frozen `SyncEngine` so it compiles before `src/engine` exists)
 
@@ -53,12 +53,12 @@ Single npm package: `src/engine/` (008's disjoint module group), `tests/{unit,co
 
 ### Implementation for Foundational
 
-- [ ] T007 Implement the `EngineError` taxonomy in `src/engine/errors.ts` (research R14): `EngineFailError` (fail action), `IntegrityError` (multi-issue identity collision), `JournalError` (tamper/unreadable journal); user-facing refusals reuse frozen `GateFailure` codes verbatim — NO new refusal vocabulary
-- [ ] T008 Implement `EngineOptions` in `src/engine/options.ts` per contracts/engine-pipeline.md: `keyProvider?` (manifest/step-journal key source, default env-var name from config `manifestKeyEnvVarName` + `manifestKeyId`; null ⇒ key unavailable ⇒ abort), `normalizationProfiles?` (registry extension; built-in `"default"` always present), `journalingEnabled?` (default `true`; false ⇒ unjournaled applies and rollback refusal)
+- [X] T007 Implement the `EngineError` taxonomy in `src/engine/errors.ts` (research R14): `EngineFailError` (fail action), `IntegrityError` (multi-issue identity collision), `JournalError` (tamper/unreadable journal); user-facing refusals reuse frozen `GateFailure` codes verbatim — NO new refusal vocabulary
+- [X] T008 Implement `EngineOptions` in `src/engine/options.ts` per contracts/engine-pipeline.md: `keyProvider?` (manifest/step-journal key source, default env-var name from config `manifestKeyEnvVarName` + `manifestKeyId`; null ⇒ key unavailable ⇒ abort), `normalizationProfiles?` (registry extension; built-in `"default"` always present), `journalingEnabled?` (default `true`; false ⇒ unjournaled applies and rollback refusal)
 - [ ] T009 Implement the normalization-profile registry + built-in `"default"` profile in `src/engine/normalize.ts` (makes T005 pass)
 - [ ] T010 Implement the built-in `SecurityScreener` in `src/engine/screening.ts` (makes T006 pass)
 - [ ] T011 Implement `selectMode` + the CheckpointStore (read at plan start, atomic whole-file write, restore/remove semantics material) in `src/engine/mode.ts` (makes T004 pass)
-- [ ] T012 Implement the composition-root skeleton `createSyncEngine(deps: EngineDependencies, options?: EngineOptions): SyncEngine` in `src/engine/create.ts` plus the `src/engine/index.ts` public surface for `./engine`: returns an object implementing the frozen `SyncEngine` 3-method contract; methods throw `EngineError` until wired in later phases; imports restricted to Node built-ins + `src/{domain,config,state,urls,gates,ports,discovery,parsing,routing,titles,matching,tracker}` (research R1)
+- [X] T012 Implement the composition-root skeleton `createSyncEngine(deps: EngineDependencies, options?: EngineOptions): SyncEngine` in `src/engine/create.ts` plus the `src/engine/index.ts` public surface for `./engine`: returns an object implementing the frozen `SyncEngine` 3-method contract; methods throw `EngineError` until wired in later phases; imports restricted to Node built-ins + `src/{domain,config,state,urls,gates,ports,discovery,parsing,routing,titles,matching,tracker}` (research R1)
 
 **Checkpoint**: Foundation ready — user story implementation can now begin (US1 and US2 primitives are disjoint files)
 
