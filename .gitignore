@@ -1,5 +1,5 @@
-# dependencies
-node_modules/
+# dependencies (no trailing slash: also ignores a symlinked node_modules, as worktrees often link)
+node_modules
 
 # build outputs
 dist/
