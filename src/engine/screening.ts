@@ -73,7 +73,7 @@ const OPENAI_KEY = String.raw`sk-(?:proj-)?[A-Za-z0-9_-]{20,}`;
 const SLACK_TOKEN = String.raw`xox[baprse]-[A-Za-z0-9-]{10,}`;
 /** Known provider key prefixes: Google API key (`AIza…`). */
 const GOOGLE_KEY = String.raw`AIza[0-9A-Za-z_-]{20,}`;
-/** Bearer-credential material (session dumps, `Authorization:` lines). */
+/** Bearer-credential material (session dumps, HTTP bearer-scheme header lines). */
 const BEARER_TOKEN = String.raw`\bbearer[ _-]?(?=[A-Za-z0-9._~+/=-]{20,}(?![A-Za-z0-9._~+/=-]))(?=[A-Za-z0-9._~+/=-]*[0-9])(?=[A-Za-z0-9._~+/=-]*[A-Za-z])[A-Za-z0-9._~+/=-]{20,}`;
 
 /** Email addresses (non-blocking — redacted in output). */
