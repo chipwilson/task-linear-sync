@@ -130,6 +130,7 @@ export { rollbackRun } from "./rollback.js";
 // ── Reports + last-run marker (T025/T045; frozen plan-report schema; tests T047) ───
 export type {
   PlanReportAssertion,
+  PlanReportBuildOptions,
   ReportRouting,
   ReportTaskEntry,
   PlanReportJson,
@@ -137,8 +138,10 @@ export type {
   LastRunMarker,
 } from "./report.js";
 export {
+  buildPlanReportJson,
   persistPlan,
   renderPlanReportMarkdown,
   writePlanReportArtifacts,
+  derivePlanReportRunId,
   writeRunReportWithMarker,
 } from "./report.js";
