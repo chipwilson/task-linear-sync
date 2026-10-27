@@ -1,0 +1,111 @@
+{
+  "$comment": "Schema authority: tests/helpers/engine-harness.ts header docblock. Placeholders only (Principle III).",
+  "name": "both-changed",
+  "clock": "2026-01-01T00:00:00.000Z",
+  "teams": [
+    {
+      "key": "TEAM-A",
+      "id": "ac000000-0000-4000-8000-000000000101",
+      "projects": [
+        {
+          "id": "proj-alpha",
+          "name": "Project Alpha"
+        }
+      ],
+      "workflowStates": [
+        {
+          "id": "ac000000-0000-4000-8000-000000000201",
+          "name": "Backlog",
+          "type": "backlog"
+        },
+        {
+          "id": "ac000000-0000-4000-8000-000000000202",
+          "name": "Todo",
+          "type": "todo"
+        },
+        {
+          "id": "ac000000-0000-4000-8000-000000000203",
+          "name": "Done",
+          "type": "completed"
+        }
+      ]
+    }
+  ],
+  "issues": [
+    {
+      "id": "ac000000-0000-4000-8000-000000000301",
+      "key": "ACME-1",
+      "teamKey": "TEAM-A",
+      "projectId": "proj-alpha",
+      "title": "Diverge the alpha thread",
+      "description": "  Tracker-side alpha text — moved in a different direction.\n",
+      "stateType": "todo",
+      "updatedAt": "2026-01-01T00:00:05.000Z"
+    },
+    {
+      "id": "ac000000-0000-4000-8000-000000000302",
+      "key": "ACME-2",
+      "teamKey": "TEAM-A",
+      "projectId": "proj-alpha",
+      "title": "Hold the beta thread",
+      "description": "  Beta thread body — identical on both sides (control).\n",
+      "stateType": "todo",
+      "updatedAt": "2026-01-01T00:00:02.000Z"
+    }
+  ],
+  "attachments": [
+    {
+      "issueId": "ac000000-0000-4000-8000-000000000301",
+      "id": "att-1",
+      "url": "https://sync.example.invalid/task-linear-sync/dd837e71-fa46-5c11-8bff-31fb37eb5a8e",
+      "title": "task-linear-sync sync state",
+      "metadata": {
+        "__task-linear-sync": "{\"cursors\":{\"lastSyncAt\":\"2026-01-01T00:00:02.000Z\"},\"descriptionContentHash\":\"aafa210c0e44d0a10e543837eb1b8d6a689f844ceaf797d6a3a085f7ee095cfe\",\"frameworkMetadata\":{\"featureName\":\"sync-demo\",\"filePath\":\"specs/sync-demo/tasks.md\",\"frameworkId\":\"generic\",\"localTaskId\":\"1.1\"},\"history\":[{\"at\":\"2026-01-01T00:00:02.000Z\",\"description\":\"Placeholder match event seeded by the fixture.\",\"kind\":\"matched\"}],\"taskUuid\":\"dd837e71-fa46-5c11-8bff-31fb37eb5a8e\"}"
+      }
+    },
+    {
+      "issueId": "ac000000-0000-4000-8000-000000000302",
+      "id": "att-2",
+      "url": "https://sync.example.invalid/task-linear-sync/5516e12e-613a-5b40-838c-4a39ea1c547b",
+      "title": "task-linear-sync sync state",
+      "metadata": {
+        "__task-linear-sync": "{\"cursors\":{\"lastSyncAt\":\"2026-01-01T00:00:02.000Z\"},\"descriptionContentHash\":\"6e238465dd589dc50b3eb749afd2ae4b3d80b3d504eda6fef69af4d261bc2f29\",\"frameworkMetadata\":{\"featureName\":\"sync-demo\",\"filePath\":\"specs/sync-demo/tasks.md\",\"frameworkId\":\"generic\",\"localTaskId\":\"1.2\"},\"history\":[{\"at\":\"2026-01-01T00:00:02.000Z\",\"description\":\"Placeholder match event seeded by the fixture.\",\"kind\":\"matched\"}],\"taskUuid\":\"5516e12e-613a-5b40-838c-4a39ea1c547b\"}"
+      }
+    }
+  ],
+  "config": {
+    "teams": {
+      "TEAM-A": {
+        "projects": [
+          "proj-alpha"
+        ],
+        "workflowStates": {
+          "backlog": "Backlog",
+          "todo": "Todo",
+          "done": "Done",
+          "completedTypes": [
+            "completed"
+          ],
+          "ignoredTypes": [
+            "canceled",
+            "duplicate"
+          ]
+        }
+      }
+    },
+    "projectByPath": [
+      {
+        "prefix": "specs/sync-demo",
+        "teamKey": "TEAM-A",
+        "project": "proj-alpha"
+      }
+    ],
+    "defaultTeamKey": "TEAM-A",
+    "defaultProject": "proj-alpha",
+    "confirmationKey": "ACME",
+    "descriptionNormalizationProfile": "default"
+  },
+  "metadata": {
+    "scenario": "Both sides diverged from the checkpoint baseline ⇒ both-changed ⇒ report-only; ACME-1 updatedAt is later (still always degrades)."
+  }
+}

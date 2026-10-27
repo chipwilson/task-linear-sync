@@ -1,0 +1,30 @@
+{
+  "$comment": "Plan-level expectations (T018/T027, SC-002). Noise present: repo = CRLF, trailing whitespace, padded blank run, drop-final-newline; issues = NFD echo, CRLF, extra trailing newlines, trailing whitespace.",
+  "world": "formatting-noise",
+  "modeNote": "seed expected/checkpoint-seed.json ⇒ sync mode (both hashes equal the baseline); seed nothing ⇒ bootstrap (both sides normalize-equal). Classification is null either way — that is the point of SC-002.",
+  "entries": [
+    {
+      "taskUuid": "dd837e71-fa46-5c11-8bff-31fb37eb5a8e",
+      "localTaskId": "1.1",
+      "title": "Normalize the alpha feed",
+      "matchedIssueKey": "ACME-1",
+      "decision": "no-change",
+      "descriptionConflict": null,
+      "expectedMarkdownChanges": []
+    },
+    {
+      "taskUuid": "5516e12e-613a-5b40-838c-4a39ea1c547b",
+      "localTaskId": "1.2",
+      "title": "Normalize the beta feed",
+      "matchedIssueKey": "ACME-2",
+      "decision": "no-change",
+      "descriptionConflict": null,
+      "expectedMarkdownChanges": []
+    }
+  ],
+  "reportNotes": {
+    "planEntries": 2,
+    "conflicts": 0,
+    "SC-002": "zero conflicts and zero planned rewrites/renders; the applied run (if any) performs zero description updates and the file bytes never change"
+  }
+}

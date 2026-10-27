@@ -1,0 +1,20 @@
+{
+  "dd837e71-fa46-5c11-8bff-31fb37eb5a8e": {
+    "taskUuid": "dd837e71-fa46-5c11-8bff-31fb37eb5a8e",
+    "issueId": "ac000000-0000-4000-8000-000000000301",
+    "checked": false,
+    "title": "Extend the alpha contract",
+    "issueUpdatedAt": "2026-01-01T00:00:02.000Z",
+    "issueStateType": "todo",
+    "descriptionContentHash": "2244acf4d4fc739d87bda6eea876d3e715caefdcf99b84b28de21e342890e0d0"
+  },
+  "5516e12e-613a-5b40-838c-4a39ea1c547b": {
+    "taskUuid": "5516e12e-613a-5b40-838c-4a39ea1c547b",
+    "issueId": "ac000000-0000-4000-8000-000000000302",
+    "checked": false,
+    "title": "Keep the beta contract",
+    "issueUpdatedAt": "2026-01-01T00:00:02.000Z",
+    "issueStateType": "todo",
+    "descriptionContentHash": "50abd4a389af6a9b9313f9ca1678eba774ae7be69457e2ed612f2c22890af54c"
+  }
+}

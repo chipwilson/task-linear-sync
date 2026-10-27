@@ -1,0 +1,54 @@
+{
+  "$comment": "Plan-level expectations (T033 completion-states, US1 AC5/FR-006). Seed expected/checkpoint-seed.json first ⇒ sync mode. State NAME → id resolves via the fake discoverMetadata snapshot seeded in world.json teams.",
+  "world": "completion-toggle",
+  "mode": "sync",
+  "entries": [
+    {
+      "taskUuid": "dd837e71-fa46-5c11-8bff-31fb37eb5a8e",
+      "localTaskId": "1.1",
+      "title": "Ship the release toggle",
+      "matchedIssueKey": "ACME-1",
+      "checkedChanged": true,
+      "checkpointChecked": false,
+      "taskChecked": true,
+      "descriptionConflict": null,
+      "decision": "update",
+      "desiredStateName": "Done",
+      "desiredStateTypeId": "ac000000-0000-4000-8000-000000000203",
+      "expectedOp": "update-issue(stateTypeId)",
+      "historyEvent": "checkbox-changed",
+      "note": "newly checked + description identical ⇒ done state, NO description conflict (FR-006)"
+    },
+    {
+      "taskUuid": "5516e12e-613a-5b40-838c-4a39ea1c547b",
+      "localTaskId": "1.2",
+      "title": "Reopen the stalled gauge",
+      "matchedIssueKey": "ACME-2",
+      "checkedChanged": true,
+      "checkpointChecked": true,
+      "taskChecked": false,
+      "descriptionConflict": null,
+      "decision": "update",
+      "desiredStateName": "Backlog",
+      "desiredStateTypeId": "ac000000-0000-4000-8000-000000000201",
+      "expectedOp": "update-issue(stateTypeId)",
+      "historyEvent": "checkbox-changed",
+      "note": "unchecked ⇒ configured backlog state; tracker state moves stateTypeDrift only, never pushed back"
+    },
+    {
+      "taskUuid": "d3e847c1-8de0-53e5-bb70-e3d0a003ef78",
+      "localTaskId": "1.3",
+      "title": "Polish the idle widget",
+      "matchedIssueKey": "ACME-3",
+      "checkedChanged": false,
+      "descriptionConflict": null,
+      "decision": "no-change",
+      "note": "control — no checkbox movement, no conflict, no op"
+    }
+  ],
+  "reportNotes": {
+    "planEntries": 3,
+    "conflicts": 0,
+    "FR-006": "checkbox-driven ops never consult or populate descriptionConflict; one checkbox-changed event per affecting action (matrix §5)"
+  }
+}
