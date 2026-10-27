@@ -1,5 +1,5 @@
 /**
- * Mode selection + CheckpointStore (research R2; data-model §1–§2; task T011 implements;
+ * Mode selection + CheckpointStore (research R2; data-model §1–§2; T011 implemented;
  * unit tests T004). FR-001: mode is selected SOLELY by checkpoint presence for the
  * repository — no checkpoint ⇒ `bootstrap`, ≥1 ⇒ `sync`. The `sync-state.json` store
  * (schema `{ schemaVersion: 1, checkpoints: Record<taskUuid, Checkpoint> }`) is read at
@@ -34,14 +34,41 @@ export interface ModeSelection {
   readonly diagnosticReason?: string;
 }
 
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+/**
+ * Validate a parsed `sync-state.json` root against the v1 schema (data-model §1). A root
+ * that is not an object never reaches here — `StateStore.readJson` rejects non-object
+ * roots itself (loudly) — this guards the schema members: fixed `schemaVersion: 1` and an
+ * object-valued `checkpoints` map. Corrupt material surfaces as a failure; it is NEVER
+ * silently reinterpreted as "no checkpoints" (a silent bootstrap against an existing
+ * checkpoint set would be a clobber vector — research R2).
+ */
+function parseCheckpointStoreFile(raw: unknown): CheckpointStoreFile {
+  if (!isPlainObject(raw) || raw.schemaVersion !== 1 || !isPlainObject(raw.checkpoints)) {
+    throw new Error(
+      `checkpoint store '${CHECKPOINT_STORE_REL_PATH}' does not match the v1 schema ` +
+        `{ schemaVersion: 1, checkpoints: Record<taskUuid, Checkpoint> } — run aborted (data-model §1)`,
+    );
+  }
+  return { schemaVersion: 1, checkpoints: raw.checkpoints as Readonly<Record<string, Checkpoint>> };
+}
+
 /**
  * Read the checkpoint store; an absent file yields `{ schemaVersion: 1, checkpoints: {} }`
  * (fresh repository ⇒ bootstrap). Non-object/corrupt roots surface as engine failures.
  * T011 implements (T004).
  */
 export async function readCheckpointStore(store: StateStore): Promise<CheckpointStoreFile> {
-  void [store]; // signature stub — the owning task (header JSDoc) implements the body
-  throw new Error("not implemented: mode");
+  // Unreadable/corrupt JSON or a non-object root throws inside readJson (StateFileError)
+  // and propagates verbatim — presence-based mode selection must never guess.
+  const raw = await store.readJson<unknown>(CHECKPOINT_STORE_REL_PATH);
+  if (raw === null) {
+    return { schemaVersion: 1, checkpoints: {} };
+  }
+  return parseCheckpointStoreFile(raw);
 }
 
 /**
@@ -52,8 +79,10 @@ export async function writeCheckpointStore(
   store: StateStore,
   checkpoints: Readonly<Record<string /* taskUuid */, Checkpoint>>,
 ): Promise<void> {
-  void [store, checkpoints]; // signature stub — the owning task (header JSDoc) implements the body
-  throw new Error("not implemented: mode");
+  // Fresh copy under the fixed v1 root: a whole-file replacement, never a merge —
+  // StateStore.writeJson serializes atomically (temp + rename, owner-only).
+  const file: CheckpointStoreFile = { schemaVersion: 1, checkpoints: { ...checkpoints } };
+  await store.writeJson(CHECKPOINT_STORE_REL_PATH, file);
 }
 
 /**
@@ -66,8 +95,19 @@ export function selectMode(
   storeFile: CheckpointStoreFile,
   hint?: SyncMode,
 ): ModeSelection {
-  void [storeFile, hint]; // signature stub — the owning task (header JSDoc) implements the body
-  throw new Error("not implemented: mode");
+  const mode: SyncMode = Object.keys(storeFile.checkpoints).length > 0 ? "sync" : "bootstrap";
+  if (hint !== undefined && hint !== mode) {
+    // Sanitized, machine-readable label (FR-005 posture): names the ignored hint and the
+    // reality-selected mode only — never task identities or content (Principle II).
+    return {
+      mode,
+      hintDisagreed: true,
+      diagnosticReason:
+        `mode-hint-disagreed: advisory BuildPlanOptions.mode hint '${hint}' ignored — ` +
+        `checkpoint presence selects '${mode}' (FR-001 reality rule)`,
+    };
+  }
+  return { mode, hintDisagreed: false };
 }
 
 /**
@@ -79,6 +119,12 @@ export async function restoreCheckpointStoreFromSnapshot(
   store: StateStore,
   checkpointBefore: readonly Checkpoint[],
 ): Promise<void> {
-  void [store, checkpointBefore]; // signature stub — the owning task (header JSDoc) implements the body
-  throw new Error("not implemented: mode");
+  // Re-key the frozen snapshot by its own taskUuid (the record carries its key) and write
+  // the result as ONE atomic whole-file replacement — entries absent from the snapshot
+  // are thereby removed, and a rolled-back interrupted apply leaves no partial entries.
+  const checkpoints: Record<string, Checkpoint> = {};
+  for (const checkpoint of checkpointBefore) {
+    checkpoints[checkpoint.taskUuid] = checkpoint;
+  }
+  await writeCheckpointStore(store, checkpoints);
 }
