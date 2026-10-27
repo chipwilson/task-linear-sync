@@ -51,7 +51,7 @@ export { builtInScreeningRules, createDefaultSecurityScreener } from "./screenin
 
 // ── Classification (T020; data-model §3; tests T013) ───────────────────────────────
 export type { ClassificationOutcome, ClassificationInput } from "./classify.js";
-export { classifyTask } from "./classify.js";
+export { classifyTask, resolveConfiguredNormalizer } from "./classify.js";
 
 // ── Action resolution + FR-004 default maps (T021; matrix contract; tests T014) ────
 export type {
