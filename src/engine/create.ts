@@ -13,6 +13,8 @@
  * (research R1; contract test T048 scans for violations).
  */
 import type { BuildPlanOptions, EngineDependencies, SyncEngine } from "../ports/engine.js";
+import type { Plan } from "../domain/plan.js";
+import { buildSyncPlan } from "./build.js";
 import { EngineError } from "./errors.js";
 import type { EngineOptions } from "./options.js";
 import { resolveEngineOptions } from "./options.js";
@@ -22,19 +24,23 @@ import { resolveEngineOptions } from "./options.js";
  * clock, screener) and the 008-local {@link EngineOptions} bag. The returned object
  * implements `SyncEngine` and nothing else.
  *
- * @throws never at composition; each frozen method throws `EngineError` until its
- * wiring task (T026/T045) replaces the skeleton body.
+ * `buildSyncPlan` is wired to the read-only pipeline (T026 → `build.ts` with the
+ * `ResolvedEngineOptions` resolved once here). `applySyncPlan`/`rollbackRun` stay
+ * skeleton-throws until T045 wires `apply.ts`/`rollback.ts` (Phase 4).
+ *
+ * @throws never at composition; the unwired frozen methods throw `EngineError` until
+ * their wiring task (T045) replaces the skeleton body.
  */
 export function createSyncEngine(deps: EngineDependencies, options?: EngineOptions): SyncEngine {
   // Composition seam: effective options resolve once here (keyProvider default, journaling
   // flag, profile extensions, screener override) and flow into T026/T045 pipeline wiring.
   const resolved = resolveEngineOptions(options, deps.config);
-  void resolved; // consumed by the wiring tasks (T026/T045); untouched by the skeleton throws
-  void deps; // port/state/clock/screener enter the pipelines at T026/T045 wiring
 
   const engine: SyncEngine = {
-    async buildSyncPlan(_o: BuildPlanOptions) {
-      throw new EngineError("SyncEngine.buildSyncPlan is not wired until phase 3 (T026 wires build.ts)");
+    async buildSyncPlan(o: BuildPlanOptions): Promise<Plan> {
+      // T026 wiring: delegate to the read-only plan pipeline (contracts/engine-pipeline.md
+      // stages 1–7) — zero tracker mutations, zero repository writes.
+      return buildSyncPlan(deps, resolved, o);
     },
     async applySyncPlan(_plan, _gates) {
       throw new EngineError("SyncEngine.applySyncPlan is not wired until phase 4 (T045 wires apply.ts)");
