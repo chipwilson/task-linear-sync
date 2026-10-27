@@ -6,6 +6,21 @@
  * on FR-004 (contract §1 table). Effects apply to the whole tool-managed issue
  * description only — never to the synced state payload (FR-003). `fail` maps to effect
  * `abort-run`: `EngineFailError` thrown before the next mutation (data-model §4).
+ *
+ * T021 modeling constraints (T014 test header, binding):
+ *  1. `ResolvedConflictAction.action` is always the action READ FROM THE MAP — a degraded
+ *     `prefer-newer` still reports `action: "prefer-newer"`; the degradation surfaces only
+ *     as `effect: "none"` + `degraded: true` + a reason naming the `report-only` fallback.
+ *  2. Every reason is sanitized machine-readable text containing the conflict-type and
+ *     action names verbatim (FR-005: conflict type + action taken + reason).
+ *  3. `skip` reasons mark the record as internal-only (matrix §2: journal/plan reasons,
+ *     NOT a report conflict entry) — they carry the word "internal*".
+ *  4. Mode is map-selection context only: identical map entries + type + context ⇒
+ *     identical results under `bootstrap` and `sync` (never echoed into the result).
+ *  5. `prefer-newer` with missing/partial recency context degrades — indeterminable is
+ *     never guessed (R6); recency context is INERT for every non-`prefer-newer` action.
+ *  6. Recency compares ISO-8601 timestamps as strings with a STRICT advancement gate:
+ *     `issueUpdatedAt > checkpointIssueUpdatedAt` advances; equal (`==`) never does.
  */
 import type {
   ConflictAction,
@@ -91,7 +106,7 @@ export const syncConflictDefaults: ConflictResolutionMap = Object.freeze({
  * (skip is internal-record only); `fail` ⇒ `abort-run`. Recency (§3): `spec-changed` ⇒
  * overwrite-linear effect; `linear-changed` with `issueUpdatedAt > checkpointIssueUpdatedAt`
  * ⇒ overwrite-spec effect; `linear-changed` with non-advancing `updatedAt` ⇒ degrade
- * `report-only` (`degraded: true`); `both-changed` ⇒ always degrade. T021 implements (T014).
+ * `report-only` (`degraded: true`); `both-changed` ⇒ always degrade. Implemented (T021).
  */
 export function resolveConflictAction(
   mode: SyncMode,
@@ -99,20 +114,152 @@ export function resolveConflictAction(
   map: ConflictResolutionMap,
   context?: ConflictResolutionContext,
 ): ResolvedConflictAction {
-  void [mode, conflictType, map, context]; // signature stub — the owning task (header JSDoc) implements the body
-  throw new Error("not implemented: actions");
+  // Matrix §6: the action is selected from the classification + the mode's (merged) map,
+  // never from anything else. The map is complete by contract (frozen deep-merge chain);
+  // the mode's built-in row is only an absent-key safety net, never an override.
+  const action: ConflictAction =
+    map[conflictType] ??
+    (mode === "bootstrap" ? bootstrapConflictDefaults : syncConflictDefaults)[conflictType];
+
+  // Matrix §2: fixed consequences for the five non-`prefer-newer` actions. Recency
+  // context is inert here (modeling choice 5): stale never degrades an overwrite;
+  // advancing never upgrades `report-only`/`skip`/`fail`.
+  switch (action) {
+    case "overwrite-linear":
+      return {
+        action,
+        effect: "update-issue",
+        degraded: false,
+        reason:
+          `${conflictType}: action overwrite-linear - push screened rendered task ` +
+          `section to the issue (update-issue); spec file untouched`,
+      };
+    case "overwrite-spec":
+      return {
+        action,
+        effect: "render-file",
+        degraded: false,
+        reason:
+          `${conflictType}: action overwrite-spec - replace task section with the ` +
+          `git-style conflict-marker block embedding local then tracker content ` +
+          `(render-file); issue untouched, nothing pushed`,
+      };
+    case "report-only":
+      return {
+        action,
+        effect: "none",
+        degraded: false,
+        reason:
+          `${conflictType}: action report-only - conflict surfaced in plan/report, ` +
+          `no changes on either side (effect none)`,
+      };
+    case "skip":
+      return {
+        action,
+        effect: "none",
+        degraded: false,
+        reason:
+          `${conflictType}: action skip - recorded internally only as a journal/plan ` +
+          `reason, NOT a report conflict entry (effect none)`,
+      };
+    case "fail":
+      return {
+        action,
+        effect: "abort-run",
+        degraded: false,
+        reason:
+          `${conflictType}: action fail - abort the run before the next mutation ` +
+          `(abort-run); already-applied steps remain rollback-able`,
+      };
+    case "prefer-newer":
+      return resolvePreferNewer(conflictType, context);
+  }
+}
+
+/**
+ * Matrix §3 recency rule for `prefer-newer` (research R6 "never guessed"; US1 AC6).
+ * The configured action stays map-read even on degradation (modeling choice 1); the
+ * `report-only` fallback surfaces only via `effect: "none"` + `degraded: true` + a
+ * reason naming it. Timestamps are ISO-8601 strings compared lexicographically with a
+ * strict advancement gate — equal instants are non-advancing (matrix §3 `≤` row).
+ */
+function resolvePreferNewer(
+  conflictType: DescriptionConflictType,
+  context: ConflictResolutionContext | undefined,
+): ResolvedConflictAction {
+  if (conflictType === "spec-changed") {
+    // §3 row 1: single-sided by construction — only the spec moved since the
+    // checkpoint baseline. Self-attesting: recency context is neither needed nor able
+    // to change the verdict (a stale tracker clock never flips it).
+    return {
+      action: "prefer-newer",
+      effect: "update-issue", // winner = spec ⇒ §2 overwrite-linear effect
+      degraded: false,
+      reason:
+        `spec-changed: action prefer-newer resolved to overwrite-linear - spec side is ` +
+        `single-sided newer than the checkpoint baseline (update-issue)`,
+    };
+  }
+  if (conflictType === "both-changed") {
+    // §3 row 4: no trustworthy spec-side timestamp source exists — always degrade,
+    // regardless of any recency context supplied.
+    return {
+      action: "prefer-newer",
+      effect: "none", // fallback actually taken: report-only
+      degraded: true,
+      reason:
+        `both-changed: action prefer-newer configured - no trustworthy spec-side ` +
+        `recency source; degraded to report-only (effect none)`,
+    };
+  }
+  // linear-changed — §3 rows 2–3: tracker-newer requires BOTH timestamps present and
+  // strictly advancing past the checkpoint baseline; missing/partial or non-advancing
+  // context is indeterminable and must degrade (R6).
+  const issueUpdatedAt = context?.issueUpdatedAt;
+  const checkpointIssueUpdatedAt = context?.checkpointIssueUpdatedAt;
+  const trackerNewer =
+    issueUpdatedAt !== undefined &&
+    checkpointIssueUpdatedAt !== undefined &&
+    issueUpdatedAt > checkpointIssueUpdatedAt;
+  if (trackerNewer) {
+    return {
+      action: "prefer-newer",
+      effect: "render-file", // winner = tracker ⇒ §2 overwrite-spec effect
+      degraded: false,
+      reason:
+        `linear-changed: action prefer-newer resolved to overwrite-spec - issue ` +
+        `updatedAt is strictly after the checkpoint baseline (render-file)`,
+    };
+  }
+  return {
+    action: "prefer-newer",
+    effect: "none", // fallback actually taken: report-only
+    degraded: true,
+    reason:
+      `linear-changed: action prefer-newer configured - recency indeterminable ` +
+      `(issue.updatedAt missing or not strictly after the checkpoint baseline); ` +
+      `degraded to report-only (effect none)`,
+  };
 }
 
 /**
  * Bind a pure resolution to its task: `{ taskUuid, ...resolved }` (data-model §4
  * `AppliedAction`). Every applied action records `{ conflictType, action, reason }` in
- * plan entry reasons, `OperationOutcome.detail`, and reports (FR-005). T021 implements.
+ * plan entry reasons, `OperationOutcome.detail`, and reports (FR-005). The conflict type
+ * is `null` on the non-conflict path (e.g. checkbox-driven completion, matrix §5
+ * independence) and the resolution fields pass through verbatim. Implemented (T021).
  */
 export function appliedAction(
   taskUuid: string,
   conflictType: DescriptionConflictType | null,
   resolved: ResolvedConflictAction,
 ): AppliedAction {
-  void [taskUuid, conflictType, resolved]; // signature stub — the owning task (header JSDoc) implements the body
-  throw new Error("not implemented: actions");
+  return {
+    taskUuid,
+    conflictType,
+    action: resolved.action,
+    effect: resolved.effect,
+    degraded: resolved.degraded,
+    reason: resolved.reason,
+  };
 }
