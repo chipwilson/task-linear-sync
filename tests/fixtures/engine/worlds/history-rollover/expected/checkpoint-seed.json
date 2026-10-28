@@ -1,0 +1,20 @@
+{
+  "dd837e71-fa46-5c11-8bff-31fb37eb5a8e": {
+    "taskUuid": "dd837e71-fa46-5c11-8bff-31fb37eb5a8e",
+    "issueId": "ac000000-0000-4000-8000-000000000301",
+    "checked": false,
+    "title": "Append the alpha ledger",
+    "issueUpdatedAt": "2026-01-01T00:00:02.000Z",
+    "issueStateType": "todo",
+    "descriptionContentHash": "ba8d4cb11353db78033bd0ff239701ee71d15272d00ab693a9dda78b5a63377b"
+  },
+  "5516e12e-613a-5b40-838c-4a39ea1c547b": {
+    "taskUuid": "5516e12e-613a-5b40-838c-4a39ea1c547b",
+    "issueId": "ac000000-0000-4000-8000-000000000302",
+    "checked": true,
+    "title": "Reopen the beta checkbox",
+    "issueUpdatedAt": "2026-01-01T00:00:02.000Z",
+    "issueStateType": "completed",
+    "descriptionContentHash": "b68110449050e71d9aea692f5d19519eeff95f15ecf00f160b0e2339eab67f45"
+  }
+}

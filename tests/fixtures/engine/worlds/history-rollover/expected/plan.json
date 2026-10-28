@@ -1,0 +1,53 @@
+{
+  "$comment": "Chain/append expectations for T035 (quickstart 2.5, FR-009/010). Seed expected/checkpoint-seed.json first ⇒ sync mode. config.historyLogMaxEntries = 3 (world.json).",
+  "world": "history-rollover",
+  "mode": "sync",
+  "seedTable": {
+    "1.1": {
+      "page0": "3 seeded events (AT threshold — appending one rolls)",
+      "continuations": "none",
+      "landingEvent": "description-updated (spec-changed ⇒ overwrite-linear lands)",
+      "expectedAfterApply": "page 0 keeps its 3 events byte-identical; page 1 appears at the continuation URL holding ONLY the new event (data-model §7 rollover)"
+    },
+    "1.2": {
+      "page0": "3 seeded events",
+      "continuations": "page 1 SEEDED at 3 events (also at threshold)",
+      "landingEvent": "checkbox-changed (checkpoint checked=true, task unchecked ⇒ Backlog; description identical — no conflict)",
+      "expectedAfterApply": "getAttachmentByUrl walk 0→1 finds page 1 last; its candidate exceeds 3 ⇒ page 2 appears holding ONLY the new event; pages 0–1 byte-identical (append-only, Principle IV)"
+    }
+  },
+  "entries": [
+    {
+      "taskUuid": "dd837e71-fa46-5c11-8bff-31fb37eb5a8e",
+      "localTaskId": "1.1",
+      "title": "Append the alpha ledger",
+      "matchedIssueKey": "ACME-1",
+      "decision": "conflict",
+      "descriptionConflict": "spec-changed",
+      "defaultMapAction": "overwrite-linear",
+      "historyEvent": "description-updated",
+      "note": "single-event append on a threshold-full page 0 ⇒ first rollover cell"
+    },
+    {
+      "taskUuid": "5516e12e-613a-5b40-838c-4a39ea1c547b",
+      "localTaskId": "1.2",
+      "title": "Reopen the beta checkbox",
+      "matchedIssueKey": "ACME-2",
+      "decision": "update",
+      "descriptionConflict": null,
+      "checkedChanged": true,
+      "checkpointChecked": true,
+      "taskChecked": false,
+      "desiredStateName": "Backlog",
+      "desiredStateTypeId": "ac000000-0000-4000-8000-000000000201",
+      "expectedOp": "update-issue(stateTypeId)",
+      "historyEvent": "checkbox-changed",
+      "note": "chain walk over a seeded continuation page ⇒ rollover at depth 2"
+    }
+  ],
+  "reportNotes": {
+    "planEntries": 2,
+    "conflicts": 1,
+    "FR_010": "no entry is edited, reordered, or removed; rollover only adds pages; re-run/resume lands byte-identical pages (URL idempotency, FR-015)"
+  }
+}
