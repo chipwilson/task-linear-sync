@@ -1,5 +1,5 @@
 {
-  "$comment": "Plan-level expectations (T019 conflict-freeze, US1 AC4/FR-007/SC-004). Seed expected/checkpoint-seed.json first ⇒ sync mode; the frozen task's baseline is PRE-BLOCK so post-resolution classification compares against it.",
+  "$comment": "Plan-level expectations (T019 conflict-freeze, US1 AC4/FR-007/SC-004). Seed expected/checkpoint-seed.json first ⇒ sync mode; the frozen task's baseline is PRE-BLOCK so post-resolution classification compares against it. Sides: the marker block's LOCAL side is verbatim that pre-block baseline body (mirror region = section body below the task line), the block's tracker side is the historical divergent snapshot, and the live ACME-2 description equals the baseline body — removal keeping the local side re-hashes equal to both ⇒ no-change.",
   "world": "unresolved-block",
   "mode": "sync",
   "entries": [
@@ -41,7 +41,7 @@
   ],
   "postResolutionExpectation": {
     "localTaskId": "1.2",
-    "action": "human removes the marker block and restores the pre-block body (the checkpoint baseline)",
+    "action": "human removes the marker lines keeping the local side — the pre-block baseline body (the checkpoint mirror region)",
     "then": {
       "descriptionConflict": null,
       "decision": "no-change"
