@@ -48,7 +48,7 @@
       "teamKey": "TEAM-A",
       "projectId": "proj-alpha",
       "title": "Freeze the widget ledger",
-      "description": "  Tracker body side of the historical conflict.\n",
+      "description": "  - [ ] Fake checklist sub-item — interior line; never extracted while the block stands\n  Local body side of the historical conflict — the pre-block baseline the checkpoint pins.\n",
       "stateType": "todo",
       "updatedAt": "2026-01-01T00:00:02.000Z"
     },
@@ -79,7 +79,7 @@
       "url": "https://sync.example.invalid/task-linear-sync/5516e12e-613a-5b40-838c-4a39ea1c547b",
       "title": "task-linear-sync sync state",
       "metadata": {
-        "__task-linear-sync": "{\"cursors\":{\"lastSyncAt\":\"2026-01-01T00:00:02.000Z\"},\"descriptionContentHash\":\"fbc19f03f60861df8b2536620c7f2bfe02c48614d2e043694f33cdab896e13c4\",\"frameworkMetadata\":{\"featureName\":\"sync-demo\",\"filePath\":\"specs/sync-demo/tasks.md\",\"frameworkId\":\"generic\",\"localTaskId\":\"1.2\"},\"history\":[{\"at\":\"2026-01-01T00:00:02.000Z\",\"description\":\"Placeholder match event seeded by the fixture.\",\"kind\":\"matched\"}],\"taskUuid\":\"5516e12e-613a-5b40-838c-4a39ea1c547b\"}"
+        "__task-linear-sync": "{\"cursors\":{\"lastSyncAt\":\"2026-01-01T00:00:02.000Z\"},\"descriptionContentHash\":\"2f66d14310e2247c4814b9f7758ef97ce42a9eec131c6a03e46a1db66b09afef\",\"frameworkMetadata\":{\"featureName\":\"sync-demo\",\"filePath\":\"specs/sync-demo/tasks.md\",\"frameworkId\":\"generic\",\"localTaskId\":\"1.2\"},\"history\":[{\"at\":\"2026-01-01T00:00:02.000Z\",\"description\":\"Placeholder match event seeded by the fixture.\",\"kind\":\"matched\"}],\"taskUuid\":\"5516e12e-613a-5b40-838c-4a39ea1c547b\"}"
       }
     },
     {
