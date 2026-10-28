@@ -470,7 +470,34 @@ export function emissionOrder(tasks: readonly Task[]): readonly Task[] {
   }
   const emitted: Task[] = [];
   const seen = new Set<string>();
-  let frontier = ordered.filter((t) => isDependencyRoot(t, byUuid));
+  // Root level also honors the sibling-reversal rule for tasks sharing the SAME dangling
+  // parentUuid (parent outside the set): they are that (external) parent's children in
+  // working order, so their group reverses like any other. Tasks with NO parentUuid stay
+  // individual roots in working order. Groups emit ordered by their first working-order slot.
+  const rootBuckets = new Map<string, Task[]>();
+  for (const t of ordered) {
+    if (t.parentUuid !== undefined && isDependencyRoot(t, byUuid)) {
+      const bucket = rootBuckets.get(t.parentUuid);
+      if (bucket === undefined) rootBuckets.set(t.parentUuid, [t]);
+      else bucket.push(t);
+    }
+  }
+  const roots: Task[] = [];
+  for (const t of ordered) {
+    if (t.parentUuid === undefined) {
+      roots.push(t); // individual root — working order
+      continue;
+    }
+    const bucket = rootBuckets.get(t.parentUuid);
+    if (bucket !== undefined) {
+      for (let i = bucket.length - 1; i >= 0; i--) {
+        const member = bucket[i];
+        if (member !== undefined) roots.push(member);
+      }
+      rootBuckets.delete(t.parentUuid); // flush the dangling sibling group once
+    }
+  }
+  let frontier = roots;
   while (frontier.length > 0) {
     const next: Task[] = [];
     for (const parent of frontier) {
