@@ -524,7 +524,6 @@ async function assertApplySide(w: EngineWorld, cell: Cell, plan: Plan, result: A
 
   if (aborts) {
     // ── `fail` — matrix §2 / engine-pipeline: abort BEFORE the next mutation. ──
-    assert.equal(result.status, "applied", `${cell.id}: NO — status`); // fails here today / post-wire:
     assert.equal(result.status, "aborted", `${cell.id}: fail action ⇒ run status aborted (got ${result.status})`);
     assert.equal(mutationCalls(w, mark).filter((r) => r.ok).length, 0, `${cell.id}: aborted before ANY mutation lands`);
     assert.equal(readTasks(w), bytesBefore, `${cell.id}: spec file untouched through the abort`);
