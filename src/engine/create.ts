@@ -1,11 +1,12 @@
 /**
  * `createSyncEngine` — the composition root (contracts/engine-pipeline.md; task T012;
  * plan.md module map "create.ts — composition root"; research R1).
- * T012 (Phase 2) delivers the SKELETON: options resolution + an object implementing the
- * frozen 3-method `SyncEngine` (`src/ports/engine.ts`) whose methods throw `EngineError`
- * until the wiring tasks replace the bodies — `buildSyncPlan` at T026 (Phase 3) and
+ * T012 (Phase 2) delivered the SKELETON: options resolution + an object implementing the
+ * frozen 3-method `SyncEngine` (`src/ports/engine.ts`) whose methods threw `EngineError`
+ * until the wiring tasks replaced the bodies — `buildSyncPlan` at T026 (Phase 3) and
  * `applySyncPlan`/`rollbackRun` at T045 (Phase 4), delegating to `build.ts`/`apply.ts`/
- * `rollback.ts` with the `ResolvedEngineOptions` computed here.
+ * `rollback.ts` with the `ResolvedEngineOptions` computed here. All three methods are
+ * now wired; no skeleton throws remain.
  *
  * There is no other mutating entry point in the package (constitution V — one engine,
  * implemented exactly once behind the additive `./engine` subpath). Imports stay inside
@@ -14,10 +15,11 @@
  */
 import type { BuildPlanOptions, EngineDependencies, SyncEngine } from "../ports/engine.js";
 import type { Plan } from "../domain/plan.js";
+import { applySyncPlan as runApplyPipeline } from "./apply.js";
 import { buildSyncPlan } from "./build.js";
-import { EngineError } from "./errors.js";
 import type { EngineOptions } from "./options.js";
 import { resolveEngineOptions } from "./options.js";
+import { rollbackRun as runRollbackPipeline } from "./rollback.js";
 
 /**
  * Compose the sync engine over the frozen injectable dependencies (port, config, state,
@@ -25,11 +27,13 @@ import { resolveEngineOptions } from "./options.js";
  * implements `SyncEngine` and nothing else.
  *
  * `buildSyncPlan` is wired to the read-only pipeline (T026 → `build.ts` with the
- * `ResolvedEngineOptions` resolved once here). `applySyncPlan`/`rollbackRun` stay
- * skeleton-throws until T045 wires `apply.ts`/`rollback.ts` (Phase 4).
+ * `ResolvedEngineOptions` resolved once here). `applySyncPlan`/`rollbackRun` are wired
+ * by T045 to the mutating pipelines (`apply.ts`/`rollback.ts`) with the SAME resolved
+ * options bag — the gate-trio → lock → stability → journal order inside `apply.ts` is
+ * the frozen enforcement order (contracts/engine-pipeline.md), and `rollback.ts` decides
+ * every §2 refusal before it ever acquires the lock (contracts/journal-rollback.md).
  *
- * @throws never at composition; the unwired frozen methods throw `EngineError` until
- * their wiring task (T045) replaces the skeleton body.
+ * @throws never at composition.
  */
 export function createSyncEngine(deps: EngineDependencies, options?: EngineOptions): SyncEngine {
   // Composition seam: effective options resolve once here (keyProvider default, journaling
@@ -42,11 +46,17 @@ export function createSyncEngine(deps: EngineDependencies, options?: EngineOptio
       // stages 1–7) — zero tracker mutations, zero repository writes.
       return buildSyncPlan(deps, resolved, o);
     },
-    async applySyncPlan(_plan, _gates) {
-      throw new EngineError("SyncEngine.applySyncPlan is not wired until phase 4 (T045 wires apply.ts)");
+    async applySyncPlan(plan, gates) {
+      // T045 wiring: the single mutating entry (apply.ts) — gates → lock → stability →
+      // journal-before-first-mutation → journaled mutations → checkpoint advance → run
+      // report + `last-run.json` marker (frozen `ApplyResult`; refusals never lock/mutate).
+      return runApplyPipeline(deps, resolved, plan, gates);
     },
-    async rollbackRun(_runId) {
-      throw new EngineError("SyncEngine.rollbackRun is not wired until phase 4 (T045 wires rollback.ts)");
+    async rollbackRun(runId) {
+      // T045 wiring: resumable guarded rollback (rollback.ts) — §2 refusals pre-lock,
+      // reverse-order guarded walk, checkpoint-store restore, history preservation, and
+      // its own run report + marker (frozen `RollbackResult` shape).
+      return runRollbackPipeline(deps, resolved, runId);
     },
   };
   return engine;

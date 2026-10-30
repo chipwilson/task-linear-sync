@@ -69,7 +69,6 @@ import {
   updateCreateIntentStatus,
   writeCreateIntentBeforeAttempt,
 } from "../state/intent.js";
-import { writeRunReports } from "../state/marker.js";
 import type { StateStore } from "../state/paths.js";
 import type {
   ApplyResult,
@@ -130,6 +129,7 @@ import { readCheckpointStore, writeCheckpointStore } from "./mode.js";
 import {
   buildPlanReportJson,
   renderPlanReportMarkdown,
+  writeRunReportWithMarker,
   type PlanReportAssertion,
 } from "./report.js";
 import { desiredCompletionStateName, resolveWorkflowStateId } from "./completion.js";
@@ -184,6 +184,14 @@ interface RunContext {
   readonly mirrorHash: Map<string, string>;
   readonly normalizer: ReturnType<typeof resolveConfiguredNormalizer>;
   snapshot: ReadonlyArray<TeamMetadataCollections>;
+  /**
+   * Per-file `render-file` splices landed this run, in ORIGINAL line coordinates
+   * `{ bodyStart, bodyEnd, landed }` (1-based, body = lines below the task line).
+   * The mirror-region line model is pinned to the pristine file, so a second render of
+   * the same file must shift its splice by the cumulative line delta of earlier renders
+   * above it (matrix §2 renders marker blocks top-down per emission order).
+   */
+  readonly fileRenders: Map<string, Array<{ bodyStart: number; bodyEnd: number; landed: number }>>;
   mutationsLanded: boolean;
   aborted: boolean;
   screeningBlocked: boolean;
@@ -345,6 +353,7 @@ async function runUnderLock(
     mirrorHash: new Map(),
     normalizer: resolveConfiguredNormalizer(deps.config.descriptionNormalizationProfile, options.normalizationProfiles),
     snapshot: derived.snapshot,
+    fileRenders: new Map(),
     mutationsLanded: false,
     aborted: false,
     screeningBlocked: false,
@@ -575,12 +584,18 @@ function mirrorRegion(rawLines: readonly string[], task: Task): string {
  * already contains a marker block (nested-marker refusal, matrix §4). Shared verbatim
  * between the plan-time render op (before/after hashes) and the live write, so the
  * journal's afterContentHash equals what actually lands.
+ *
+ * `shift` is the cumulative line delta of EARLIER same-file renders landed this run above
+ * this region (RunContext.fileRenders): the 004 line model is pinned to the pristine
+ * file, so a second marker write in one file must splice at the SHIFTED position or it
+ * would land inside the first marker block.
  */
 function overwriteRenderedContent(
   content: string,
   config: ResolvedConfig,
   flow: TaskFlow,
   issue: IssueView,
+  shift = 0,
 ): string | null {
   let block: string;
   try {
@@ -595,13 +610,49 @@ function overwriteRenderedContent(
   } catch {
     return null; // nested marker block already present — refusal
   }
-  const start = flow.task.taskBody.startLine + 1;
-  const end = flow.task.taskBody.endLine;
+  const start = flow.task.taskBody.startLine + 1 + shift;
+  const end = flow.task.taskBody.endLine + shift;
   const lines = content.split("\n");
   if (start <= end && end <= lines.length) {
     lines.splice(start - 1, end - start + 1, ...block.split("\n"));
   }
   return lines.join("\n");
+}
+
+/**
+ * Per-file splice shift for a `render-file` write (see {@link overwriteRenderedContent}):
+ * `null` ⇒ an earlier render this run ALREADY covered this region (nested/covered section
+ * ⇒ refusal, matrix §4), else the cumulative line delta of fully-above earlier renders.
+ * Regions are tracked in ORIGINAL line coordinates; siblings never overlap.
+ */
+function renderSpliceShift(
+  fileRenders: ReadonlyMap<string, ReadonlyArray<{ bodyStart: number; bodyEnd: number; landed: number }>>,
+  filePath: string,
+  bodyStart: number,
+  bodyEnd: number,
+): number | null {
+  let shift = 0;
+  for (const r of fileRenders.get(filePath) ?? []) {
+    if (r.bodyEnd < bodyStart) shift += r.landed - (r.bodyEnd - r.bodyStart + 1);
+    else if (r.bodyStart <= bodyEnd) return null; // earlier render covers/overlaps the region
+  }
+  return shift;
+}
+
+/** Record a landed render so later same-file renders shift (or refuse) correctly. */
+function recordRender(
+  fileRenders: Map<string, Array<{ bodyStart: number; bodyEnd: number; landed: number }>>,
+  filePath: string,
+  bodyStart: number,
+  bodyEnd: number,
+  beforeContent: string,
+  afterContent: string,
+): void {
+  const regionLines = bodyEnd - bodyStart + 1;
+  const landed = afterContent.split("\n").length - (beforeContent.split("\n").length - regionLines);
+  const list = fileRenders.get(filePath) ?? [];
+  list.push({ bodyStart, bodyEnd, landed });
+  fileRenders.set(filePath, list);
 }
 
 // ──────────────────────────────────────────────────────────── execution
@@ -655,6 +706,17 @@ async function applyFlow(context: RunContext, flow: TaskFlow, ledger: StepLedger
 
   // Report-only posture (explicit mapping or degraded prefer-newer): surfaced, NOT mutated.
   if (decision === "conflict" && (flow.degraded || flow.action === "report-only")) {
+    // history-log.md §2: conflict detection is an AFFECTING action — `report-only` and
+    // degraded `prefer-newer` append exactly one `conflict-detected` event (only `skip`
+    // is excluded; matrix §2 "History event" column). Zero issue-field/file mutation, but
+    // the event rides the task's canonical attachment (payload.ts owns the chain write).
+    if (flow.issue !== undefined) {
+      await appendHistoryEvent(context.ctx, {
+        issueId: flow.issue.id,
+        taskUuid: uuid,
+        event: historyEvent(context, flow, "conflict-detected", [`action:${flow.action ?? "report-only"}`]),
+      });
+    }
     context.outcomes.set(uuid, {
       taskUuid: uuid,
       decision,
@@ -911,6 +973,22 @@ async function runUpdateFlow(context: RunContext, flow: TaskFlow, ledger: StepLe
     return;
   }
 
+  // ── matrix §3 `prefer-newer` winner resolution (tracker-newer ⇒ overwrite-spec). ───
+  // Degraded pairs (§3 rows 3–4) never reach here — the plan labels them `degraded:true`
+  // and the report-only branch handled them. What survives is a live winner: `spec-changed`
+  // (§3 row 1) is the fall-through update below (push the spec section ⇒ the
+  // `description-updated` winner effect); a strictly ADVANCING `issue.updatedAt` over the
+  // checkpoint's (§3 row 2) is tracker-newer ⇒ the overwrite-spec effect: marker block
+  // into the file, zero pushes to the issue.
+  if (decision === "conflict" && flow.action === "prefer-newer") {
+    const checkpoint = context.checkpointMap[uuid];
+    const trackerNewer = checkpoint !== undefined && issue.updatedAt > checkpoint.issueUpdatedAt;
+    if (trackerNewer) {
+      await renderConflictFile(context, flow, issue, ledger);
+      return;
+    }
+  }
+
   // Precondition re-check builds the patch from LIVE issue vs desired state; the plan's
   // changedFields bounds WHICH channels may ever be patched (R7).
   const changed = flow.entry.changedFields;
@@ -1017,19 +1095,23 @@ async function renderConflictFile(
     return;
   }
   backupFile(context, flow.filePath, content);
-  const after = overwriteRenderedContent(content, context.config, flow, issue);
+  const bodyStart = flow.task.taskBody.startLine + 1;
+  const bodyEnd = flow.task.taskBody.endLine;
+  const shift = renderSpliceShift(context.fileRenders, flow.filePath, bodyStart, bodyEnd);
+  const after = shift === null ? null : overwriteRenderedContent(content, context.config, flow, issue, shift);
   if (after === null) {
     context.outcomes.set(uuid, {
       taskUuid: uuid,
       decision: "conflict",
       status: "failed",
       issueId: issue.id,
-      detail: "overwrite-spec refused: a conflict marker block is already present (matrix §4 nested-marker refusal) — resolve manually",
+      detail: "overwrite-spec refused: the section already carries or is covered by a conflict-marker block (matrix §4 nested-marker refusal) — resolve manually",
     });
     return;
   }
   const step = takeStep(ledger, planRenderFileOp({ taskUuid: uuid, filePath: flow.filePath, beforeContentHash: sha256(content), afterContentHash: sha256(after) }));
   writeRepoFileAtomic(abs, after);
+  recordRender(context.fileRenders, flow.filePath, bodyStart, bodyEnd, content, after);
   context.mutationsLanded = true;
   if (context.journal !== null && step !== null) {
     await recordStepTransition(context.deps.state, context.deps.config, context.options.keyProvider, context.deps.clock, context.runId, {
@@ -1326,6 +1408,10 @@ function planOps(
   const drafts: PlannedOpDraft[] = [];
   const fileBackups: AuditManifestFileBackup[] = [];
   const backedUp = new Set<string>();
+  // Cumulative per-file render material for multi-marker files (plan-side twin of
+  // RunContext.fileRenders — planned hashes must match what the live writes land).
+  const renderContents = new Map<string, string>();
+  const planRenders = new Map<string, Array<{ bodyStart: number; bodyEnd: number; landed: number }>>();
   for (const task of emissionOrder(flows.map((f) => f.task))) {
     const flow = flows.find((f) => f.task.stableUuid === task.stableUuid)!;
     const entry = flow.entry;
@@ -1349,10 +1435,20 @@ function planOps(
     }
     const issueId = flow.issue?.id;
     if (issueId === undefined) continue;
-    if (decision === "conflict" && flow.action === "overwrite-spec" && flow.issue !== undefined) {
+    // Matrix §2/§3 — the overwrite-spec effect (explicit `overwrite-spec`, or the
+    // tracker-winner resolution of a live `prefer-newer`, §3 row 2: strictly advancing
+    // `issue.updatedAt` over the checkpoint's) renders the marker file and pushes NOTHING.
+    const overwriteSpecWins =
+      flow.issue !== undefined &&
+      (flow.action === "overwrite-spec" ||
+        (flow.action === "prefer-newer" &&
+          !flow.degraded &&
+          flow.checkpoint !== undefined &&
+          flow.issue.updatedAt > flow.checkpoint.issueUpdatedAt));
+    if (decision === "conflict" && overwriteSpecWins && flow.issue !== undefined) {
       const issueForBlock = flow.issue;
       try {
-        const beforeContent = readFileSync(join(plan.repositoryRoot, flow.filePath), "utf8");
+        const beforeContent = renderContents.get(flow.filePath) ?? readFileSync(join(plan.repositoryRoot, flow.filePath), "utf8");
         if (!backedUp.has(flow.filePath)) {
           backedUp.add(flow.filePath);
           // R12: the sealed manifest is OPENED and plaintext-scanned for secret material —
@@ -1361,7 +1457,10 @@ function planOps(
           const backup = screenText(screener, beforeContent);
           fileBackups.push({ path: flow.filePath, beforeContentHash: sha256(backup), beforeContent: backup });
         }
-        const afterContent = overwriteRenderedContent(beforeContent, config, flow, issueForBlock);
+        // Later same-file renders plan at the SHIFTED region against the cumulative
+        // content, mirroring the live splice order (see `renderSpliceShift`).
+        const shift = renderSpliceShift(planRenders, flow.filePath, flow.task.taskBody.startLine + 1, flow.task.taskBody.endLine);
+        const afterContent = shift === null ? null : overwriteRenderedContent(beforeContent, config, flow, issueForBlock, shift);
         if (afterContent !== null) {
           drafts.push(
             planRenderFileOp({
@@ -1371,6 +1470,8 @@ function planOps(
               afterContentHash: sha256(afterContent),
             }),
           );
+          renderContents.set(flow.filePath, afterContent);
+          recordRender(planRenders, flow.filePath, flow.task.taskBody.startLine + 1, flow.task.taskBody.endLine, beforeContent, afterContent);
         }
         // afterContent === null ⇒ nested-marker refusal: the live flow fails per-task and
         // mutates nothing, so NO render op is planned either.
@@ -1380,8 +1481,18 @@ function planOps(
       continue;
     }
     const patched: MutablePatch = {};
-    if (entry.changedFields.includes("title")) patched.title = screenText(screener, flow.baseTitle);
-    if (entry.changedFields.includes("description")) patched.description = screenText(screener, flow.specSection);
+    // R12 / T043 header: blocked content lands in NO state file — a field whose source
+    // screens `blocked.length > 0` fails pre-transmission at apply time, so its screened
+    // text must never ride the journal's planned after-snapshot either. Plan only the
+    // fields that can actually transmit (all-but-blocked keeps partial updates intact).
+    if (entry.changedFields.includes("title")) {
+      const screened = screener.screen(flow.baseTitle);
+      if (screened.blocked.length === 0) patched.title = screened.output;
+    }
+    if (entry.changedFields.includes("description")) {
+      const screened = screener.screen(flow.specSection);
+      if (screened.blocked.length === 0) patched.description = screened.output;
+    }
     if (entry.changedFields.includes("state")) {
       const name = safeDesiredStateName(config, flow);
       const prior = checkpointMap[task.stableUuid]?.issueStateType ?? flow.issue?.stateType;
@@ -1474,10 +1585,11 @@ async function writeRunReport(context: RunContext): Promise<LastRunMarker["repor
     outcome: context.aborted ? "aborted" : "completed",
     notificationSuppressed: false,
   };
-  const written = await writeRunReports(
+  const written = await writeRunReportWithMarker(
     context.deps.state,
     context.runId,
-    { json: report, markdown },
+    report,
+    markdown,
     context.screener,
     marker,
   );
