@@ -801,12 +801,14 @@ function parseNamespacePayload(
 ): SyncStatePayload | null {
   if (meta === null || meta === undefined) return null;
   const raw = meta[ctx.config.metadataNamespaceKey];
-  if (typeof raw !== "string") return null;
-  try {
-    return parseSyncStatePayload(raw);
-  } catch {
-    return null;
+  if (typeof raw === "string") {
+    try {
+      return parseSyncStatePayload(raw);
+    } catch {
+      return null;
+    }
   }
+  return null;
 }
 
 // ── The reverse walk (journal-rollback.md §3) ────────────────────────────────────────

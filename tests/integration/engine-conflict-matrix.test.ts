@@ -629,9 +629,49 @@ async function assertApplySide(w: EngineWorld, cell: Cell, plan: Plan, result: A
     assert.ok(store, `${cell.id}: checkpoint store exists after a completed apply`);
     const mutating = [...effects.values()].some((e) => e === "update-issue" || e === "render-file");
     if (mutating) {
-      const before = seed[TASK_11]!.descriptionContentHash;
-      const after = store!.checkpoints[TASK_11]?.descriptionContentHash;
-      assert.ok(after !== undefined && after !== before, `${cell.id}: moved task re-baselined (checkpoint hash ≠ the seeded baseline)`);
+      // Re-baseline semantics per effect (T045 reconciliation — the former blanket
+      // "checkpoint hash ≠ seed" pin contradicted the contracts for two cell families):
+      for (const task of cell.tasks) {
+        const effect = effects.get(task.uuid);
+        const after: Checkpoint | undefined = store!.checkpoints[task.uuid];
+        const base: Checkpoint | undefined = seed[task.uuid];
+        if (effect === "render-file") {
+          // (1) matrix §2 overwrite-spec pushes NOTHING to the issue and §4 preserves the
+          //     pre-block baseline "so post-resolution classification compares against" it
+          //     — a marker write therefore re-baselines NOTHING (data-model §1 records the
+          //     post-run tracker truth and the tracker did not move).
+          assert.deepEqual(after, base, `${cell.id}: overwrite-spec leaves ${task.issueKey} at the preserved baseline (matrix §2/§4)`);
+        } else if (effect === "update-issue") {
+          assert.ok(after !== undefined, `${cell.id}: ${task.issueKey} re-baselined into the store (data-model §1)`);
+          // (2) update-issue cells re-baseline the CONTENT hash per data-model §3's
+          //     classification identity: linear-changed cells hold normalize(spec section)
+          //     == checkpoint hash, so an overwrite-linear push legitimately re-baselines
+          //     to the SAME hash (the spec side never moved; only the tracker read-back
+          //     advances, and a non-advancing pair — 1.2's "checkpoint's own instant" —
+          //     keeps the record byte-equal, which IS the post-run truth, data-model §1).
+          if (cell.type === "linear-changed") {
+            assert.equal(
+              after!.descriptionContentHash,
+              base!.descriptionContentHash,
+              `${cell.id}: linear-changed push keeps the classification-equal content hash (data-model §3)`,
+            );
+          } else {
+            assert.notEqual(
+              after!.descriptionContentHash,
+              base!.descriptionContentHash,
+              `${cell.id}: moved task re-baselined (checkpoint hash ≠ the seeded baseline)`,
+            );
+          }
+          // Cell-level post-run truth: at least one update landing moved the STORE
+          // (data-model §1 atomic final write; the advancing task 1.1 read-back advances).
+          if (task.advancing) {
+            assert.notDeepEqual(store!.checkpoints, seed, `${cell.id}: advancing update re-baselined the store (data-model §1)`);
+          }
+        } else {
+          // Inert sibling (degraded `prefer-newer` ⇒ report-only, matrix §3): untouched.
+          assert.deepEqual(after, base, `${cell.id}: ${task.issueKey} non-mutating cell never drifts its checkpoint`);
+        }
+      }
     } else {
       assert.deepEqual(store!.checkpoints, seed, `${cell.id}: ${cell.live ? cell.action : "inert non-mutating"} apply never drifts the store`);
     }

@@ -327,6 +327,7 @@ import type { Checkpoint } from "task-linear-sync/domain";
 import type {
   CreateIssueInput,
   EngineDependencies,
+  IssueView,
   LinearPort,
   SecurityScreener,
   SyncEngine,
@@ -838,8 +839,30 @@ function findSeedTitleByUrl(fake: FakeLinearPort, url: string, name: string): st
 
 // ───────────────────────────────────────────────────────────────────── port decorator
 
-/** Decorate the fake: per-call log + armed guards; delegate everything else untouched. */
-function decoratePort(fake: FakeLinearPort, st: WorldState): LinearPort {
+/**
+ * Decorate the fake: per-call log + armed guards; delegate everything else untouched.
+ *
+ * Issue-key normalization: the frozen fake port mints created-issue identifiers from
+ * `teamAbbrev(teamKey)` (e.g. `TEA-1001`), while world fixtures seed tracker issues in the
+ * config's issue-key namespace (`<confirmationKey>-N` — the ONLY prefix the frozen 005 title
+ * strip recognizes, src/titles/strip.ts §"Redundant leading [<confirmationKey>-<N>] prefix").
+ * Without normalization, a created task whose `[TEA-1001]` key is rewritten into the spec
+ * re-plans as `title-changed` forever, breaking the SC-001 convergence cycle. The decorator
+ * therefore re-keys any foreign-namespace identifier to `<confirmationKey>-N` (number stable,
+ * seeded same-namespace identifiers untouched), so every reader — page-0 rewrite, re-scan,
+ * journal snapshots — sees one consistent identifier.
+ */
+function decoratePort(fake: FakeLinearPort, st: WorldState, issueKeyNamespace: string): LinearPort {
+  /** Deterministic identifier re-key: `FOREIGN-N` → `<namespace>-N`; already-native passes through. */
+  function rekeyIssue(issue: IssueView): IssueView {
+    const m = /^(.+)-(\d+)$/.exec(issue.key);
+    if (m === null || m[1] === issueKeyNamespace) return issue;
+    return { ...issue, key: `${issueKeyNamespace}-${m[2]}` };
+  }
+  async function* rekeyIssues(src: AsyncIterableIterator<IssueView>): AsyncGenerator<IssueView> {
+    for await (const issue of src) yield rekeyIssue(issue);
+  }
+
   function beginCall(method: PortMethod, args: readonly unknown[]): MutableCallRecord {
     st.seq += 1;
     const rec: MutableCallRecord = { seq: st.seq, method, args, phase: st.phase, ok: true };
@@ -899,6 +922,16 @@ function decoratePort(fake: FakeLinearPort, st: WorldState): LinearPort {
     }
   }
 
+  /** Invoke + re-key every IssueView in the result (single value, array, or null). */
+  async function invokeRekey<T>(method: PortMethod, args: readonly unknown[], fn: () => Promise<T>): Promise<T> {
+    const out = await invoke(method, args, fn);
+    if (Array.isArray(out)) return out.map((issue) => rekeyIssue(issue as IssueView)) as T;
+    if (out !== null && typeof out === "object" && "key" in (out as object)) {
+      return rekeyIssue(out as unknown as IssueView) as T;
+    }
+    return out;
+  }
+
   const port: LinearPort = {
     listIssues(scope) {
       const rec = beginCall("listIssues", [scope]);
@@ -909,28 +942,30 @@ function decoratePort(fake: FakeLinearPort, st: WorldState): LinearPort {
         rec.error = errorMessage(e);
         throw e;
       }
-      return fake.listIssues(scope);
+      return rekeyIssues(fake.listIssues(scope));
     },
     discoverMetadata(teamKeys) {
       return invoke("discoverMetadata", [teamKeys], () => fake.discoverMetadata(teamKeys));
     },
     getIssue(id) {
-      return invoke("getIssue", [id], () => fake.getIssue(id));
+      return invokeRekey("getIssue", [id], () => fake.getIssue(id));
     },
     createIssue(input) {
-      return invoke("createIssue", [input], async () => {
+      return invokeRekey("createIssue", [input], async () => {
         checkCreateFailure(input);
         return fake.createIssue(input);
       });
     },
     updateIssue(id, p) {
-      return invoke("updateIssue", [id, p], () => fake.updateIssue(id, p));
+      return invokeRekey("updateIssue", [id, p], () => fake.updateIssue(id, p));
     },
     archiveIssue(id) {
       return invoke("archiveIssue", [id], () => fake.archiveIssue(id));
     },
     findIssuesByAttachmentUrl(attachmentUrl) {
-      return invoke("findIssuesByAttachmentUrl", [attachmentUrl], () => fake.findIssuesByAttachmentUrl(attachmentUrl));
+      return invokeRekey("findIssuesByAttachmentUrl", [attachmentUrl], () =>
+        fake.findIssuesByAttachmentUrl(attachmentUrl),
+      );
     },
     upsertAttachmentByUrl(input) {
       return invoke("upsertAttachmentByUrl", [input], () => fake.upsertAttachmentByUrl(input));
@@ -1021,7 +1056,7 @@ export async function buildWorld(nameOrDir: string, options: BuildWorldOptions =
     interrupts: [],
     disposed: false,
   };
-  const port = decoratePort(fake, st);
+  const port = decoratePort(fake, st, config.confirmationKey);
   const screener = options.screener ?? makeScreener();
   const state = createStateStore({ repositoryRoot, config, clock });
   const deps: EngineDependencies = { port, config, state, clock, screener };
