@@ -363,6 +363,14 @@ async function buildAppliedFixture(worldName: string): Promise<AppliedFixture> {
  * across the full-lifecycle cell and every interrupt-matrix resume (quickstart 2.4:
  * "the final state equals rollback-full's"). Content only — no per-scenario ids or wall
  * clock — everything deterministic under the injected clock (R14).
+ *
+ * Run-scoped ids (`runId`, `opId`) ARE tokenized: `planId` comes from the frozen 002
+ * `derivePlanId(planWithoutId)` (src/domain/plan.ts), which hashes the whole Plan — including
+ * the random per-world `repositoryRoot` — so `runId = sha256(planId ‖ clock ‖ seq)` and
+ * `opId = sha256(planId ‖ taskUuid ‖ kind ‖ ordinal)` (ops.ts) legitimately differ between the
+ * golden world and a crash world. journal-rollback.md §3 pins the rollback EVENT SHAPE (run
+ * reference + attributed opIds), not the id bytes; §3/quickstart-2.4 equality is therefore
+ * asserted modulo exactly these per-run identifiers.
  */
 async function captureRestoredStateAsync(fx: AppliedFixture): Promise<Record<string, unknown>> {
   const { w, uuids } = fx;
@@ -379,7 +387,7 @@ async function captureRestoredStateAsync(fx: AppliedFixture): Promise<Record<str
     const final = canonical[label];
     historyLengths[label] = final === null ? null : parsePayload(final, w).history.length;
   }
-  return {
+  const state: Record<string, unknown> = {
     files: walkFiles(w.repositoryRoot),
     alphaIssue: alpha === null ? null : { title: alpha.title, description: alpha.description, archived: alpha.archived },
     betaIssue: beta === null ? null : { title: beta.title, archived: beta.archived },
@@ -388,6 +396,13 @@ async function captureRestoredStateAsync(fx: AppliedFixture): Promise<Record<str
     canonical,
     historyLengths,
   };
+  // Tokenize this run's scoped ids (runId + opIds) before the cross-world deep-equal.
+  const manifest = await openManifest(w, fx.apply.runId);
+  let text = JSON.stringify(state);
+  for (const id of [fx.apply.runId, ...manifest.operations.map((o) => o.opId)]) {
+    text = text.split(id).join("<run-scoped-id>");
+  }
+  return JSON.parse(text) as Record<string, unknown>;
 }
 
 /**

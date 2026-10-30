@@ -154,11 +154,17 @@ function fakeIssueByTitle(world: EngineWorld, title: string): IssueView {
   assert.fail(`fake world carries no issue titled '${title}'`);
 }
 
-/** Split a tracker key `KEY-123` into the 004 `IssueRef` shape. */
-function splitIssueRef(view: IssueView): IssueRef {
+/**
+ * Split a tracker key `KEY-123` into the 004 `IssueRef` shape — in the world's issue-key
+ * namespace. The harness port decorator re-keys fake-minted identifiers (`teamAbbrev-N`) to
+ * `<confirmationKey>-N`, the only prefix the frozen 005 title strip recognizes
+ * (src/titles/strip.ts), and the engine rewrites that re-keyed ref into the spec; the expected
+ * re-render must therefore split the NUMBER from the raw key but carry the namespace.
+ */
+function splitIssueRef(world: EngineWorld, view: IssueView): IssueRef {
   const match = /^(.+)-(\d+)$/.exec(view.key);
   assert.ok(match?.[1] !== undefined && match[2] !== undefined, `issue key '${view.key}' is not KEY-number`);
-  return { key: match[1], number: Number(match[2]) };
+  return { key: world.config.confirmationKey, number: Number(match[2]) };
 }
 
 /** The current sync-state payload on the attachment living at `url` (fake-world read). */
@@ -343,12 +349,13 @@ test("engine-apply-creates — rollback-full apply: reversed siblings + parents-
     const betaCreate = creates[betaIdx]!;
     const gammaCreate = creates[gammaIdx]!;
     const assignments: readonly LineAssignment[] = [
-      { task: betaTask as Task, desiredTitle: createTitle(betaCreate), issueRef: splitIssueRef(betaView) },
-      { task: gammaTask as Task, desiredTitle: createTitle(gammaCreate), issueRef: splitIssueRef(gammaView) },
+      { task: betaTask as Task, desiredTitle: createTitle(betaCreate), issueRef: splitIssueRef(w, betaView) },
+      { task: gammaTask as Task, desiredTitle: createTitle(gammaCreate), issueRef: splitIssueRef(w, gammaView) },
     ];
     const expectedContent = renderTaskLines(TASKS_POSIX, preBytes, assignments, w.config).content;
     assert.equal(readFileSync(tasksPath, "utf8"), expectedContent, "assigned task lines carry issue ref + derived title");
-    assert.match(readFileSync(tasksPath, "utf8"), new RegExp(`1\\.1\\.1: \\[${betaView.key.replace("-", "\\-")}\\]`));
+    const betaNumber = /-(\d+)$/.exec(betaView.key)?.[1] ?? "";
+    assert.match(readFileSync(tasksPath, "utf8"), new RegExp(`1\\.1\\.1: \\[${w.config.confirmationKey}\\-${betaNumber}\\]`));
     assert.ok(
       preBytes.split("\n").some((line) => line.includes("1.1: [ACME-1] Alpha rehearsal root")) &&
         readFileSync(tasksPath, "utf8").includes("1.1: [ACME-1] Alpha rehearsal root"),
@@ -468,10 +475,13 @@ test("engine-apply-creates — indeterminate-create ONE-match reconcile ⇒ adop
 
     const result = await engine.applySyncPlan(plan, passingGates(w, plan));
 
-    // One attempt, scripted failure, then the reconcile finds the carrier and adopts it.
-    const creates = createRecords(w);
-    assert.equal(creates.length, 1);
-    assert.equal(creates[0]!.ok, false);
+    // One attempt for the PROBE (scripted failure), then the reconcile finds the carrier
+    // and adopts it — the child's own create (asserted below, T034 cell 3) is a separate
+    // legitimate attempt, so the exactly-one-attempt pin is scoped to the probe task
+    // (data-model §8: EXACTLY ONE createIssue attempt for the failed task, never retried).
+    const probeCreates = createRecords(w).filter((c) => createTitle(c).includes(probe.title));
+    assert.equal(probeCreates.length, 1, "the probe create is attempted exactly once, never retried (data-model §8)");
+    assert.equal(probeCreates[0]!.ok, false);
     assert.ok(
       callsOf(w, "findIssuesByAttachmentUrl").some((c) => c.args[0] === probeUrl),
       "reconciliation consults findIssuesByAttachmentUrl at the canonical URL",

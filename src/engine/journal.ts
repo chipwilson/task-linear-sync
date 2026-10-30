@@ -33,6 +33,7 @@ import { join } from "node:path";
 
 import type { Checkpoint } from "../domain/checkpoint.js";
 import type { AuditManifest, AuditOperation, AuditStepState } from "../domain/run-records.js";
+import type { AttachmentMetadata } from "../ports/linear-port.js";
 import type { ResolvedConfig } from "../config/schema.js";
 import type { Clock } from "../state/clock.js";
 import {
@@ -114,6 +115,8 @@ export interface StepTransition {
   readonly afterSnapshot?: OpAfterSnapshot;
   /** Created-issue id, learned only when a create lands. */
   readonly targetIssueId?: string;
+  /** Landing-learned BEFORE material for attachment ops whose planned prior was null. */
+  readonly before?: AttachmentMetadata | null;
 }
 
 /** Empty-string `AuditOperation.targetIssueId` sentinel: target learned only at landing. */
@@ -256,11 +259,18 @@ function auditOperationFor(op: PlannedOp): AuditOperation {
     op.kind === "upsert-attachment" && op.beforeSnapshot.kind === "upsert-attachment"
       ? op.beforeSnapshot.priorMetadata
       : undefined;
+  // FR-015: a PRE-RUN prior is seeded at materialization (null ⇒ omitted from the
+  // frozen op, which IS the "no prior" encoding). A prior learned only at landing
+  // (first writer of the URL) rides the transition's before merge in
+  // `recordStepTransition`.
+  // A planned op always carries a target: an issue id, a learned-at-landing sentinel "",
+  // or the file path for file/checkpoint ops (data-model §9 "Mutated target").
+  const target = op.targetIssueId ?? op.filePath ?? TARGET_UNLEARNED;
   return {
     opId: op.opId,
     kind: op.kind,
     // "" ⇒ target learned only at landing (create ops; run-level write-checkpoint).
-    targetIssueId: op.targetIssueId ?? TARGET_UNLEARNED,
+    targetIssueId: target,
     ...(op.attachmentUrl !== undefined ? { attachmentUrl: op.attachmentUrl } : {}),
     // FR-015: prior metadata rides the manifest only where one existed (null ⇒ omitted).
     ...(priorMetadata !== null && priorMetadata !== undefined ? { priorMetadata } : {}),
@@ -380,6 +390,14 @@ export async function recordStepTransition(
     ...step,
     ...(transition.targetIssueId !== undefined ? { targetIssueId: transition.targetIssueId } : {}),
     ...(transition.afterSnapshot !== undefined ? { afterSnapshot: transition.afterSnapshot } : {}),
+    // Landing-learned before material (first writer of an attachment URL carries the
+    // pre-run state it found — the planned before was unknowable `null`): merge a
+    // before into a still-null planned before, keeping step and manifest aligned.
+    ...(transition.before !== undefined &&
+    step.beforeSnapshot.kind === "upsert-attachment" &&
+    step.beforeSnapshot.priorMetadata === null
+      ? { beforeSnapshot: { ...step.beforeSnapshot, priorMetadata: transition.before } }
+      : {}),
     stepState: transition.stepState,
   };
   const nextSteps = steps.map((s, i) => (i === stepIndex ? nextStep : s));
@@ -390,6 +408,14 @@ export async function recordStepTransition(
           ...(transition.targetIssueId !== undefined &&
           op.targetIssueId === TARGET_UNLEARNED
             ? { targetIssueId: transition.targetIssueId }
+            : {}),
+          // FR-015 merge: a learned NON-NULL prior lands on an op whose planned prior was
+          // null/absent. A null learning means "no prior attachment existed" — the frozen
+          // encoding stays ABSENT (`undefined`), never an explicit null.
+          ...(transition.before !== undefined &&
+          transition.before !== null &&
+          (op.priorMetadata === null || op.priorMetadata === undefined)
+            ? { priorMetadata: transition.before }
             : {}),
           stepState: transition.stepState,
         }
