@@ -54,7 +54,11 @@ import {
   type EngineWorld,
 } from "../helpers/engine-harness.js";
 
-import { createSyncEngine } from "../../src/engine/create.js";
+// The e2e tier exercises the DISTRIBUTED package surface exactly as downstream features
+// (009/010/012) consume it — `task-linear-sync/engine` → the built `dist/` artifact —
+// mirroring the conformance "real-over-package" posture of the 002/007 suites. Unit and
+// integration tiers keep relative `../../src/engine/*` imports for module-level seams.
+import { createSyncEngine } from "task-linear-sync/engine";
 
 // ─────────────────────────────────────────────────────────── world table + helpers
 
