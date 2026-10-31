@@ -1,0 +1,111 @@
+{
+  "$comment": "Schema authority: tests/helpers/engine-harness.ts header docblock. Placeholders only (Principle III).",
+  "name": "first-run-bootstrap",
+  "clock": "2026-01-01T00:00:00.000Z",
+  "teams": [
+    {
+      "key": "TEAM-A",
+      "id": "ac000000-0000-4000-8000-000000000101",
+      "projects": [
+        {
+          "id": "proj-alpha",
+          "name": "Project Alpha"
+        }
+      ],
+      "workflowStates": [
+        {
+          "id": "ac000000-0000-4000-8000-000000000201",
+          "name": "Backlog",
+          "type": "backlog"
+        },
+        {
+          "id": "ac000000-0000-4000-8000-000000000202",
+          "name": "Todo",
+          "type": "todo"
+        },
+        {
+          "id": "ac000000-0000-4000-8000-000000000203",
+          "name": "Done",
+          "type": "completed"
+        }
+      ]
+    }
+  ],
+  "issues": [
+    {
+      "id": "ac000000-0000-4000-8000-000000000301",
+      "key": "ACME-1",
+      "teamKey": "TEAM-A",
+      "projectId": "proj-alpha",
+      "title": "Seed the bootstrap ledger",
+      "description": "  Alpha body text — identical on both sides after normalization.\n",
+      "stateType": "todo",
+      "updatedAt": "2026-01-01T00:00:01.000Z"
+    },
+    {
+      "id": "ac000000-0000-4000-8000-000000000302",
+      "key": "ACME-2",
+      "teamKey": "TEAM-A",
+      "projectId": "proj-alpha",
+      "title": "Backfill the bootstrap roster",
+      "description": "  Tracker-side roster body — older wording from before the spec edit.\n",
+      "stateType": "todo",
+      "updatedAt": "2026-01-01T00:00:02.000Z"
+    }
+  ],
+  "attachments": [
+    {
+      "issueId": "ac000000-0000-4000-8000-000000000301",
+      "id": "att-1",
+      "url": "https://sync.example.invalid/task-linear-sync/dd837e71-fa46-5c11-8bff-31fb37eb5a8e",
+      "title": "task-linear-sync sync state",
+      "metadata": {
+        "__task-linear-sync": "{\"cursors\":{\"lastSyncAt\":\"2026-01-01T00:00:01.000Z\"},\"descriptionContentHash\":\"5b315f3617c9f3e7e77a5c07afb34869b73a73d332ceee79178fe7960fa47dcb\",\"frameworkMetadata\":{\"featureName\":\"sync-demo\",\"filePath\":\"specs/sync-demo/tasks.md\",\"frameworkId\":\"generic\",\"localTaskId\":\"1.1\"},\"history\":[{\"at\":\"2026-01-01T00:00:01.000Z\",\"description\":\"Placeholder match event seeded by the fixture.\",\"kind\":\"matched\"}],\"taskUuid\":\"dd837e71-fa46-5c11-8bff-31fb37eb5a8e\"}"
+      }
+    },
+    {
+      "issueId": "ac000000-0000-4000-8000-000000000302",
+      "id": "att-2",
+      "url": "https://sync.example.invalid/task-linear-sync/5516e12e-613a-5b40-838c-4a39ea1c547b",
+      "title": "task-linear-sync sync state",
+      "metadata": {
+        "__task-linear-sync": "{\"cursors\":{\"lastSyncAt\":\"2026-01-01T00:00:02.000Z\"},\"descriptionContentHash\":\"97b2a443728fcb1cf1df45f72c00c15e1daab8e6cb335fa8a2af82f3de60aded\",\"frameworkMetadata\":{\"featureName\":\"sync-demo\",\"filePath\":\"specs/sync-demo/tasks.md\",\"frameworkId\":\"generic\",\"localTaskId\":\"1.2\"},\"history\":[{\"at\":\"2026-01-01T00:00:02.000Z\",\"description\":\"Placeholder match event seeded by the fixture.\",\"kind\":\"matched\"}],\"taskUuid\":\"5516e12e-613a-5b40-838c-4a39ea1c547b\"}"
+      }
+    }
+  ],
+  "config": {
+    "teams": {
+      "TEAM-A": {
+        "projects": [
+          "proj-alpha"
+        ],
+        "workflowStates": {
+          "backlog": "Backlog",
+          "todo": "Todo",
+          "done": "Done",
+          "completedTypes": [
+            "completed"
+          ],
+          "ignoredTypes": [
+            "canceled",
+            "duplicate"
+          ]
+        }
+      }
+    },
+    "projectByPath": [
+      {
+        "prefix": "specs/sync-demo",
+        "teamKey": "TEAM-A",
+        "project": "proj-alpha"
+      }
+    ],
+    "defaultTeamKey": "TEAM-A",
+    "defaultProject": "proj-alpha",
+    "confirmationKey": "ACME",
+    "descriptionNormalizationProfile": "default"
+  },
+  "metadata": {
+    "scenario": "No checkpoints ⇒ bootstrap; identical-after-normalization match, meaningful-diff match, and an unmatched create candidate."
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "dd837e71-fa46-5c11-8bff-31fb37eb5a8e": {
+    "taskUuid": "dd837e71-fa46-5c11-8bff-31fb37eb5a8e",
+    "issueId": "ac000000-0000-4000-8000-000000000301",
+    "checked": false,
+    "title": "Verify the widget before the freeze",
+    "issueUpdatedAt": "2026-01-01T00:00:01.000Z",
+    "issueStateType": "todo",
+    "descriptionContentHash": "c71a81319d3787c0e3f0ea727cbe52869ba176414770aaf3cd0592ecbd17027c"
+  },
+  "5516e12e-613a-5b40-838c-4a39ea1c547b": {
+    "taskUuid": "5516e12e-613a-5b40-838c-4a39ea1c547b",
+    "issueId": "ac000000-0000-4000-8000-000000000302",
+    "checked": false,
+    "title": "Freeze the widget ledger",
+    "issueUpdatedAt": "2026-01-01T00:00:02.000Z",
+    "issueStateType": "todo",
+    "descriptionContentHash": "2f66d14310e2247c4814b9f7758ef97ce42a9eec131c6a03e46a1db66b09afef"
+  },
+  "d3e847c1-8de0-53e5-bb70-e3d0a003ef78": {
+    "taskUuid": "d3e847c1-8de0-53e5-bb70-e3d0a003ef78",
+    "issueId": "ac000000-0000-4000-8000-000000000303",
+    "checked": false,
+    "title": "Verify the widget after the freeze",
+    "issueUpdatedAt": "2026-01-01T00:00:03.000Z",
+    "issueStateType": "todo",
+    "descriptionContentHash": "b78505d896c5ff8e79789bbf40c5cb6be54a9a921da1f33b9f2d2ae5e51a2bec"
+  }
+}

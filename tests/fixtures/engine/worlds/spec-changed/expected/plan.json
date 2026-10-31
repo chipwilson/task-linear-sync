@@ -1,0 +1,32 @@
+{
+  "$comment": "Plan-level expectations (T032 matrix cells). Seed expected/checkpoint-seed.json first ⇒ sync mode.",
+  "world": "spec-changed",
+  "mode": "sync",
+  "entries": [
+    {
+      "taskUuid": "dd837e71-fa46-5c11-8bff-31fb37eb5a8e",
+      "localTaskId": "1.1",
+      "title": "Extend the alpha contract",
+      "matchedIssueKey": "ACME-1",
+      "decision": "conflict",
+      "descriptionConflict": "spec-changed",
+      "defaultMapAction": "overwrite-linear",
+      "preferNewerAction": "overwrite-linear",
+      "preferNewerDegraded": false,
+      "note": "spec newer by construction (matrix §3 row 1); effect = screened rendered section via updateIssue + description-updated"
+    },
+    {
+      "taskUuid": "5516e12e-613a-5b40-838c-4a39ea1c547b",
+      "localTaskId": "1.2",
+      "title": "Keep the beta contract",
+      "matchedIssueKey": "ACME-2",
+      "decision": "no-change",
+      "descriptionConflict": null,
+      "note": "control — neither side moved"
+    }
+  ],
+  "reportNotes": {
+    "planEntries": 2,
+    "conflicts": 1
+  }
+}
