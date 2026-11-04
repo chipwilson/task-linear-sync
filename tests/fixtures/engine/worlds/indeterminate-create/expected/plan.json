@@ -1,0 +1,47 @@
+{
+  "$comment": "Plan/apply expectations for T034 (quickstart 2.2, FR-012, data-model §8). Seed expected/checkpoint-seed.json first ⇒ sync mode.",
+  "world": "indeterminate-create",
+  "mode": "sync",
+  "reconciliationSeed": "ZERO seeded issues/attachments carry the probe's canonical URL — after the scripted create failure the identity reconcile finds 0 matches ⇒ intent indeterminate (terminal for the task, never replayed in-run or on resume).",
+  "createFailureSeed": "world.json createFailures: { titleIncludes: 'Probe the indeterminate gauge', nth 1, times 1 } — harness HarnessCreateFailureError, the fake never sees the call (world.calls ok:false).",
+  "entries": [
+    {
+      "taskUuid": "191a3e7a-54fb-5af1-8b16-04195dee8ec5",
+      "localTaskId": "2.1",
+      "title": "Probe the indeterminate gauge",
+      "matchedIssueKey": null,
+      "decision": "create",
+      "intentOutcome": "indeterminate",
+      "createAttempts": 1,
+      "note": "plan-side entry is still a create; apply attempts exactly ONE createIssue call, fails, reconciles 0, records the report entry, and NEVER replays (FR-012)"
+    },
+    {
+      "taskUuid": "50e4b5f4-98fc-581d-a59b-20095f16588e",
+      "localTaskId": "2.1.1",
+      "title": "Recalibrate the probe needle",
+      "matchedIssueKey": null,
+      "decision": "create",
+      "parentUuid": "191a3e7a-54fb-5af1-8b16-04195dee8ec5",
+      "createAttempts": 0,
+      "note": "child of the indeterminate probe — creation ABORTS: zero createIssue calls ever carry this task"
+    },
+    {
+      "taskUuid": "d30c3fef-c5d5-5da1-b112-d3f35fc76637",
+      "localTaskId": "2.2",
+      "title": "Land the healthy ledger",
+      "matchedIssueKey": "ACME-1",
+      "decision": "conflict",
+      "descriptionConflict": "spec-changed",
+      "defaultMapAction": "overwrite-linear",
+      "historyEvent": "description-updated",
+      "note": "healthy control — its updateIssue + attachment rewrite still LAND after the probe's abort (FR-012 keeps the run alive for other work)"
+    }
+  ],
+  "reportNotes": {
+    "planEntries": 3,
+    "conflicts": 1,
+    "creates": 2,
+    "indeterminate": 1,
+    "abortedCreates": 1
+  }
+}

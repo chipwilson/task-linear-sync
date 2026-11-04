@@ -1,0 +1,20 @@
+{
+  "dd837e71-fa46-5c11-8bff-31fb37eb5a8e": {
+    "taskUuid": "dd837e71-fa46-5c11-8bff-31fb37eb5a8e",
+    "issueId": "ac000000-0000-4000-8000-000000000301",
+    "checked": false,
+    "title": "Diverge the alpha thread",
+    "issueUpdatedAt": "2026-01-01T00:00:02.000Z",
+    "issueStateType": "todo",
+    "descriptionContentHash": "aafa210c0e44d0a10e543837eb1b8d6a689f844ceaf797d6a3a085f7ee095cfe"
+  },
+  "5516e12e-613a-5b40-838c-4a39ea1c547b": {
+    "taskUuid": "5516e12e-613a-5b40-838c-4a39ea1c547b",
+    "issueId": "ac000000-0000-4000-8000-000000000302",
+    "checked": false,
+    "title": "Hold the beta thread",
+    "issueUpdatedAt": "2026-01-01T00:00:02.000Z",
+    "issueStateType": "todo",
+    "descriptionContentHash": "6e238465dd589dc50b3eb749afd2ae4b3d80b3d504eda6fef69af4d261bc2f29"
+  }
+}

@@ -1,0 +1,66 @@
+{
+  "$comment": "Plan/apply expectations for T034 (creates) + T036 (rollback) + T037 (fail) cells. Seed expected/checkpoint-seed.json first ⇒ sync mode.",
+  "world": "rollback-full",
+  "mode": "sync",
+  "checkpointSeed": "expected/checkpoint-seed.json — Beta/Gamma have NO checkpoint entries ⇒ apply adds them ⇒ rollback must REMOVE them (FR-013 restore-or-remove).",
+  "entries": [
+    {
+      "taskUuid": "dd837e71-fa46-5c11-8bff-31fb37eb5a8e",
+      "localTaskId": "1.1",
+      "title": "Alpha rehearsal root",
+      "matchedIssueKey": "ACME-1",
+      "decision": "conflict",
+      "descriptionConflict": "spec-changed",
+      "defaultMapAction": "overwrite-linear",
+      "historyEvent": "description-updated",
+      "note": "root drift = one added paragraph; mirror region covers the nested children (pinned decision 1 + 004 extents include descendants), so the seeded ACME-1 description is the PRE-DRIFT mirror including the child lines"
+    },
+    {
+      "taskUuid": "46b76f50-82ee-530d-91e2-3c41f03c9e0b",
+      "localTaskId": "1.1.2",
+      "title": "Gamma sibling task",
+      "matchedIssueKey": null,
+      "decision": "create",
+      "parentUuid": "dd837e71-fa46-5c11-8bff-31fb37eb5a8e",
+      "createOrder": 1,
+      "historyEvent": "issue-created",
+      "note": "FIRST create call: same-parent siblings run in REVERSED working order (FR-011) — GAMMA before BETA"
+    },
+    {
+      "taskUuid": "70c4cdec-4df4-5dbe-8cfb-40df2949555e",
+      "localTaskId": "1.1.1",
+      "title": "Beta child task",
+      "matchedIssueKey": null,
+      "decision": "create",
+      "parentUuid": "dd837e71-fa46-5c11-8bff-31fb37eb5a8e",
+      "createOrder": 2,
+      "historyEvent": "issue-created",
+      "note": "SECOND create call; parent 1.1 is matched (no create op), parents-before-children holds trivially"
+    },
+    {
+      "taskUuid": "5516e12e-613a-5b40-838c-4a39ea1c547b",
+      "localTaskId": "1.2",
+      "title": "Zeta control task",
+      "matchedIssueKey": "ACME-2",
+      "decision": "no-change",
+      "descriptionConflict": null,
+      "note": "control — neither side moved; zero ops, zero history events"
+    }
+  ],
+  "expectedOpOrder": {
+    "assertFromCallLog": [
+      "create-issue: GAMMA (1.1.2) strictly before BETA (1.1.1) — FR-011 reversed siblings under one parent",
+      "parents before children: the parent is matched ⇒ no parent create; children never precede their parent's own ops",
+      "update-issue(ACME-1, screened spec-changed description) precedes write-checkpoint; write-checkpoint is the final mutating step",
+      "render-file rewrites Beta/Gamma task lines with their issue refs (004 renderTaskLines) — file backup precedes it in the manifest (fileBackups)",
+      "one upsert-attachment per task with a landed action (page-0 canonical rewrite, FR-008) + one history event per affecting action (FR-009)"
+    ],
+    "engineChoice": "exact interleaving of update-issue / upsert-attachment / render-file across tasks is the engine's decision — T034/T036 assert the constraints above from world.calls, never a total order"
+  },
+  "rollbackExpectations": "T036 (quickstart 2.3/2.6): byte-equal file restore from fileBackups; ACME-1 description back to the seeded pre-run value; Beta/Gamma issues archived===true, never deleted; checkpoints: 1.1/1.2 restored, Beta/Gamma entries REMOVED; +1 rollback event per task referencing reversed opIds; zero prior events altered; page-0 attachments retained (FR-016).",
+  "reportNotes": {
+    "planEntries": 4,
+    "conflicts": 1,
+    "creates": 2
+  }
+}

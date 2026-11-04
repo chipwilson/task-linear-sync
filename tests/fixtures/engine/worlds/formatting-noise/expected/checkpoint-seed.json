@@ -1,0 +1,20 @@
+{
+  "dd837e71-fa46-5c11-8bff-31fb37eb5a8e": {
+    "taskUuid": "dd837e71-fa46-5c11-8bff-31fb37eb5a8e",
+    "issueId": "ac000000-0000-4000-8000-000000000301",
+    "checked": false,
+    "title": "Normalize the alpha feed",
+    "issueUpdatedAt": "2026-01-01T00:00:01.000Z",
+    "issueStateType": "todo",
+    "descriptionContentHash": "4e96adaaf0f9a395de90ee25dee829861c726970ea66a1583e996a14f8847c4e"
+  },
+  "5516e12e-613a-5b40-838c-4a39ea1c547b": {
+    "taskUuid": "5516e12e-613a-5b40-838c-4a39ea1c547b",
+    "issueId": "ac000000-0000-4000-8000-000000000302",
+    "checked": false,
+    "title": "Normalize the beta feed",
+    "issueUpdatedAt": "2026-01-01T00:00:02.000Z",
+    "issueStateType": "todo",
+    "descriptionContentHash": "3a70309644cf733ee38f3a9dd4596ab055f44d5412e4fa9a28fde1a2efe3706f"
+  }
+}

@@ -1,0 +1,44 @@
+{
+  "$comment": "Plan-level expectations for engine-bootstrap integration tests (T018). taskUuid keys: Task.stableUuid.",
+  "world": "first-run-bootstrap",
+  "mode": "bootstrap",
+  "checkpointSeed": "none — this world must start with NO checkpoints (bootstrap reality, data-model §2)",
+  "entries": [
+    {
+      "taskUuid": "dd837e71-fa46-5c11-8bff-31fb37eb5a8e",
+      "localTaskId": "1.1",
+      "title": "Seed the bootstrap ledger",
+      "matchedIssueKey": "ACME-1",
+      "decision": "no-change",
+      "descriptionConflict": null,
+      "note": "durable identity + normalized-identical mirror ⇒ no description conflict (FR-002 bootstrap AC1)"
+    },
+    {
+      "taskUuid": "5516e12e-613a-5b40-838c-4a39ea1c547b",
+      "localTaskId": "1.2",
+      "title": "Backfill the bootstrap roster",
+      "matchedIssueKey": "ACME-2",
+      "decision": "conflict",
+      "descriptionConflict": "both-changed",
+      "bootstrapMapAction": "overwrite-linear",
+      "reasonIncludes": [
+        "both-changed",
+        "overwrite-linear"
+      ],
+      "note": "meaningful body difference ⇒ both-changed ⇒ bootstrapConflictMap default (matrix §1)"
+    },
+    {
+      "taskUuid": "d3e847c1-8de0-53e5-bb70-e3d0a003ef78",
+      "localTaskId": "1.3",
+      "title": "Calibrate the bootstrap gauge",
+      "matchedIssueKey": null,
+      "decision": "create",
+      "descriptionConflict": null,
+      "note": "unmatched ⇒ create op; create classification is outside the conflict machinery"
+    }
+  ],
+  "reportNotes": {
+    "planEntries": 3,
+    "SC-001": "after a full bootstrap apply, a second buildSyncPlan over unchanged inputs ⇒ zero pending changes"
+  }
+}

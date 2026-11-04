@@ -1,0 +1,111 @@
+{
+  "$comment": "Schema authority: tests/helpers/engine-harness.ts header docblock. Placeholders only (Principle III).",
+  "name": "spec-changed",
+  "clock": "2026-01-01T00:00:00.000Z",
+  "teams": [
+    {
+      "key": "TEAM-A",
+      "id": "ac000000-0000-4000-8000-000000000101",
+      "projects": [
+        {
+          "id": "proj-alpha",
+          "name": "Project Alpha"
+        }
+      ],
+      "workflowStates": [
+        {
+          "id": "ac000000-0000-4000-8000-000000000201",
+          "name": "Backlog",
+          "type": "backlog"
+        },
+        {
+          "id": "ac000000-0000-4000-8000-000000000202",
+          "name": "Todo",
+          "type": "todo"
+        },
+        {
+          "id": "ac000000-0000-4000-8000-000000000203",
+          "name": "Done",
+          "type": "completed"
+        }
+      ]
+    }
+  ],
+  "issues": [
+    {
+      "id": "ac000000-0000-4000-8000-000000000301",
+      "key": "ACME-1",
+      "teamKey": "TEAM-A",
+      "projectId": "proj-alpha",
+      "title": "Extend the alpha contract",
+      "description": "  Alpha contract body.\n",
+      "stateType": "todo",
+      "updatedAt": "2026-01-01T00:00:02.000Z"
+    },
+    {
+      "id": "ac000000-0000-4000-8000-000000000302",
+      "key": "ACME-2",
+      "teamKey": "TEAM-A",
+      "projectId": "proj-alpha",
+      "title": "Keep the beta contract",
+      "description": "  Beta contract body — untouched on both sides.\n",
+      "stateType": "todo",
+      "updatedAt": "2026-01-01T00:00:02.000Z"
+    }
+  ],
+  "attachments": [
+    {
+      "issueId": "ac000000-0000-4000-8000-000000000301",
+      "id": "att-1",
+      "url": "https://sync.example.invalid/task-linear-sync/dd837e71-fa46-5c11-8bff-31fb37eb5a8e",
+      "title": "task-linear-sync sync state",
+      "metadata": {
+        "__task-linear-sync": "{\"cursors\":{\"lastSyncAt\":\"2026-01-01T00:00:02.000Z\"},\"descriptionContentHash\":\"2244acf4d4fc739d87bda6eea876d3e715caefdcf99b84b28de21e342890e0d0\",\"frameworkMetadata\":{\"featureName\":\"sync-demo\",\"filePath\":\"specs/sync-demo/tasks.md\",\"frameworkId\":\"generic\",\"localTaskId\":\"1.1\"},\"history\":[{\"at\":\"2026-01-01T00:00:02.000Z\",\"description\":\"Placeholder match event seeded by the fixture.\",\"kind\":\"matched\"}],\"taskUuid\":\"dd837e71-fa46-5c11-8bff-31fb37eb5a8e\"}"
+      }
+    },
+    {
+      "issueId": "ac000000-0000-4000-8000-000000000302",
+      "id": "att-2",
+      "url": "https://sync.example.invalid/task-linear-sync/5516e12e-613a-5b40-838c-4a39ea1c547b",
+      "title": "task-linear-sync sync state",
+      "metadata": {
+        "__task-linear-sync": "{\"cursors\":{\"lastSyncAt\":\"2026-01-01T00:00:02.000Z\"},\"descriptionContentHash\":\"50abd4a389af6a9b9313f9ca1678eba774ae7be69457e2ed612f2c22890af54c\",\"frameworkMetadata\":{\"featureName\":\"sync-demo\",\"filePath\":\"specs/sync-demo/tasks.md\",\"frameworkId\":\"generic\",\"localTaskId\":\"1.2\"},\"history\":[{\"at\":\"2026-01-01T00:00:02.000Z\",\"description\":\"Placeholder match event seeded by the fixture.\",\"kind\":\"matched\"}],\"taskUuid\":\"5516e12e-613a-5b40-838c-4a39ea1c547b\"}"
+      }
+    }
+  ],
+  "config": {
+    "teams": {
+      "TEAM-A": {
+        "projects": [
+          "proj-alpha"
+        ],
+        "workflowStates": {
+          "backlog": "Backlog",
+          "todo": "Todo",
+          "done": "Done",
+          "completedTypes": [
+            "completed"
+          ],
+          "ignoredTypes": [
+            "canceled",
+            "duplicate"
+          ]
+        }
+      }
+    },
+    "projectByPath": [
+      {
+        "prefix": "specs/sync-demo",
+        "teamKey": "TEAM-A",
+        "project": "proj-alpha"
+      }
+    ],
+    "defaultTeamKey": "TEAM-A",
+    "defaultProject": "proj-alpha",
+    "confirmationKey": "ACME",
+    "descriptionNormalizationProfile": "default"
+  },
+  "metadata": {
+    "scenario": "Only the task section moved (new paragraph) ⇒ spec-changed ⇒ built-in sync action overwrite-linear."
+  }
+}

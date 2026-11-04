@@ -1,0 +1,29 @@
+{
+  "dd837e71-fa46-5c11-8bff-31fb37eb5a8e": {
+    "taskUuid": "dd837e71-fa46-5c11-8bff-31fb37eb5a8e",
+    "issueId": "ac000000-0000-4000-8000-000000000301",
+    "checked": false,
+    "title": "Rotate the alpha report",
+    "issueUpdatedAt": "2026-01-01T00:00:02.000Z",
+    "issueStateType": "todo",
+    "descriptionContentHash": "f1111461ecc43fdaa4a97fd7e82c4d539eb8fbe0bfa0616510c01847c733f348"
+  },
+  "5516e12e-613a-5b40-838c-4a39ea1c547b": {
+    "taskUuid": "5516e12e-613a-5b40-838c-4a39ea1c547b",
+    "issueId": "ac000000-0000-4000-8000-000000000302",
+    "checked": false,
+    "title": "Rotate the beta report",
+    "issueUpdatedAt": "2026-01-01T00:00:03.000Z",
+    "issueStateType": "todo",
+    "descriptionContentHash": "6c525c20f039216279089949c417fb7e18fdd1dfd7be7abb2cf00206d235fea5"
+  },
+  "d3e847c1-8de0-53e5-bb70-e3d0a003ef78": {
+    "taskUuid": "d3e847c1-8de0-53e5-bb70-e3d0a003ef78",
+    "issueId": "ac000000-0000-4000-8000-000000000303",
+    "checked": false,
+    "title": "Rotate the gamma report",
+    "issueUpdatedAt": "2026-01-01T00:00:02.000Z",
+    "issueStateType": "todo",
+    "descriptionContentHash": "67825457f7a79d0f25d7a787627e6a3092f66a0cc959ee1ea1c3958039bcf188"
+  }
+}

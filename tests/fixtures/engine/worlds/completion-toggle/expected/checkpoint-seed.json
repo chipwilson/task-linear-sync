@@ -1,0 +1,29 @@
+{
+  "dd837e71-fa46-5c11-8bff-31fb37eb5a8e": {
+    "taskUuid": "dd837e71-fa46-5c11-8bff-31fb37eb5a8e",
+    "issueId": "ac000000-0000-4000-8000-000000000301",
+    "checked": false,
+    "title": "Ship the release toggle",
+    "issueUpdatedAt": "2026-01-01T00:00:01.000Z",
+    "issueStateType": "todo",
+    "descriptionContentHash": "40926ddf336674bbd8ace0a465e8ecf0ebd7d7a4dc07c7eeb4873f4e62b6236c"
+  },
+  "5516e12e-613a-5b40-838c-4a39ea1c547b": {
+    "taskUuid": "5516e12e-613a-5b40-838c-4a39ea1c547b",
+    "issueId": "ac000000-0000-4000-8000-000000000302",
+    "checked": true,
+    "title": "Reopen the stalled gauge",
+    "issueUpdatedAt": "2026-01-01T00:00:02.000Z",
+    "issueStateType": "completed",
+    "descriptionContentHash": "3054b4f0d45fefa80387e1b9a8858d44194fa62c04ce66727988701aac369933"
+  },
+  "d3e847c1-8de0-53e5-bb70-e3d0a003ef78": {
+    "taskUuid": "d3e847c1-8de0-53e5-bb70-e3d0a003ef78",
+    "issueId": "ac000000-0000-4000-8000-000000000303",
+    "checked": false,
+    "title": "Polish the idle widget",
+    "issueUpdatedAt": "2026-01-01T00:00:03.000Z",
+    "issueStateType": "todo",
+    "descriptionContentHash": "20e561eac9d874107a451af53a128d7ae237646f10f62f66544344e6e24378b4"
+  }
+}

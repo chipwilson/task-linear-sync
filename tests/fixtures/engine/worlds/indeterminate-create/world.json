@@ -1,0 +1,100 @@
+{
+  "$comment": "Schema authority: tests/helpers/engine-harness.ts header docblock. Placeholders only (Principle III).",
+  "name": "indeterminate-create",
+  "clock": "2026-01-01T00:00:00.000Z",
+  "teams": [
+    {
+      "key": "TEAM-A",
+      "id": "ac000000-0000-4000-8000-000000000101",
+      "projects": [
+        {
+          "id": "proj-alpha",
+          "name": "Project Alpha"
+        }
+      ],
+      "workflowStates": [
+        {
+          "id": "ac000000-0000-4000-8000-000000000201",
+          "name": "Backlog",
+          "type": "backlog"
+        },
+        {
+          "id": "ac000000-0000-4000-8000-000000000202",
+          "name": "Todo",
+          "type": "todo"
+        },
+        {
+          "id": "ac000000-0000-4000-8000-000000000203",
+          "name": "Done",
+          "type": "completed"
+        }
+      ]
+    }
+  ],
+  "issues": [
+    {
+      "id": "ac000000-0000-4000-8000-000000000301",
+      "key": "ACME-1",
+      "teamKey": "TEAM-A",
+      "projectId": "proj-alpha",
+      "title": "Land the healthy ledger",
+      "description": "  Healthy ledger body — mirrored on the tracker copy.\n",
+      "stateType": "todo",
+      "updatedAt": "2026-01-01T00:00:02.000Z"
+    }
+  ],
+  "attachments": [
+    {
+      "issueId": "ac000000-0000-4000-8000-000000000301",
+      "id": "att-1",
+      "url": "https://sync.example.invalid/task-linear-sync/d30c3fef-c5d5-5da1-b112-d3f35fc76637",
+      "title": "task-linear-sync sync state",
+      "metadata": {
+        "__task-linear-sync": "{\"cursors\":{\"lastSyncAt\":\"2026-01-01T00:00:02.000Z\"},\"descriptionContentHash\":\"cd59423a664c5264cd01f4741b258c5edff3115d30fde0718cc0c1623a310f0e\",\"frameworkMetadata\":{\"featureName\":\"sync-demo\",\"filePath\":\"specs/sync-demo/tasks.md\",\"frameworkId\":\"generic\",\"localTaskId\":\"2.2\"},\"history\":[{\"at\":\"2026-01-01T00:00:01.000Z\",\"description\":\"Placeholder match event seeded by the fixture.\",\"kind\":\"matched\"}],\"taskUuid\":\"d30c3fef-c5d5-5da1-b112-d3f35fc76637\"}",
+        "taskUuid": "d30c3fef-c5d5-5da1-b112-d3f35fc76637"
+      }
+    }
+  ],
+  "createFailures": [
+    {
+      "titleIncludes": "Probe the indeterminate gauge",
+      "nth": 1,
+      "times": 1
+    }
+  ],
+  "config": {
+    "teams": {
+      "TEAM-A": {
+        "projects": [
+          "proj-alpha"
+        ],
+        "workflowStates": {
+          "backlog": "Backlog",
+          "todo": "Todo",
+          "done": "Done",
+          "completedTypes": [
+            "completed"
+          ],
+          "ignoredTypes": [
+            "canceled",
+            "duplicate"
+          ]
+        }
+      }
+    },
+    "projectByPath": [
+      {
+        "prefix": "specs/sync-demo",
+        "teamKey": "TEAM-A",
+        "project": "proj-alpha"
+      }
+    ],
+    "defaultTeamKey": "TEAM-A",
+    "defaultProject": "proj-alpha",
+    "confirmationKey": "ACME",
+    "descriptionNormalizationProfile": "default"
+  },
+  "metadata": {
+    "scenario": "Create attempt for 2.1 throws (harness createFailures) and findIssuesByAttachmentUrl('https://sync.example.invalid/task-linear-sync/191a3e7a-54fb-5af1-8b16-04195dee8ec5') finds ZERO seeded matches ⇒ intent indeterminate; child 2.1.1 creation aborts (FR-012); healthy 2.2 still lands its update."
+  }
+}

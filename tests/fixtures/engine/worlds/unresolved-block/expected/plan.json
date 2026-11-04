@@ -1,0 +1,55 @@
+{
+  "$comment": "Plan-level expectations (T019 conflict-freeze, US1 AC4/FR-007/SC-004). Seed expected/checkpoint-seed.json first ⇒ sync mode; the frozen task's baseline is PRE-BLOCK so post-resolution classification compares against it. Sides: the marker block's LOCAL side is verbatim that pre-block baseline body (mirror region = section body below the task line), the block's tracker side is the historical divergent snapshot, and the live ACME-2 description equals the baseline body — removal keeping the local side re-hashes equal to both ⇒ no-change.",
+  "world": "unresolved-block",
+  "mode": "sync",
+  "entries": [
+    {
+      "taskUuid": "dd837e71-fa46-5c11-8bff-31fb37eb5a8e",
+      "localTaskId": "1.1",
+      "title": "Verify the widget before the freeze",
+      "matchedIssueKey": "ACME-1",
+      "decision": "no-change",
+      "descriptionConflict": null,
+      "note": "control — classifies normally next to a frozen sibling"
+    },
+    {
+      "taskUuid": "5516e12e-613a-5b40-838c-4a39ea1c547b",
+      "localTaskId": "1.2",
+      "title": "Freeze the widget ledger",
+      "matchedIssueKey": "ACME-2",
+      "unresolvedConflict": true,
+      "decision": "skip-unresolved",
+      "descriptionConflict": null,
+      "descriptionConflictNote": "frozen per FR-007 — description classification is skipped, the conflict machinery never runs on this task",
+      "planEntryNotes": {
+        "unresolvedConflictReportEntries": 1,
+        "fileMutations": 0,
+        "issueMutations": 0,
+        "additionalMarkers": "none — a second overwrite-spec attempt is refused outright (no nested markers)",
+        "checkpoint": "untouched — baseline preserved (expected/checkpoint-seed.json stays authoritative)"
+      }
+    },
+    {
+      "taskUuid": "d3e847c1-8de0-53e5-bb70-e3d0a003ef78",
+      "localTaskId": "1.3",
+      "title": "Verify the widget after the freeze",
+      "matchedIssueKey": "ACME-3",
+      "decision": "no-change",
+      "descriptionConflict": null,
+      "note": "control — classifies normally next to a frozen sibling"
+    }
+  ],
+  "postResolutionExpectation": {
+    "localTaskId": "1.2",
+    "action": "human removes the marker lines keeping the local side — the pre-block baseline body (the checkpoint mirror region)",
+    "then": {
+      "descriptionConflict": null,
+      "decision": "no-change"
+    },
+    "note": "matrix §4 — removal returns the task to normal classification against the stored checkpoint"
+  },
+  "reportNotes": {
+    "planEntries": 3,
+    "SC-004": "the block survives byte-for-byte across any number of intervening runs"
+  }
+}

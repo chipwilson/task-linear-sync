@@ -57,6 +57,10 @@
     "./discovery": {
       "types": "./dist/discovery/index.d.ts",
       "default": "./dist/discovery/index.js"
+    },
+    "./engine": {
+      "types": "./dist/engine/index.d.ts",
+      "default": "./dist/engine/index.js"
     }
   },
   "files": [

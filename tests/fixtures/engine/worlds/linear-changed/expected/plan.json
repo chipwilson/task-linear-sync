@@ -1,0 +1,44 @@
+{
+  "$comment": "Plan-level expectations (T032 matrix cells, quickstart 1.2/1.6). Seed expected/checkpoint-seed.json first ⇒ sync mode.",
+  "world": "linear-changed",
+  "mode": "sync",
+  "entries": [
+    {
+      "taskUuid": "dd837e71-fa46-5c11-8bff-31fb37eb5a8e",
+      "localTaskId": "1.1",
+      "title": "Rotate the alpha report",
+      "matchedIssueKey": "ACME-1",
+      "decision": "conflict",
+      "descriptionConflict": "linear-changed",
+      "defaultMapAction": "overwrite-spec",
+      "preferNewerAction": "overwrite-spec",
+      "preferNewerDegraded": false,
+      "note": "issue.updatedAt 00:00:04 > checkpoint.issueUpdatedAt 00:00:02 (matrix §3 row 2)"
+    },
+    {
+      "taskUuid": "5516e12e-613a-5b40-838c-4a39ea1c547b",
+      "localTaskId": "1.2",
+      "title": "Rotate the beta report",
+      "matchedIssueKey": "ACME-2",
+      "decision": "conflict",
+      "descriptionConflict": "linear-changed",
+      "defaultMapAction": "overwrite-spec",
+      "preferNewerAction": "report-only",
+      "preferNewerDegraded": true,
+      "note": "non-advancing updatedAt (00:00:03 == checkpoint.issueUpdatedAt) ⇒ indeterminate recency ⇒ report-only, degraded:true (matrix §3 row 3, US1 AC6)"
+    },
+    {
+      "taskUuid": "d3e847c1-8de0-53e5-bb70-e3d0a003ef78",
+      "localTaskId": "1.3",
+      "title": "Rotate the gamma report",
+      "matchedIssueKey": "ACME-3",
+      "decision": "no-change",
+      "descriptionConflict": null,
+      "note": "control — neither side moved"
+    }
+  ],
+  "reportNotes": {
+    "planEntries": 3,
+    "1.2-effect": "overwrite-spec ⇒ git-style marker block written into the section, ZERO updateIssue calls, history conflict-detected (matrix §2)"
+  }
+}
