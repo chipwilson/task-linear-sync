@@ -9,6 +9,9 @@
   },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
+  "bin": {
+    "task-linear-sync": "./dist/cli/main.js"
+  },
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
@@ -61,6 +64,10 @@
     "./engine": {
       "types": "./dist/engine/index.d.ts",
       "default": "./dist/engine/index.js"
+    },
+    "./cli": {
+      "types": "./dist/cli/index.d.ts",
+      "default": "./dist/cli/index.js"
     }
   },
   "files": [
