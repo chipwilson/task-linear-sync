@@ -33,9 +33,9 @@
 
 **Purpose**: project wiring for the new module group; no logic.
 
-- [ ] T001 [P] Add the additive `"./queue": { "types": "./dist/queue/index.d.ts", "import": "./dist/queue/index.js" }` entry to package.json exports (research R1; the frozen lazy-import shape in src/cli/queue-surface.ts:159-166 — zero-argument `createQueueSurface()` — is the binding contract); zero dependency and engines changes
-- [ ] T002 [P] Reserve `tests/fixtures/queue/gitlab-stub/`, `tests/fixtures/queue/fs-storm/`, `tests/fixtures/queue/hooks/` with `.gitkeep` files and `tests/fixtures/queue/README.md` documenting fixture ownership per contracts README
-- [ ] T003 [P] Create `tests/helpers/queue-harness.ts`: `makeQueueHarness({ config?, wiring? })` — tmp git repo, resolved config (frozen `loadConfig`, env cleared first), `StateStorePaths` for its state dir, fs stub, injected clock/sleep/which/spawner, cleanup (pattern: tests/helpers/cli-harness.ts) — plus exported helpers `writePendingJob(dir, job)`, `readPendingJob(dir)`, `readQueueLock(dir)`, `stripHookBlock(text, markers)` for the story phases
+- [X] T001 [P] Add the additive `"./queue": { "types": "./dist/queue/index.d.ts", "import": "./dist/queue/index.js" }` entry to package.json exports (research R1; the frozen lazy-import shape in src/cli/queue-surface.ts:159-166 — zero-argument `createQueueSurface()` — is the binding contract); zero dependency and engines changes
+- [X] T002 [P] Reserve `tests/fixtures/queue/gitlab-stub/`, `tests/fixtures/queue/fs-storm/`, `tests/fixtures/queue/hooks/` with `.gitkeep` files and `tests/fixtures/queue/README.md` documenting fixture ownership per contracts README
+- [X] T003 [P] Create `tests/helpers/queue-harness.ts`: `makeQueueHarness({ config?, wiring? })` — tmp git repo, resolved config (frozen `loadConfig`, env cleared first), `StateStorePaths` for its state dir, fs stub, injected clock/sleep/which/spawner, cleanup (pattern: tests/helpers/cli-harness.ts) — plus exported helpers `writePendingJob(dir, job)`, `readPendingJob(dir)`, `readQueueLock(dir)`, `stripHookBlock(text, markers)` for the story phases
 
 **Checkpoint**: package.json resolves `task-linear-sync/queue`; harness compiles — foundation ready
 
