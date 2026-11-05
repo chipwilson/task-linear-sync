@@ -173,6 +173,13 @@ export async function runCli(argv: readonly string[], context: CliContext): Prom
       if (engine === undefined) engine = context.makeEngine(engineDeps());
       return engine;
     };
+    // Read-only lanes compose the guard EAGERLY, before any handler code runs: the
+    // ReadOnlyGuard must already wrap `port`/`state` when the engine (or a mid-run
+    // mutation attempt) first touches them, so a refusal is structurally impossible to
+    // race past (FR-005). Queue/apply lanes stay lazy — presentations never need a port.
+    if (lane !== undefined) {
+      engineFor();
+    }
 
     const handler: CommandHandler | undefined = HANDLERS[invocation.command];
     if (handler === undefined) {
