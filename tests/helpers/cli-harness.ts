@@ -129,12 +129,17 @@ export interface QueueInputLike {
   readonly state?: StateStore;
 }
 
+/** `contracts/queue-surface.md` §1 `ReadLastRunInput` (widened: `state` optional). */
+export interface ReadLastRunInputLike {
+  readonly state?: StateStore;
+}
+
 export interface QueueSurfaceLike {
   installHooks(o: QueueInputLike): Promise<QueueOutcomeLike>;
   installAgentHook(o: QueueInputLike): Promise<QueueOutcomeLike>;
   enqueue(o: QueueInputLike): Promise<QueueOutcomeLike>;
   runWorker(o: QueueInputLike): Promise<QueueOutcomeLike>;
-  readLastRun(o: QueueInputLike): Promise<LastRunOutcomeLike>;
+  readLastRun(o: ReadLastRunInputLike): Promise<LastRunOutcomeLike>;
 }
 
 /** `data-model.md` §4 CliContext (structural twin; handlers never touch `process`). */
@@ -162,7 +167,7 @@ export interface QueueRecords {
   readonly installAgentHook: QueueInputLike[];
   readonly enqueue: QueueInputLike[];
   readonly runWorker: QueueInputLike[];
-  readonly readLastRun: QueueInputLike[];
+  readonly readLastRun: ReadLastRunInputLike[];
 }
 
 type Injection = QueueOutcomeLike | LastRunOutcomeLike | Error;
@@ -256,7 +261,7 @@ export function createRecordingQueueSurface(): RecordingQueueSurface {
       if (hit instanceof Error) throw hit;
       return (hit as QueueOutcomeLike | undefined) ?? outcomeFor("runWorker", input);
     },
-    async readLastRun(input) {
+    async readLastRun(input: ReadLastRunInputLike) {
       records.readLastRun.push(input);
       const hit = injected.readLastRun;
       if (hit instanceof Error) throw hit;
@@ -517,6 +522,11 @@ export interface WriteDriverOptions {
   readonly start?: string;
   /** When true the argv already carries the repository root and no insertion happens. */
   readonly noRepoInsertion?: boolean;
+  /**
+   * Shared state directory (default: a fresh temp dir per run). Pass the same path to
+   * two drivers to keep state (stored plans, markers) across child processes.
+   */
+  readonly stateDir?: string;
 }
 
 /**
@@ -553,12 +563,12 @@ const root = mkdtempSync(join(tmpdir(), "tls-009-driver-"));
 const repositoryRoot = join(root, "repo");
 if (existsSync(join(worldDir, "repo"))) cpSync(join(worldDir, "repo"), repositoryRoot, { recursive: true });
 else mkdirSync(repositoryRoot, { recursive: true });
-const stateDir = join(root, "state");
+const stateDir = ${opts.stateDir === undefined ? 'join(root, "state")' : JSON.stringify(resolve(opts.stateDir))};
 
 const startIso = ${JSON.stringify(opts.start ?? null)} ?? worldDoc.clock ?? "2026-01-01T00:00:00.000Z";
 const clock = stateMod.fixedClock(new Date(startIso));
 const config = configMod.loadConfig({
-  overrides: { ...(worldDoc.config ?? {}), ${JSON.stringify(opts.config ?? {})}, stateDirectory: stateDir },
+  overrides: { ...(worldDoc.config ?? {}), ...${JSON.stringify(opts.config ?? {})}, stateDirectory: stateDir },
 });
 const fake = trackerTesting.createFakeLinearPort({
   teams: worldDoc.teams ?? [],

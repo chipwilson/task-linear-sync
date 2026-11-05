@@ -56,7 +56,6 @@ const APPLY_FLAGS: Readonly<Record<string, FlagSpec>> = {
 
 /** Repository-root commands accept 0–1 positional repo path (default `cwd`). */
 const REPO_POSITIONAL = { min: 0, max: 1, noun: "repository path" };
-const NO_POSITIONAL = { min: 0, max: 0, noun: "" };
 
 function spec(
   name: CommandName,
@@ -108,30 +107,30 @@ export const COMMAND_REGISTRY: Readonly<Record<CommandName, CommandSpec>> = {
   "install-hooks": spec(
     "install-hooks",
     "install the managed git hooks (background-queue feature)",
-    NO_POSITIONAL,
+    REPO_POSITIONAL,
   ),
   "install-agent-hook": spec(
     "install-agent-hook",
     "scaffold the agent hook template for --framework <id> (no tracker network)",
-    NO_POSITIONAL,
+    REPO_POSITIONAL,
     { framework: { kind: "value" } },
   ),
   enqueue: spec(
     "enqueue",
     "record a single pending sync job with --mode bootstrap|sync",
-    NO_POSITIONAL,
+    REPO_POSITIONAL,
     { mode: { kind: "value", allowedValues: ["bootstrap", "sync"] } },
   ),
   worker: spec(
     "worker",
     "run the background-queue worker (--once for a single pass)",
-    NO_POSITIONAL,
+    REPO_POSITIONAL,
     { once: { kind: "boolean" } },
   ),
   "last-run": spec(
     "last-run",
     "report the last recorded run (--json for one JSON object)",
-    NO_POSITIONAL,
+    REPO_POSITIONAL,
     { json: { kind: "boolean" } },
   ),
   rollback: spec(
