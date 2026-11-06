@@ -288,26 +288,45 @@ test("install-agent-hook scaffolds with zero tracker network and never overwrite
   });
 });
 
-test("queue commands on the DEFAULT surface exit 7 naming the module with zero side effects", async () => {
+test("T026: queue commands on the DEFAULT surface run through the real 010 module (frozen default semantics)", async () => {
   await withWorld("zero-task", async (w) => {
-    const repoBefore = hashTree(w.repositoryRoot);
     const stateBefore = hashTree(w.stateDir);
     const { createDefaultQueueSurface } = await import("../../src/cli/index.js");
-    for (const argv of [
-      ["install-hooks", w.repositoryRoot],
-      ["install-agent-hook", w.repositoryRoot],
-      ["enqueue", w.repositoryRoot],
-      ["worker", w.repositoryRoot, "--once"],
-    ]) {
-      const { cliContext: ctx, stderr: err } = w.createContext({ queueSurface: createDefaultQueueSurface() });
-      const outcome = await runCli(argv, ctx);
-      assert.equal(outcome.exitCode, ExitCode.SURFACE_UNAVAILABLE, `${argv.join(" ")} → ${err.join("\n")}`);
-      assert.match(err.join("\n"), /task-linear-sync\/queue/);
-      assert.match(err.join("\n"), new RegExp(argv[0] as string));
+
+    // install-hooks: real 010 refusal (this world has no .git) — exit 4, no unavailability talk.
+    {
+      const { cliContext, stderr, stdout } = w.createContext({ queueSurface: createDefaultQueueSurface() });
+      const outcome = await runCli(["install-hooks", w.repositoryRoot], cliContext);
+      assert.equal(outcome.exitCode, ExitCode.GATE_REFUSED, stderr.join("\n"));
+      assert.match(stderr.join("\n"), /\.git/);
+      assert.doesNotMatch(stderr.join("\n"), /task-linear-sync\/queue/);
+      assert.equal(stdout.length, 0, "refusals print nothing on stdout");
     }
-    assert.equal(w.requests().length, 0);
-    assert.equal(hashTree(w.repositoryRoot), repoBefore);
-    assert.equal(hashTree(w.stateDir), stateBefore);
+    // install-agent-hook: real scaffold write, still zero tracker network (FR-003).
+    {
+      const { cliContext, stdout } = w.createContext({ queueSurface: createDefaultQueueSurface() });
+      const outcome = await runCli(["install-agent-hook", w.repositoryRoot], cliContext);
+      assert.equal(outcome.exitCode, ExitCode.SUCCESS, stdout.join("\n"));
+      assert.match(stdout.join("\n"), /hooks/);
+      assert.ok(existsSync(join(w.repositoryRoot, ".kiro", "hooks")));
+    }
+    // worker --once on the empty slot BEFORE any enqueue: stopped, nothing written.
+    {
+      const { cliContext, stdout } = w.createContext({ queueSurface: createDefaultQueueSurface() });
+      const outcome = await runCli(["worker", w.repositoryRoot, "--once"], cliContext);
+      assert.equal(outcome.exitCode, ExitCode.SUCCESS, stdout.join("\n"));
+      assert.match(stdout.join("\n"), /stopped/);
+      assert.equal(hashTree(w.stateDir), stateBefore, "an empty-slot pass writes nothing");
+    }
+    // enqueue: the durable fast path lands the pending job through the real module.
+    {
+      const { cliContext, stdout } = w.createContext({ queueSurface: createDefaultQueueSurface() });
+      const outcome = await runCli(["enqueue", w.repositoryRoot, "--mode", "sync"], cliContext);
+      assert.equal(outcome.exitCode, ExitCode.SUCCESS, stdout.join("\n"));
+      assert.match(stdout.join("\n"), /enqueued/);
+      assert.ok(existsSync(join(w.stateDir, "pending-job.json")), "the job is durable in the state dir");
+    }
+    assert.equal(w.requests().length, 0); // no queue command touches the tracker
   });
 });
 
