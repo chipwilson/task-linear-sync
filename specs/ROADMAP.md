@@ -5,6 +5,9 @@ Decomposition of `specs/001-extract-functional-requirements/spec.md` performed
 specs 002–013 are the **independently specced, independently testable features** that
 own each FR's normative behavior. Every one of 001's FR-001…FR-097 appears in exactly
 one feature spec, renumbered locally with a `(001 FR-0xx)` citation on each line.
+Specs 014–015 are post-Wave-4 hardening features: they add **scope beyond the 001
+catalog** (promotion guarantees and release machinery), so their FRs cite research
+deferrals and constitution clauses instead of 001 numbers, and they redefine no 001 FR.
 
 ## Feature Index
 
@@ -23,6 +26,8 @@ one feature spec, renumbered locally with a `(001 FR-0xx)` citation on each line
 | [011](011-sync-history-web-page/spec.md) | Sync-history web component | P (082–089) | 002, 007 |
 | [012](012-ai-agent-tool-interface/spec.md) | AI-agent tool interface | Q (090–094) | 002, 008 |
 | [013](013-ci-enforcement-layer/spec.md) | CI/CD enforcement layer | R (095–097) | 009 |
+| [014](014-preview-to-stable-hardening/spec.md) | Preview→stable hardening of the 011/012 surfaces | beyond 001: 011 research R4/R6 + 012 research R1/R9 deferrals, stability declaration, amendment freeze | 011, 012 |
+| [015](015-package-publish-tooling/spec.md) | Package publish tooling & release gate | beyond 001: constitution Release gates / Hermetic pipelines / Technology-stack clauses | 002–013 (export map + contract suites) |
 
 ## Parallel Development Waves
 
@@ -41,6 +46,11 @@ one feature spec, renumbered locally with a `(001 FR-0xx)` citation on each line
   `install-agent-hook`, `enqueue`, `worker`, and `last-run` commands, which present
   010's behaviors at the command surface. 011 is the most independent surface (needs
   only the attachment URL scheme + history event shape + tracker reads).
+- **Wave 5** (2 agents, parallel — disjoint file sets): **014** hardens the two preview
+  surfaces (011/012 modules, their contract docs, and the traceability catalog) and declares
+  stability; **015** builds the release pipeline (pack verification, defaults scan over the
+  artifact, versioning/license/changelog hygiene). 014's surface freeze and 015's versioning
+  policy reference each other as policy text but neither blocks the other.
 
 Peak parallelism: **5 concurrent agents** in each of Waves 2 and 4.
 
