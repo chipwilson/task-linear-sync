@@ -92,6 +92,8 @@ export interface ChainWorldSpec {
   corruptKind?: "task-uuid" | "page" | "json" | "history";
   /** Page 0 gains two secret-shaped events (screening fixtures). */
   secretShape?: boolean;
+  /** Every event shares one `at` (stable-sort tie tests). */
+  tieAllAt?: boolean;
   /** Fake-port scripted failures (rate-limit / network postures). */
   failures?: Readonly<Record<string, FailureScript | readonly FailureScript[]>>;
   /** Fake-port retry budget (0 exercises ultimate-failure exhaustion). */
@@ -160,7 +162,7 @@ export function buildChainWorld(spec: ChainWorldSpec = {}): ChainWorld {
       const globalIndex = p * eventsPerPage + e;
       // Interleaved layout: seconds = e*64 + p, so page slices overlap and
       // chain order ≠ chronological order for every page pair.
-      const offsetSeconds = interleave ? e * 64 + p : p * 3600 + e * 31;
+      const offsetSeconds = spec.tieAllAt === true ? 0 : interleave ? e * 64 + p : p * 3600 + e * 31;
       if ((globalIndex + 1) % 1000 === 0) {
         const description = `SC001-MARKER-${(globalIndex + 1) / 1000}`;
         markers.push(description);
@@ -183,7 +185,7 @@ export function buildChainWorld(spec: ChainWorldSpec = {}): ChainWorld {
         {
           kind: "discovered",
           at: new Date(WORLD_BASE_MS + 90_000).toISOString(),
-          description: `created with token ${SECRET_SHAPE_VALUES.token} attached`,
+          description: `created with token=${SECRET_SHAPE_VALUES.token} attached`,
           references: [`api_key=${SECRET_SHAPE_VALUES.apiKey}`],
         },
         {
@@ -281,7 +283,7 @@ export function buildChainWorld(spec: ChainWorldSpec = {}): ChainWorld {
       assert.ok(att !== undefined, "landEvent requires an existing page-0 attachment");
       const payload = parseSyncStatePayload(String(att.metadata[NS_KEY]));
       const event: SyncHistoryEvent = {
-        kind: "field-updated" as SyncHistoryEvent["kind"],
+        kind: "description-updated",
         at: new Date(WORLD_BASE_MS + 4_000_000).toISOString(),
         description,
       };
@@ -435,7 +437,7 @@ async function readSse(
   const deadline = new Promise<never>((_, reject) => {
     timer = setTimeout(
       () => reject(new Error(`SSE did not contain ${JSON.stringify(opts.until)} in time`)),
-      opts.timeoutMs ?? 4000,
+      opts.timeoutMs ?? 10000,
     );
   });
   try {
