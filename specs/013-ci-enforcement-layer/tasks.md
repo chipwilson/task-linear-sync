@@ -114,7 +114,7 @@ Single npm package: `src/ci/` (013's disjoint module group), `action.yml` (repo 
 - [X] T050 Write `docs/ci-enforcement.md` (documentation duty; Req 27 criterion 7): purpose + read-only posture, the three conditions with exact predicates and defaults, the inputs/outputs tables (mirroring contracts/action.md), protected-branch resolution rules, the exit map, a full example workflow invocation with a read-scoped credential via `env:` (placeholder identifiers), standalone `node dist/ci/main.js` usage, and the artifact-direct mode — zero org identifiers
 - [X] T051 Update `README.md`: status line for 013 (CI enforcement shipping on `wave-4-surfaces`), the `./ci` subpath added to the published-exports list, module-tree mention, and a pointer to `docs/ci-enforcement.md` (placeholder identifiers only)
 - [X] T060 Run the full quickstart.md validation (Scenarios 1–5) against built `dist/` and fix any drift between artifacts and behavior
-- [ ] T061 Run `npm test` (full suite, all tiers) — GREEN with the coverage gate held (lines 80 / branches 70 / functions 80) by 013's own tests; mark completed tasks `[X]` in this file
+- [X] T061 Run `npm test` (full suite, all tiers) — GREEN with the coverage gate held (lines 80 / branches 70 / functions 80) by 013's own tests; mark completed tasks `[X]` in this file
 
 ---
 
