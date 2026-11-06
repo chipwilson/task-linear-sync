@@ -22,6 +22,7 @@ import type { EngineDependencies, LinearPort, SecurityScreener } from "../ports/
 import type { McpSettings } from "./config.js";
 import { resolveMcpConfig } from "./config.js";
 import { McpConfigError, renderCoreRefusal, renderSingleRefusal } from "./errors.js";
+import { listenHttp as listenHttpServer } from "./http.js";
 import { createReadHandlers, createApplyHandler } from "./handlers.js";
 import type { ToolCoreOutcome } from "./handlers.js";
 import { createDispatcher } from "./jsonrpc.js";
@@ -107,6 +108,7 @@ export function createAgentToolServer(deps: AgentToolServerDeps): AgentToolServe
 
   // The ONE sanctioned process.env read of the whole module group (research R11).
   const env = deps.env ?? process.env;
+  let httpToken = ""; // captured at construction; per-request env reads are FORBIDDEN
   if (settings.transport === "http") {
     const tokenValue = env[settings.tokenEnvVarName];
     if (tokenValue === undefined || tokenValue.trim() === "") {
@@ -115,6 +117,7 @@ export function createAgentToolServer(deps: AgentToolServerDeps): AgentToolServe
         `mcp: transport 'http' requires the environment variable '${settings.tokenEnvVarName}' to hold a non-empty token value`,
       );
     }
+    httpToken = tokenValue;
   }
 
   const clock = deps.clock ?? systemClock;
@@ -240,7 +243,15 @@ export function createAgentToolServer(deps: AgentToolServerDeps): AgentToolServe
       if (settings.transport !== "http") {
         throw new McpConfigError("mcp: listenHttp() requires settings.transport === 'http' (stdio is the default transport)");
       }
-      throw new McpConfigError("mcp: the http transport listener lands with T054");
+      const listener = await listenHttpServer({
+        host: settings.host,
+        port: settings.port,
+        token: httpToken,
+        serverName: `${deps.config.toolId}-mcp`,
+        handleMessage: (raw: unknown) => dispatcher.handleMessage(raw),
+      });
+      httpClose = listener.close;
+      return listener;
     },
     async close(): Promise<void> {
       if (httpClose !== null) {

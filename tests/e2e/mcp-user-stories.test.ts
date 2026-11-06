@@ -4,7 +4,7 @@
  */
 
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync, readlinkSync } from "node:fs";
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -186,4 +186,126 @@ test("mcp-user-stories: US2 walkthrough — enabled child plans then applies; a 
     "SC-001: the refusing child performed ZERO port mutations",
   );
   assert.equal(hashTree(stateDir), stateHash, "SC-001: the refusing child wrote NOTHING to the state dir");
+});
+
+// ── US3: transports at the process level (T055; quickstart Scenario 3) ────────────────
+
+/** LISTEN-state socket inodes visible to the child's network namespace (/proc). */
+function listenSocketInodes(pid: number): Set<string> {
+  const inodes = new Set<string>();
+  for (const table of ["tcp", "tcp6"]) {
+    const text = readFileSync(`/proc/${pid}/net/${table}`, "utf8");
+    for (const line of text.split("\n").slice(1)) {
+      const cols = line.trim().split(/\s+/);
+      if (cols.length > 9 && cols[3] === "0A") inodes.add(cols[9]!); // st 0A = LISTEN
+    }
+  }
+  return inodes;
+}
+
+function openSocketInodes(pid: number): string[] {
+  const out: string[] = [];
+  for (const fd of readdirSync(`/proc/${pid}/fd`)) {
+    const match = /^socket:\[(\d+)\]$/.exec(readlinkSync(`/proc/${pid}/fd/${fd}`));
+    if (match) out.push(match[1]!);
+  }
+  return out;
+}
+
+test("mcp-user-stories: US3 default-settings child serves the read flow with ZERO sockets", async () => {
+  const driverPath = join(scratch, "driver-us3-stdio.mjs");
+  await emitMcpDriver({ driverPath, worldDir: cliWorldDir("review-report") });
+  const child = spawnMcpDriver(driverPath);
+  try {
+    child.send({ jsonrpc: "2.0", id: 1, method: "initialize", params: { protocolVersion: "2025-03-26" } });
+    await child.waitFor((m) => m.id === 1);
+    child.send({ jsonrpc: "2.0", method: "notifications/initialized" });
+    child.send({ jsonrpc: "2.0", id: 2, method: "tools/call", params: { name: "task_sync_status", arguments: {} } });
+    await child.waitFor((m) => m.id === 2);
+
+    // Mid-session socket census: this child owns no LISTEN socket at all.
+    const listening = listenSocketInodes(child.pid);
+    const bound = openSocketInodes(child.pid).filter((inode) => listening.has(inode));
+    assert.deepEqual(bound, [], "the default (stdio) child bound no socket");
+    assert.ok(child.stderr.includes("listening on stdio"), "the stdio announce is present");
+    assert.equal(/listening on \d/.test(child.stderr), false, "no network announce at default settings");
+  } finally {
+    const exit = await child.close();
+    assert.equal(exit.code, 0);
+  }
+});
+
+test("mcp-user-stories: US3 token-configured http child completes the SAME story via fetch; unauthenticated probes are refused", async () => {
+  const token = "e2e-us3-http-token-012";
+  const driverPath = join(scratch, "driver-us3-http.mjs");
+  await emitMcpDriver({ driverPath, worldDir: cliWorldDir("review-report"), transport: "http" });
+  const child = spawnMcpDriver(driverPath, { env: { MCP_HARNESS_TOKEN: token } });
+  try {
+    let port = "";
+    const deadline = Date.now() + 30_000;
+    for (;;) {
+      const announced = child.lines.find((l) => l.startsWith("MCP-LISTENING "));
+      if (announced) {
+        port = announced.slice("MCP-LISTENING ".length).trim();
+        break;
+      }
+      assert.ok(Date.now() < deadline, `the http child never announced its port; stderr: ${child.stderr.slice(-300)}`);
+      await new Promise((resolve) => setImmediate(resolve));
+    }
+    const url = `http://127.0.0.1:${port}/mcp`;
+
+    // The same read story as US1 — over fetch against the real child listener.
+    const rpc = async (id: number, method: string, params: unknown): Promise<Record<string, unknown>> => {
+      const response = await fetch(url, {
+        method: "POST",
+        headers: { "content-type": "application/json", authorization: `Bearer ${token}` },
+        body: JSON.stringify({ jsonrpc: "2.0", id, method, params }),
+      });
+      assert.equal(response.status, 200);
+      return (await response.json()) as Record<string, unknown>;
+    };
+    const init = await rpc(1, "initialize", { protocolVersion: "2025-03-26" });
+    assert.ok(init.result, JSON.stringify(init));
+    const notified = await fetch(url, {
+      method: "POST",
+      headers: { "content-type": "application/json", authorization: `Bearer ${token}` },
+      body: JSON.stringify({ jsonrpc: "2.0", method: "notifications/initialized" }),
+    });
+    assert.equal(notified.status, 202);
+    assert.equal(await notified.text(), "");
+    const listed = await rpc(2, "tools/list", {});
+    assert.equal(
+      ((listed.result as { tools: Array<{ name: string }> }).tools.length),
+      3,
+      "default settings ⇒ the three read tools",
+    );
+    const status = await rpc(3, "tools/call", { name: "task_sync_status", arguments: {} });
+    assert.ok(status.result, JSON.stringify(status));
+
+    // Unauthenticated probes: refused with the constants, before any world activity.
+    const noAuth = await fetch(url, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ jsonrpc: "2.0", id: 9, method: "tools/call", params: { name: "task_sync_plan", arguments: {} } }),
+    });
+    assert.equal(noAuth.status, 401);
+    assert.equal(noAuth.headers.get("www-authenticate"), "Bearer");
+    assert.equal(await noAuth.text(), '{"error":"UNAUTHORIZED"}');
+
+    const wrong = await fetch(url, {
+      method: "POST",
+      headers: { "content-type": "application/json", authorization: "Bearer definitely-not-it" },
+      body: JSON.stringify({ jsonrpc: "2.0", id: 10, method: "tools/call", params: { name: "task_sync_plan", arguments: {} } }),
+    });
+    assert.equal(wrong.status, 403);
+    assert.equal(await wrong.text(), '{"error":"FORBIDDEN"}');
+
+    const get = await fetch(url, { headers: { authorization: `Bearer ${token}` } });
+    assert.equal(get.status, 405);
+  } finally {
+    const exit = await child.close();
+    assert.equal(exit.code, 0);
+  }
+  const announces = child.stderr.split("\n").filter((l) => /listening/i.test(l) && !l.startsWith("MCP-CALL-LOG"));
+  assert.equal(announces.length, 1, `the bound port is announced exactly once: ${JSON.stringify(announces)}`);
 });

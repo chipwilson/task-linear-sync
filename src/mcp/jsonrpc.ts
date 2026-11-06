@@ -71,7 +71,8 @@ export const RPC_ERROR_CODES = {
 // Fixed error texts (§4: constants or method tokens only).
 /** Fixed parse-error text (transport frames — never echoes presented input). */
 export const MSG_PARSE_ERROR = "parse error";
-const MSG_INVALID_REQUEST = "invalid request";
+/** Fixed invalid-request text (also the http transport's parse/array fault). */
+export const MSG_INVALID_REQUEST = "invalid request";
 const MSG_INVALID_PARAMS = "invalid params";
 const MSG_INTERNAL = "internal error";
 const MSG_NOT_INITIALIZED = "server not initialized";

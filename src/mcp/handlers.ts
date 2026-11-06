@@ -54,7 +54,10 @@ interface LaneCapture {
 export function createReadHandlers(deps: ReadHandlerDeps): McpReadHandlers {
   const screen = (value: string): string => {
     const outcome = deps.screener.screen(value);
-    return outcome.blocked.length > 0 ? "[redacted]" : outcome.output;
+    if (outcome.blocked.length === 0) return outcome.output;
+    // transport-auth.md §3.3: blocked findings ship the [blocked:<category>] sentinel —
+    // deterministic, sorted, deduped — never the source text.
+    return [...new Set(outcome.blocked)].sort().map((category) => `[blocked:${category}]`).join(" ");
   };
 
   async function runLane(argv: readonly string[]): Promise<LaneCapture> {
@@ -225,7 +228,10 @@ export type ApplyCoreOutcome =
 export function createApplyHandler(deps: ApplyHandlerDeps): (args: Record<string, unknown>) => Promise<ApplyCoreOutcome> {
   const screen = (value: string): string => {
     const outcome = deps.screener.screen(value);
-    return outcome.blocked.length > 0 ? "[redacted]" : outcome.output;
+    if (outcome.blocked.length === 0) return outcome.output;
+    // transport-auth.md §3.3: blocked findings ship the [blocked:<category>] sentinel —
+    // deterministic, sorted, deduped — never the source text.
+    return [...new Set(outcome.blocked)].sort().map((category) => `[blocked:${category}]`).join(" ");
   };
 
   return async (args) => {
@@ -269,7 +275,7 @@ export function createApplyHandler(deps: ApplyHandlerDeps): (args: Record<string
     // surface sanitizes it before rendering: the refusal names the CODE, never the value.
     const sanitizeGateDetail = (code: string, detail: string, presented: string): string =>
       code === "CONFIRMATION_KEY_MISMATCH"
-        ? detail.split(presented).join("[redacted]")
+        ? detail.split(presented).join("[blocked:credential]")
         : screen(detail);
     const result = await deps.engine.applySyncPlan(stored.plan as Parameters<SyncEngine["applySyncPlan"]>[0], {
       applyFlag: true,

@@ -317,6 +317,8 @@ export async function emitMcpDriver(opts: EmitMcpDriverOptions): Promise<void> {
 }
 
 export interface McpDriverHandle {
+  /** OS pid of the spawned child (for /proc-level evidence, e.g. socket censuses). */
+  readonly pid: number;
   readonly lines: string[];
   readonly stderr: string;
   send(message: Record<string, unknown> | string): void;
@@ -324,8 +326,11 @@ export interface McpDriverHandle {
   close(): Promise<{ code: number | null; stdout: string; stderr: string }>;
 }
 
-export function spawnMcpDriver(driverPath: string): McpDriverHandle {
-  const child = spawn(process.execPath, [driverPath], { stdio: ["pipe", "pipe", "pipe"] });
+export function spawnMcpDriver(driverPath: string, options: { env?: Record<string, string> } = {}): McpDriverHandle {
+  const child = spawn(process.execPath, [driverPath], {
+    stdio: ["pipe", "pipe", "pipe"],
+    env: { ...process.env, ...(options.env ?? {}) },
+  });
   const pump = createLinePump();
   pump.attach(child.stdout);
   let stderrText = "";
@@ -337,6 +342,7 @@ export function spawnMcpDriver(driverPath: string): McpDriverHandle {
     child.on("close", (code) => res({ code, stdout: pump.lines.join("\n"), stderr: stderrText }));
   });
   return {
+    pid: child.pid ?? Number.NaN,
     lines: pump.lines,
     get stderr() {
       return stderrText;
