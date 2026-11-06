@@ -74,10 +74,17 @@ test("stability-docs: spec status lines mirror the promotion; 014 reads Delivere
   assert.match(read("specs/014-preview-to-stable-hardening/spec.md"), /\*\*Status\*\*:\s*Delivered/);
 });
 
-test("stability-docs: the README surface table shows both 011/012 rows as merged, unlabelled", () => {
+test("stability-docs: the README presents both 011/012 surfaces as merged and Stable", () => {
+  // The consumer-facing README dropped the old feature-status table; the same
+  // guarantee is now pinned on the prose — both promoted entry points must be
+  // named inside the Stable declaration, and no preview label survives
+  // (asserted by the SC-005 test above).
   const readme = read("README.md");
-  for (const row of [/Sync History web page \| ✅ merged \|/, /\| MCP server \| ✅ merged \|/]) {
-    assert.match(readme, row, "surface-table row must read plain ✅ merged");
+  const stability = readme.slice(readme.indexOf("\n## Stability"));
+  assert.ok(stability !== readme, "the README must carry a ## Stability section");
+  assert.match(stability, /\*\*Stable\*\*/, "the Stability section must declare the surfaces Stable");
+  for (const entry of ["task-linear-sync/history-server", "task-linear-sync/mcp"]) {
+    assert.ok(stability.includes(entry), `the Stable declaration must name the ${entry} entry point`);
   }
 });
 
