@@ -62,7 +62,6 @@
           "score": 120,
           "margin": 40,
           "reasons": [
-            "conflict:both-changed",
             "conflict:linear-changed"
           ],
           "alternatives": [],

@@ -110,7 +110,7 @@ fixtures["violates-all-three.json"] = report("b", [
 fixtures["conflict-blocks.json"] = report("c", [
   GROUP([
     entry({ n: 1, issueId: "TLS-301", reasons: ["title-exact"] }),
-    entry({ n: 2, issueId: "TLS-302", decision: "conflict", unresolvedConflict: true, reasons: ["conflict:both-changed", "conflict:linear-changed"] }),
+    entry({ n: 2, issueId: "TLS-302", decision: "conflict", unresolvedConflict: true, reasons: ["conflict:linear-changed"] }),
     entry({ n: 3, issueId: "TLS-303", decision: "conflict", unresolvedConflict: true, reasons: ["conflict:linear-changed"] }),
   ]),
 ]);
