@@ -72,6 +72,10 @@
     "./queue": {
       "types": "./dist/queue/index.d.ts",
       "import": "./dist/queue/index.js"
+    },
+    "./history-server": {
+      "types": "./dist/history-server/index.d.ts",
+      "default": "./dist/history-server/index.js"
     }
   },
   "files": [
