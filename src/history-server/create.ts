@@ -4,11 +4,12 @@
  *
  * `createSyncHistoryServer` validates everything at construction (fail fast,
  * never silent) and returns a deployable `(req, res)` handler. The request
- * pipeline is route → (auth gate lands in US2) → reconstruct → content
- * negotiation (SSE/JSON/HTML). Error responses render from the fixed
- * envelopes on a structurally separate path, so a failure can never carry
- * history bytes. `process.env` appears exactly once in the whole module
- * group — the deps default below (research R9).
+ * pipeline is route → (auth gate lands in US2) → admission (014: SSE-stream
+ * join cap + walk-leader cap, both answered by the 429 envelope + Retry-After)
+ * → reconstruct → content negotiation (SSE/JSON/HTML). Error responses render
+ * from the fixed envelopes on a structurally separate path, so a failure can
+ * never carry history bytes. `process.env` appears exactly once in the whole
+ * module group — the deps default below (research R9).
  */
 
 import type { IncomingMessage, ServerResponse } from "node:http";
@@ -124,8 +125,43 @@ export function createSyncHistoryServer(deps: SyncHistoryServerDeps): SyncHistor
     env,
     toolId: config.toolId,
     clock,
+    secureCookies: settings.secureCookies,
   });
-  const cache = createHistoryCache({ ttlSeconds: settings.cacheTtlSeconds, clock });
+  const cache = createHistoryCache({
+    ttlSeconds: settings.cacheTtlSeconds,
+    maxEntries: settings.maxCacheEntries,
+    clock,
+  });
+
+  // 014 admission (resource-bounds.md §3): the two counted units are walk
+  // LEADERS on data-route cache misses and OPEN SSE streams. Both counters
+  // mutate in synchronous blocks only — no interleaving mid-decision.
+  let inFlightWalks = 0;
+  let openStreams = 0;
+
+  /** A leader refused by admission; renders the 429 envelope + Retry-After. */
+  class AdmissionRefused extends Error {
+    override readonly name = "AdmissionRefused";
+  }
+  const selfProtectiveHeaders = { ...(ERROR_ENVELOPES.RATE_LIMITED.selfProtective?.headers ?? {}) };
+  const selfProtective429 = (res2: ServerResponse, accept: string | undefined): void => {
+    respondError(res2, accept, ERROR_ENVELOPES.RATE_LIMITED, { ...selfProtectiveHeaders });
+  };
+
+  /** Cache load with leader-only admission; hits and followers never refused. */
+  async function loadAdmitted(taskUuid: string) {
+    let slot = false;
+    if (!cache.isFresh(taskUuid) && !cache.hasFlight(taskUuid)) {
+      if (inFlightWalks >= settings.maxConcurrentWalks) throw new AdmissionRefused();
+      inFlightWalks += 1;
+      slot = true;
+    }
+    try {
+      return await cache.load(taskUuid, () => reconstructHistory(reconstructDeps, taskUuid));
+    } finally {
+      if (slot) inFlightWalks -= 1;
+    }
+  }
 
   function respond(
     res: ServerResponse,
@@ -251,26 +287,47 @@ export function createSyncHistoryServer(deps: SyncHistoryServerDeps): SyncHistor
 
     const format: NegotiatedFormat = negotiateFormat(accept, settings.sseEnabled);
 
+    // SSE join admission — strictly before anything opens (resource-bounds §3):
+    // an over-limit join is answered with the 429 envelope + Retry-After and
+    // never opens, so it is never counted.
+    let streamSlot = false;
+    if (format === "sse") {
+      if (openStreams >= settings.maxConcurrentSseStreams) {
+        selfProtective429(res, accept);
+        return;
+      }
+      openStreams += 1;
+      streamSlot = true;
+    }
+
     let cached;
     try {
-      cached = await cache.load(outcome.taskUuid, () =>
-        reconstructHistory(reconstructDeps, outcome.taskUuid),
-      );
+      cached = await loadAdmitted(outcome.taskUuid);
     } catch (error) {
-      respondError(res, accept, toEnvelope(error));
+      if (streamSlot) openStreams -= 1;
+      if (error instanceof AdmissionRefused) selfProtective429(res, accept);
+      else respondError(res, accept, toEnvelope(error));
       return;
     }
 
     if (format === "sse") {
       // Streams refresh by re-walking (the cache must not freeze a live view).
-      startSseStream({
-        res,
-        taskUuid: outcome.taskUuid,
-        refreshSeconds: settings.refreshSeconds,
-        clock,
-        initialView: cached.value,
-        loadView: (taskUuid) => reconstructHistory(reconstructDeps, taskUuid),
-      });
+      try {
+        const stream = startSseStream({
+          res,
+          taskUuid: outcome.taskUuid,
+          refreshSeconds: settings.refreshSeconds,
+          clock,
+          initialView: cached.value,
+          loadView: (taskUuid) => reconstructHistory(reconstructDeps, taskUuid),
+        });
+        void stream.done.then(() => {
+          openStreams -= 1;
+        });
+      } catch (error) {
+        openStreams -= 1;
+        throw error;
+      }
       return;
     }
     const cacheHeaders: Record<string, string> = {

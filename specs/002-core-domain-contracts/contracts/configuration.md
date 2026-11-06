@@ -68,6 +68,34 @@ export const builtInDefaults: ResolvedConfig;  // release-scan target: zero org 
 6. `confirmationKey` default `SYNC`; the merged value is used for exact-match gates and is
    never compared against a built-in constant (001 R17.7).
 
+## Amendment 2026-11-06 — surface resource-bound keys (noted against feature 001, shipped by feature 014)
+
+Two additive field sets on the pre-frozen surface groups. Interface fields only: no exported
+name changes, existing values untouched, defaults preserve pre-amendment observable behavior.
+Range guards execute in the consuming surfaces (`src/history-server/options.ts`,
+`src/mcp/config.ts`), listing every problem, one dotted-key line each.
+
+```ts
+export interface WebSurfaceConfig {
+  // …existing fields unchanged…
+  readonly maxCacheEntries: number;         // int 1..100000,   default 500
+  readonly maxConcurrentWalks: number;      // int 1..64,       default 8
+  readonly maxConcurrentSseStreams: number; // int 1..1000,     default 16
+  readonly secureCookies: boolean;          // default false
+}
+
+export interface McpSurfaceConfig {
+  // …existing fields unchanged…
+  readonly planReferenceTtlSeconds: number; // int 60..86400,   default 3600
+  readonly planReferenceMaxEntries: number; // int 1..100000,   default 1000
+}
+```
+
+Semantics are normative on the owning surfaces per
+[`specs/014-preview-to-stable-hardening/contracts/resource-bounds.md`](../014-preview-to-stable-hardening/contracts/resource-bounds.md):
+cache LRU bound and admission caps (history), session-cookie `Secure` attribute, and the
+MCP plan-reference store TTL/capacity lifecycle.
+
 ## Test obligations (mapped in quickstart)
 
 - Precedence matrix fixtures (defaults-only / file-only / all-three, overlapping and

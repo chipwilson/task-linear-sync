@@ -21,6 +21,7 @@ import { fileURLToPath } from "node:url";
 
 import { createAgentToolServer } from "../../src/mcp/index.js";
 import type { AgentToolServerApp } from "../../src/mcp/index.js";
+import type { Clock, StateStore } from "../../src/state/index.js";
 import { buildCliWorld } from "./cli-harness.js";
 import type { CliWorld } from "./cli-harness.js";
 
@@ -39,6 +40,10 @@ export interface McpFixtureOptions {
   readonly settings?: Record<string, unknown>;
   readonly env?: Record<string, string>;
   readonly token?: string;
+  /** 014 (T028): override the world clock (e.g. an advancing clock for TTL tests). */
+  readonly clock?: Clock;
+  /** 014 (T028): wrap the state store (e.g. a call-counting spy) before injection. */
+  readonly wrapState?: (state: StateStore) => StateStore;
 }
 
 export interface McpFixture {
@@ -70,8 +75,8 @@ export async function startMcpFixture(options: McpFixtureOptions = {}): Promise<
   const app = createAgentToolServer({
     config: world.config,
     env,
-    clock: world.clock,
-    state: world.state,
+    clock: options.clock ?? world.clock,
+    state: options.wrapState ? options.wrapState(world.state) : world.state,
     port: world.port,
     screener: world.world.screener,
     repositoryRoot: world.repositoryRoot, // the lanes walk the world's repo copy, never the package tree
@@ -136,8 +141,8 @@ export async function withHttpServer(
     const app = createAgentToolServer({
       config: world.config,
       env: { ...world.env, [MCP_TEST_TOKEN_ENV]: token, ...(options.env ?? {}) },
-      clock: world.clock,
-      state: world.state,
+      clock: options.clock ?? world.clock,
+      state: options.wrapState ? options.wrapState(world.state) : world.state,
       port: world.port,
       screener: world.world.screener,
       repositoryRoot: world.repositoryRoot,

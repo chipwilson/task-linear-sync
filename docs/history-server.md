@@ -8,6 +8,9 @@ no checkpoint) and never becomes a tracker client beyond the injected
 
 All identifiers in this document are placeholders (Principle III).
 
+This feature's wire surface is pinned by feature 011's specs and the
+frozen surface snapshot — see `## Stability` at the end of this document.
+
 ## Usage
 
 ```ts
@@ -88,8 +91,15 @@ error names only the variable NAME, never a value.
   (`HMAC` under an HKDF-derived key, expiry 3600 s, verified against the
   injected clock; the cookie value never contains a substring of the token).
   No credential at all ⇒ `401` (+ `WWW-Authenticate: Bearer`, with a token
-  form in the HTML shell); a presented-but-invalid credential ⇒ `403`, never
-  downgraded to a 401. Authorization runs strictly **before** any tracker
+  form in the HTML shell); a credential that parses but fails to verify ⇒
+  `403`, never downgraded to a 401. The `Authorization` scheme is matched
+  like RFC 7235 defines it: case-insensitive and whitespace-tolerant
+  (`bearer`, `BEARER`, `  Bearer  <token>` all present the token), and a
+  value that is not a well-formed Bearer credential — bare `Bearer`, an
+  empty token, `Basic …` — counts as **no credential** (401), not as a
+  failed one. This is the same parser the MCP HTTP transport uses; the
+  parity is pinned by a cross-surface test, not by a shared module.
+  Authorization runs strictly **before** any tracker
   probe.
 - **`public` (explicit opt-in via `web.accessControlMode`).** Any credential
   is ignored; every request serves. Intended for private networks / sidecars
@@ -108,6 +118,10 @@ connection and additionally re-fetches the JSON view every
 without a manual reload. SSE refreshes re-walk the chain (they must not be
 frozen by the cache); JSON/HTML reads go through the TTL cache.
 `web.realtimeSse = false` turns SSE negotiation off (405-set unaffected).
+A reconnect that names `Last-Event-ID` is accepted and the header is
+**ignored**: every stream starts fresh with the full current chain (the
+history is append-only and re-derivable, so a full re-render IS the resume
+semantics — see the Stability non-goal `sse-last-event-id-resume`).
 
 ## Cache semantics
 
@@ -118,6 +132,29 @@ Concurrent misses for the same task coalesce into one chain walk
 never served on upstream failure. Success responses carry the non-normative
 `X-History-Cache: hit|miss` marker (plus `X-History-Age-Ms` on hits); error
 responses carry no cache headers and no history bytes.
+
+Retention is LRU-bounded by `web.maxCacheEntries` (integer `1..100000`,
+default 500): a read of a fresh entry moves it to the most-recent slot, and a
+`set` past the bound evicts from the front (insertion order breaks ties).
+Expiry stays lazy — no timers. Eviction never changes response bytes: every
+miss rebuilds from the tracker, so a bounded run and an unbounded run serve
+byte-identical responses for the same world.
+
+## Backpressure
+
+Two independent inbound counters answer over-limit requests with the existing
+`429 RATE_LIMITED` envelope (fixed body, zero history bytes) plus a
+`Retry-After: 1` header — no queueing, no in-component retries:
+
+- `web.maxConcurrentWalks` (integer `1..64`, default 8) counts chain-walk
+  leaders; a cache hit or a single-flight follower is never refused.
+- `web.maxConcurrentSseStreams` (integer `1..1000`, default 16) counts open
+  streams; an over-limit join is answered before the stream opens and is
+  therefore never counted — closing a stream frees its slot immediately.
+
+This self-protective 429 is the *same* envelope the tracker-originated rate
+limit maps to; clients treat both identically (retry later). The header-only
+delta is recorded in `docs/contract-amendments.md`.
 
 ## Security posture
 
@@ -135,3 +172,51 @@ responses carry no cache headers and no history bytes.
 - Responses are `no-store` with `X-Content-Type-Options: nosniff` and a
   default-deny CSP; `node:http` is the only transport (inbound only — the
   component never acts as a client).
+- Production exposure goes through a TLS-terminating front door; behind one,
+  set `web.secureCookies: true` so the session cookie appends `; Secure`
+  (the base attribute set `Path=/; HttpOnly; SameSite=Strict` is unchanged).
+  The default `false` fits plain loopback or same-origin hosting; the
+  component never auto-detects TLS from forwarded headers (014 research R4).
+
+## Stability
+
+- **Status**: Stable · effective 2026-11-06 · promoted by feature 014.
+
+**Guaranteed scope** — pointer list only; the pointers ARE the scope definition:
+
+- `specs/011-sync-history-web-page/contracts/http-surface.md`
+- `specs/011-sync-history-web-page/contracts/access-control.md`
+- `specs/011-sync-history-web-page/contracts/history-reconstruction.md`
+- `specs/011-sync-history-web-page/contracts/component-api.md`
+- `tests/contract/snapshots/history-surface.json` — the machine-readable frozen inventory
+
+**Not guaranteed**: behavior outside the frozen inventory (internal refactors,
+formatting, diagnostics) may change without notice.
+
+**Explicit non-goals** (one bullet per deferred decision record — populated
+before promotion by feature 014 US2/US4, per
+`specs/014-preview-to-stable-hardening/data-model.md` §4):
+
+- `sse-last-event-id-resume` — **re-deferred** (011 research R4, reaffirmed
+  014 research R9). Rationale: the chain is append-only and re-derivable from
+  the tracker; a resume cursor would cache chain state the component
+  deliberately does not own (011 FR-004: nothing reconstructed from local
+  state), and per-stream cursor state interacts badly with the R3 stream
+  bound for a problem no deployment has shown. `Last-Event-ID` is therefore
+  ignored and every stream ships the full current chain. Revisit trigger:
+  adoption by a TLS-fronted real deployment showing repeated proxy-side
+  stream drops, or MCP streamable-HTTP adoption (which would introduce
+  event-id infrastructure anyway).
+- `history-inbound-identity-limiting` — **re-deferred** (014 research R3).
+  Rationale: the surface is deliberately credential-light (private/public
+  modes only); per-client token buckets would invent an identity model, and
+  random shedding is nondeterministic — so admission stays aggregate
+  (walk/stream counters, `Retry-After: 1`) and never per-client. Revisit
+  trigger: a shared multi-tenant deployment where aggregate bounds demonstrably
+  let one client starve others, or an access mode that introduces per-user
+  credentials.
+
+**Deployment assumptions**: production exposure puts a TLS-terminating front
+door in front of the component; set `web.secureCookies: true` behind it so the
+session cookie carries `Secure`. Plain loopback or same-origin hosting works
+with the default (`false`).

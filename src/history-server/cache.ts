@@ -13,6 +13,8 @@ import type { HistoryClock } from "./types.js";
 
 export interface HistoryCacheDeps {
   readonly ttlSeconds: number;
+  /** 014 (resource-bounds.md §2): LRU retention bound; eviction never alters bytes. */
+  readonly maxEntries: number;
   readonly clock: HistoryClock;
 }
 
@@ -27,6 +29,10 @@ export interface HistoryCache {
   load<T>(key: string, loader: () => Promise<T>): Promise<CacheOutcome<T>>;
   /** Entries currently retained (0 whenever the TTL disables caching). */
   size(): number;
+  /** True when a FRESH entry exists — admission never refuses a hit (resource-bounds §3). */
+  isFresh(key: string): boolean;
+  /** True when a walk is already running for the key — followers are never refused. */
+  hasFlight(key: string): boolean;
 }
 
 interface CacheEntry {
@@ -43,10 +49,27 @@ export function createHistoryCache(deps: HistoryCacheDeps): HistoryCache {
     return { value: entry.value, cacheState: "hit", ageMs: Math.max(0, deps.clock.elapsed(entry.builtAtIso)) };
   }
 
+  /** Touch-on-hit: re-inserting moves the entry to the most-recent slot (§2). */
+  function touchMostRecent(key: string, entry: CacheEntry): void {
+    entries.delete(key);
+    entries.set(key, entry);
+  }
+
+  /** Store as most-recent, then evict from the front until inside the bound. */
+  function storeBounded(key: string, entry: CacheEntry): void {
+    touchMostRecent(key, entry);
+    while (entries.size > deps.maxEntries) {
+      const oldest = entries.keys().next();
+      if (oldest.done === true) break;
+      entries.delete(oldest.value);
+    }
+  }
+
   function load<T>(key: string, loader: () => Promise<T>): Promise<CacheOutcome<T>> {
     if (ttlMs > 0) {
       const entry = entries.get(key);
       if (entry !== undefined && deps.clock.elapsed(entry.builtAtIso) < ttlMs) {
+        touchMostRecent(key, entry);
         return Promise.resolve(freshOutcome(entry) as CacheOutcome<T>);
       }
     }
@@ -59,7 +82,7 @@ export function createHistoryCache(deps: HistoryCacheDeps): HistoryCache {
     const flight: Promise<CacheOutcome<T>> = loader().then(
       (value) => {
         if (ttlMs > 0) {
-          entries.set(key, { value, builtAtIso: deps.clock.now().toISOString() });
+          storeBounded(key, { value, builtAtIso: deps.clock.now().toISOString() });
         }
         return { value, cacheState: "miss", ageMs: 0 } satisfies CacheOutcome<T>;
       },
@@ -80,5 +103,12 @@ export function createHistoryCache(deps: HistoryCacheDeps): HistoryCache {
   return {
     load,
     size: () => entries.size,
+    isFresh: ttlMs > 0
+      ? (key) => {
+          const entry = entries.get(key);
+          return entry !== undefined && deps.clock.elapsed(entry.builtAtIso) < ttlMs;
+        }
+      : () => false,
+    hasFlight: (key) => flights.has(key),
   };
 }

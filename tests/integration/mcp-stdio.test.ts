@@ -148,3 +148,35 @@ test("mcp-stdio: stdout carries protocol frames ONLY (stderr captured separately
     assert.ok(Array.isArray(fx.stderrLines), "stderr captured apart from the protocol stream");
   });
 });
+
+// ── T036 (feature 014) — quickstart Scenario 5 negotiation rows over the real
+// stdio line transport (one fresh connection per row; FR-010) ────────────────
+
+test("mcp-stdio: Scenario 5 — every negotiation row over the real line pipe", async () => {
+  for (const [sent, echo] of [
+    ["2025-06-18", "2025-06-18"],
+    ["2025-03-26", "2025-03-26"],
+    ["2024-11-05", "2024-11-05"],
+    ["2099-01-01", "2025-06-18"], // unsupported ⇒ newest supported
+    ["not-a-date", "2025-06-18"],
+  ] as const) {
+    await withMcpServer(async (fx) => {
+      const init = await fx.request("initialize", { protocolVersion: sent });
+      const result = init.result as { protocolVersion: string };
+      assert.equal(result.protocolVersion, echo, `wire echo for ${sent}`);
+    });
+  }
+
+  // Non-string protocolVersion ⇒ -32602 on the wire; the handshake stays
+  // retryable, and the completed session still lists exactly the three tools.
+  await withMcpServer(async (fx) => {
+    const bad = await fx.request("initialize", { protocolVersion: 42 });
+    assert.equal((bad.error as { code: number }).code, -32602);
+    assert.equal((bad.error as { message: string }).message, "invalid params");
+
+    const retry = await fx.request("initialize", { protocolVersion: "2025-06-18" });
+    assert.equal((retry.result as { protocolVersion: string }).protocolVersion, "2025-06-18");
+    fx.notify("notifications/initialized");
+    assert.deepEqual((await toolsList(fx)).sort(), ["task_sync_inventory", "task_sync_plan", "task_sync_status"]);
+  });
+});

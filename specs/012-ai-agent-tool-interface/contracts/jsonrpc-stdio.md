@@ -21,7 +21,11 @@ pins the wire format the module implements — the MCP stdio-transport shape:
 ## 2. Lifecycle / handshake
 
 1. `initialize` (request) — `params.protocolVersion` echoed when in the supported set
-   `{ "2024-11-05", "2025-03-26" }`, else the server answers `"2025-03-26"` (our latest).
+   `{ "2024-11-05", "2025-03-26", "2025-06-18" }` (014 amendment: `2025-06-18` joins — it adds no
+   stdio-layer semantics this server does not already implement), else the server answers
+   `"2025-06-18"` (our latest). A MISSING `protocolVersion` is lenient (answers the default);
+   a PRESENT but non-string one is a params shape fault answered `-32602` WITHOUT consuming
+   the handshake — a corrected retry may still initialize (014 Scenario 5).
    Result: `{ protocolVersion, capabilities: { tools: {} }, serverInfo: { name, version } }`
    with `name = "<toolId>-mcp"` (toolId-derived, zero org literals) and `version` from the
    package version.

@@ -124,10 +124,17 @@ export const builtInDefaults: ResolvedConfig = {
     pollIntervalSeconds: 15,
     cacheTtlSeconds: 10,
     authEnvVarName: `${envVarPrefixFor(DEFAULT_TOOL_ID)}_WEB_TOKEN`,
+    // 014 amendment: defaults reproduce pre-amendment observable behavior (generous caps).
+    maxCacheEntries: 500,
+    maxConcurrentWalks: 8,
+    maxConcurrentSseStreams: 16,
+    secureCookies: false,
   },
   mcp: {
     mutatingToolsEnabled: false,
     transport: "stdio",
     authEnvVarName: `${envVarPrefixFor(DEFAULT_TOOL_ID)}_MCP_TOKEN`,
+    planReferenceTtlSeconds: 3600,
+    planReferenceMaxEntries: 1000,
   },
 };

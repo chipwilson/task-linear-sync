@@ -10,6 +10,9 @@ import test from "node:test";
 import { createHistoryCache } from "../../src/history-server/cache.js";
 import { makeFixedClock } from "../helpers/history-harness.js";
 
+/** Pre-014 observable behavior: an effectively unbounded retention bound. */
+const UNBOUNDED = 1_000_000;
+
 interface Loader {
   calls: number;
   gate: Promise<unknown> | undefined;
@@ -35,7 +38,7 @@ function run(loader: Loader): Promise<string> {
 
 test("history-cache: a read inside the TTL window is a hit; at/after the window is a miss", async () => {
   const clock = makeFixedClock();
-  const cache = createHistoryCache({ ttlSeconds: 10, clock });
+  const cache = createHistoryCache({ ttlSeconds: 10, maxEntries: UNBOUNDED, clock });
   const loader = makeLoader();
 
   const first = await cache.load("task-a", () => run(loader));
@@ -60,7 +63,7 @@ test("history-cache: a read inside the TTL window is a hit; at/after the window 
 
 test("history-cache: cacheTtlSeconds 0 stores nothing — every read misses", async () => {
   const clock = makeFixedClock();
-  const cache = createHistoryCache({ ttlSeconds: 0, clock });
+  const cache = createHistoryCache({ ttlSeconds: 0, maxEntries: UNBOUNDED, clock });
   const loader = makeLoader();
 
   const first = await cache.load("task-a", () => run(loader));
@@ -73,7 +76,7 @@ test("history-cache: cacheTtlSeconds 0 stores nothing — every read misses", as
 
 test("history-cache: failed reconstructions are never cached and stale never serves on error", async () => {
   const clock = makeFixedClock();
-  const cache = createHistoryCache({ ttlSeconds: 10, clock });
+  const cache = createHistoryCache({ ttlSeconds: 10, maxEntries: UNBOUNDED, clock });
 
   const ok = makeLoader();
   await cache.load("task-a", () => run(ok));
@@ -103,7 +106,7 @@ test("history-cache: failed reconstructions are never cached and stale never ser
 
 test("history-cache: concurrent misses for one taskUuid coalesce to a single walk", async () => {
   const clock = makeFixedClock();
-  const cache = createHistoryCache({ ttlSeconds: 10, clock });
+  const cache = createHistoryCache({ ttlSeconds: 10, maxEntries: UNBOUNDED, clock });
   const loader = makeLoader();
   let release: () => void = () => undefined;
   loader.gate = new Promise<void>((resolve) => {
@@ -128,7 +131,7 @@ test("history-cache: concurrent misses for one taskUuid coalesce to a single wal
 
 test("history-cache: entries are keyed per taskUuid — different tasks never share", async () => {
   const clock = makeFixedClock();
-  const cache = createHistoryCache({ ttlSeconds: 10, clock });
+  const cache = createHistoryCache({ ttlSeconds: 10, maxEntries: UNBOUNDED, clock });
   const loader = makeLoader();
 
   await cache.load("task-a", () => run(loader));
@@ -136,4 +139,117 @@ test("history-cache: entries are keyed per taskUuid — different tasks never sh
   assert.equal(other.cacheState, "miss", "a different taskUuid is never a hit");
   assert.equal(loader.calls, 2);
   assert.equal(cache.size(), 2);
+});
+
+// ── T016 (feature 014) — LRU bound enforcement (resource-bounds.md §2, FR-005)
+
+test("history-cache: maxEntries 4 keeps size ≤ 4 and evicts from the front", async () => {
+  const clock = makeFixedClock();
+  const cache = createHistoryCache({ ttlSeconds: 10, maxEntries: 4, clock });
+  const calls = new Map<string, number>();
+  const load = (key: string) => {
+    calls.set(key, (calls.get(key) ?? 0) + 1);
+    return cache.load(key, async () => `v-${key}`);
+  };
+
+  for (const key of ["a", "b", "c", "d", "e", "f"]) {
+    await load(key);
+    assert.ok(cache.size() <= 4, `size invariant after inserting ${key}: ${cache.size()}`);
+  }
+  assert.equal(cache.size(), 4);
+
+  // The four newest insertions are fresh hits (hits change no retention order);
+  // the two oldest insertions were evicted from the front. Miss-checks come
+  // LAST because a miss re-walks and re-stores (which itself evicts one).
+  assert.equal((await load("c")).cacheState, "hit");
+  assert.equal((await load("d")).cacheState, "hit");
+  assert.equal((await load("e")).cacheState, "hit");
+  assert.equal((await load("f")).cacheState, "hit");
+  assert.equal((await load("a")).cacheState, "miss", "a was the first eviction");
+  assert.equal((await load("b")).cacheState, "miss", "b was evicted next from the front");
+});
+
+test("history-cache: touching a FRESH entry moves it to the most-recent slot", async () => {
+  const clock = makeFixedClock();
+  const cache = createHistoryCache({ ttlSeconds: 10, maxEntries: 4, clock });
+  const load = (key: string) => cache.load(key, async () => `v-${key}`);
+
+  for (const key of ["a", "b", "c", "d"]) await load(key);
+  assert.equal((await load("a")).cacheState, "hit", "a is a fresh hit — the touch re-orders it");
+  await load("e"); // must evict b (front), not a (touched to most-recent)
+
+  assert.equal((await load("a")).cacheState, "hit", "a survived eviction thanks to the touch");
+  assert.equal((await load("c")).cacheState, "hit");
+  assert.equal((await load("d")).cacheState, "hit");
+  assert.equal((await load("e")).cacheState, "hit");
+  assert.equal((await load("b")).cacheState, "miss", "b was the front slot");
+});
+
+test("history-cache: untouched entries evict in pure insertion order (tie-break)", async () => {
+  const clock = makeFixedClock();
+  const cache = createHistoryCache({ ttlSeconds: 10, maxEntries: 3, clock });
+  const load = (key: string) => cache.load(key, async () => `v-${key}`);
+
+  for (const key of ["a", "b", "c", "d"]) await load(key); // retained: b, c, d
+  assert.equal((await load("b")).cacheState, "hit");
+  assert.equal((await load("c")).cacheState, "hit");
+  assert.equal((await load("d")).cacheState, "hit");
+  assert.equal((await load("a")).cacheState, "miss", "a was the front slot"); // its re-store evicts b
+  assert.equal((await load("b")).cacheState, "miss", "insertion order breaks ties"); // re-store evicts c
+  assert.equal((await load("e")).cacheState, "miss"); // evicts d
+  assert.equal((await load("a")).cacheState, "hit", "the re-stored a is retained normally");
+});
+
+test("history-cache: TTL stays lazy with a bound — expiry needs no timer", async () => {
+  const clock = makeFixedClock();
+  const cache = createHistoryCache({ ttlSeconds: 10, maxEntries: 2, clock });
+  const load = (key: string) => cache.load(key, async () => `v-${key}`);
+
+  await load("a");
+  await load("b");
+  clock.advance(10_000); // both expired; nothing was evicted (no timers ran)
+  assert.equal(cache.size(), 2, "expiry is lazy — retention is not timer-driven");
+  assert.equal((await load("a")).cacheState, "miss", "expired ⇒ a fresh walk");
+  assert.equal(cache.size(), 2, "the rebuilt entry stays inside the bound");
+});
+
+test("history-cache: flights stay unbounded — maxEntries 1 coalesces and completes all keys", async () => {
+  const clock = makeFixedClock();
+  const cache = createHistoryCache({ ttlSeconds: 10, maxEntries: 1, clock });
+  let release: () => void = () => undefined;
+  const gate = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  let calls = 0;
+  const loadGated = (key: string) => {
+    calls += 1;
+    return cache.load(key, () => gate.then(() => `v-${key}`));
+  };
+
+  // Three DIFFERENT keys fly concurrently — the bound is on retention only,
+  // never on in-flight work (admission is capped by create.ts, §3).
+  const inFlight = ["a", "b", "c"].map(loadGated);
+  await new Promise((resolve) => setImmediate(resolve));
+  release();
+  const all = await Promise.all(inFlight);
+  assert.equal(calls, 3, "the bound must never queue or refuse distinct-key flights");
+  assert.deepEqual(all.map((o) => o.value), ["v-a", "v-b", "v-c"]);
+  assert.equal(cache.size(), 1, "retention still trims to the bound");
+});
+
+test("history-cache: eviction never alters response bytes (SC-002 rule)", async () => {
+  const clock = makeFixedClock();
+  const bounded = createHistoryCache({ ttlSeconds: 10, maxEntries: 1, clock });
+  const control = createHistoryCache({ ttlSeconds: 10, maxEntries: UNBOUNDED, clock });
+  const value = JSON.stringify({ events: [{ at: "2026-02-01T10:00:00.000Z", kind: "applied" }] });
+  const loader = () => Promise.resolve(value);
+
+  const first = await bounded.load("task-a", loader);
+  await bounded.load("task-b", loader); // evicts task-a
+  const again = await bounded.load("task-a", loader);
+
+  assert.equal(again.cacheState, "miss", "bounded run re-reads after eviction");
+  assert.equal(again.value, first.value, "same loader ⇒ byte-identical payload");
+  const controlRun = await control.load("task-a", loader);
+  assert.equal(controlRun.value, again.value, "bounded and control runs serve identical bytes");
 });

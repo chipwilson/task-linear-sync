@@ -16,7 +16,7 @@ function configWith(web: Record<string, unknown>) {
   return loadConfig({ overrides: { web } as unknown as ConfigOverrides });
 }
 
-test("frozen defaults resolve to the documented surface settings", () => {
+test("built-in defaults resolve to the documented surface settings, including the 014 bounds", () => {
   const settings = resolveHistoryServerConfig(loadConfig({}));
   assert.deepEqual(settings, {
     accessMode: "private",
@@ -24,9 +24,23 @@ test("frozen defaults resolve to the documented surface settings", () => {
     sseEnabled: true,
     refreshSeconds: 15,
     cacheTtlSeconds: 10,
+    maxCacheEntries: 500, // amendment 2026-11-06
+    maxConcurrentWalks: 8, // amendment 2026-11-06
+    maxConcurrentSseStreams: 16, // amendment 2026-11-06
+    secureCookies: false, // amendment 2026-11-06
   });
   assert.equal(builtInDefaults.web.cacheTtlSeconds, 10);
   assert.equal(builtInDefaults.web.pollIntervalSeconds, 15);
+});
+
+test("the 014 web defaults equal the documented bounds-table defaults (docs/configuration.md)", () => {
+  // The table's Default column is the normative source; drift here would make the
+  // shipped behavior disagree with the documented defaults (a changed DEFAULT value).
+  const web = builtInDefaults.web;
+  assert.equal(web.maxCacheEntries, 500);
+  assert.equal(web.maxConcurrentWalks, 8);
+  assert.equal(web.maxConcurrentSseStreams, 16);
+  assert.equal(web.secureCookies, false);
 });
 
 test("tokenEnvVarName comes from web.authEnvVarName (toolId-derived)", () => {
@@ -99,4 +113,46 @@ test("resolver never mutates the config (pure read, no new keys)", () => {
   const before = structuredClone(config);
   resolveHistoryServerConfig(config);
   assert.deepEqual(config, before);
+});
+
+// ── T017 (feature 014) — guards for the four amended web.* keys
+// (resource-bounds.md §1/§2–4; ranges quoted verbatim from configuration.md amendment)
+
+test("the 014 bounds guards reject out-of-range values, quoting the range", () => {
+  // web.maxCacheEntries — integer 1..100000
+  assert.throws(() => resolveHistoryServerConfig(configWith({ maxCacheEntries: 0 })), /web\.maxCacheEntries.*1\.\.100000/s);
+  assert.throws(() => resolveHistoryServerConfig(configWith({ maxCacheEntries: 100001 })), /web\.maxCacheEntries/s);
+  assert.throws(() => resolveHistoryServerConfig(configWith({ maxCacheEntries: 2.5 })), /web\.maxCacheEntries/s);
+  // web.maxConcurrentWalks — integer 1..64
+  assert.throws(() => resolveHistoryServerConfig(configWith({ maxConcurrentWalks: 0 })), /web\.maxConcurrentWalks.*1\.\.64/s);
+  assert.throws(() => resolveHistoryServerConfig(configWith({ maxConcurrentWalks: 65 })), /web\.maxConcurrentWalks/s);
+  // web.maxConcurrentSseStreams — integer 1..1000
+  assert.throws(() => resolveHistoryServerConfig(configWith({ maxConcurrentSseStreams: 0 })), /web\.maxConcurrentSseStreams.*1\.\.1000/s);
+  assert.throws(() => resolveHistoryServerConfig(configWith({ maxConcurrentSseStreams: 1001 })), /web\.maxConcurrentSseStreams/s);
+  // web.secureCookies — boolean
+  assert.throws(() => resolveHistoryServerConfig(configWith({ secureCookies: "yes" })), /web\.secureCookies/s);
+  // Bounds themselves resolve.
+  const bounds = resolveHistoryServerConfig(
+    configWith({ maxCacheEntries: 100000, maxConcurrentWalks: 64, maxConcurrentSseStreams: 1000, secureCookies: true }),
+  );
+  assert.equal(bounds.maxCacheEntries, 100000);
+  assert.equal(bounds.maxConcurrentWalks, 64);
+  assert.equal(bounds.maxConcurrentSseStreams, 1000);
+  assert.equal(bounds.secureCookies, true);
+  assert.equal(resolveHistoryServerConfig(configWith({ maxCacheEntries: 1 })).maxCacheEntries, 1);
+});
+
+test("all four 014 problems are listed at once, one dotted-key line each", () => {
+  const bad = configWith({ maxCacheEntries: 0, maxConcurrentWalks: 99, maxConcurrentSseStreams: 0, secureCookies: 1 });
+  let message = "";
+  assert.throws(() => resolveHistoryServerConfig(bad), (error: unknown) => {
+    assert.ok(error instanceof Error);
+    message = error.message;
+    return true;
+  });
+  const lines = message.split("\n").filter((line) => /^\s*web\./.test(line));
+  for (const key of ["web.maxCacheEntries", "web.maxConcurrentWalks", "web.maxConcurrentSseStreams", "web.secureCookies"]) {
+    assert.ok(lines.some((line) => line.includes(key)), `${key} problem listed`);
+  }
+  assert.equal(lines.length, 4, "exactly one line per offending key");
 });

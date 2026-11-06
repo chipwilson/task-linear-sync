@@ -11,8 +11,8 @@ drive it. This guide covers embedding `createAgentToolServer` in your own
 process or tooling, the settings that shape it, the transport and token
 setup, and what happens when things go wrong.
 
-This feature is in preview; its wire surface is pinned by feature 012's
-specs, but treat it as preview-grade until the surface stabilizes.
+This feature's wire surface is pinned by feature 012's specs and the
+frozen surface snapshot — see `## Stability` at the end of this document.
 
 > **Security note:** `task_sync_apply` runs the real engine — the same
 > gated `applySyncPlan` entry the CLI and queue use. The apply tool is
@@ -197,13 +197,24 @@ layer ever echoes secrets, tokens, or file contents back:
 
 Each server session keeps a small **in-memory plan-reference store**:
 every successful `task_sync_plan` records its `planReference` (a 64-hex
-id) in a `Map` — no plan bodies stored, nothing persisted, zero TTL. It
+id) in a `Map` — no plan bodies stored, nothing persisted. It
 is what makes `task_sync_apply` execute *a plan this session actually
 previewed*: the `planReference` must be one of this session's recorded
 ids, and a cold or restarted process answers `PLAN_REFERENCE_UNKNOWN`
 for every previously handed-out reference. The store is private to the
 session and disappears with the process; it never becomes cross-session
 shared state.
+
+Retention is bounded (feature 014): entries expire lazily past
+`mcp.planReferenceTtlSeconds` (integer `60..86400`, default 3600) and the
+store trims to `mcp.planReferenceMaxEntries` (integer `1..100000`,
+default 1000), evicting the oldest recorded reference first. No timers
+are involved — expiry and eviction are checked on read and on record.
+An **expired or evicted reference is indistinguishable from a
+never-known one**: `task_sync_apply` answers the same
+`PLAN_REFERENCE_UNKNOWN` refusal, before the engine, any port call, or
+any state-directory access, so long-lived sessions cannot accumulate
+unbounded references.
 
 ## Safety model
 
@@ -221,3 +232,53 @@ Three invariants the surface is built around, each pinned by tests:
   002 path-safety and output-hygiene screeners before it is serialized,
   so raw absolute paths and secret-shaped substrings never reach the
   agent — blocked segments surface as `[blocked:<category>]` markers.
+
+## Stability
+
+- **Status**: Stable · effective 2026-11-06 · promoted by feature 014.
+
+**Guaranteed scope** — pointer list only; the pointers ARE the scope definition:
+
+- `specs/012-ai-agent-tool-interface/contracts/tool-definitions.md`
+- `specs/012-ai-agent-tool-interface/contracts/jsonrpc-stdio.md`
+- `specs/012-ai-agent-tool-interface/contracts/transport-auth.md`
+- `specs/012-ai-agent-tool-interface/contracts/apply-gating.md`
+- `specs/012-ai-agent-tool-interface/contracts/component-api.md`
+- `tests/contract/snapshots/mcp-surface.json` — the machine-readable frozen inventory
+
+**Not guaranteed**: behavior outside the frozen inventory (internal refactors,
+formatting, diagnostics) may change without notice.
+
+**Explicit non-goals** (one bullet per deferred decision record — populated
+before promotion by feature 014 US2/US4, per
+`specs/014-preview-to-stable-hardening/data-model.md` §4):
+
+- `mcp-sdk-protocol-surface` — **re-deferred** (012 R1/R2, reaffirmed by
+  014 research R7/R9). Rationale: the hand-rolled JSON-RPC/MCP subset keeps
+  the zero-dependency budget contract at `SPENT 0`; adopting the MCP SDK
+  would spend the one allowance plus its transitive tree and force a
+  frozen-contract amendment, while the SDK-only surface — streamable HTTP
+  transport, resources, prompts, sampling, elicitation, roots,
+  subscriptions — is used by nothing here and expands the frozen
+  inventory for zero benefit. The published surface stays
+  `initialize`/`tools/list`/`tools/call` over stdio and loopback HTTP.
+  Revisit trigger: a future feature needs SDK-only protocol surface
+  (streamable HTTP transport, sampling) — that change carries the budget
+  amendment explicitly — or MCP event-id/streamable-HTTP infrastructure
+  is adopted anyway (which also retires the history surface's
+  `sse-last-event-id-resume` deferral).
+- `mcp-tls-remote-exposure` — **re-deferred** (012 R9, mirroring 014
+  research R4). Rationale: TLS termination is a deployment concern — the
+  loopback bearer-token design is deliberately credential-light and
+  honest about what it can see; the server terminates no TLS of its own,
+  never reads forwarded headers to guess the scheme, and never exposes a
+  public socket by itself. Gating and the 401/403 posture never weaken by
+  transport, so adding in-component TLS would widen the frozen surface
+  (cert lifecycle, SNI, reload semantics) without closing a gap in the
+  documented shape. Revisit trigger: a demanded deployment where the
+  component itself must terminate TLS (no front door available), or a
+  trusted-proxy convention the component could verify honestly.
+
+**Deployment assumptions**: stdio is the default transport; the HTTP transport
+is loopback-only — put any TLS termination in front, the server never exposes a
+public socket by itself.
