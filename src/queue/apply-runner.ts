@@ -11,6 +11,7 @@
 import { createLinearPort } from "../tracker/index.js";
 import { createDefaultSecurityScreener, createSyncEngine, envVarKeyProvider } from "../engine/index.js";
 import type { ApplyResult, EngineDependencies } from "../ports/engine.js";
+import type { KeyProvider } from "../state/manifest.js";
 import type { StateStore } from "../state/paths.js";
 import { newCorrelationRunId } from "./reports.js";
 import type { EnginePassResult, QueueSettings, SyncMode } from "./types.js";
@@ -19,6 +20,15 @@ export interface EnginePassInput {
   readonly repositoryRoot: string;
   readonly mode: SyncMode;
   readonly env: Readonly<Record<string, string | undefined>>;
+}
+
+/**
+ * Test-lane overrides: a precomposed deps bag (the 007 fake-port world) and its key
+ * provider. Production lanes pass nothing and get the real composition above.
+ */
+export interface EnginePassOverrides {
+  readonly deps?: EngineDependencies;
+  readonly keyProvider?: KeyProvider;
 }
 
 function describeFailure(error: unknown): string {
@@ -66,13 +76,20 @@ export async function runEnginePass(
   store: StateStore,
   settings: QueueSettings,
   input: EnginePassInput,
+  overrides: EnginePassOverrides = {},
 ): Promise<EnginePassResult> {
   const config = store.config;
   try {
-    const port = createLinearPort({ config, options: { env: { ...input.env } } });
-    const screener = createDefaultSecurityScreener(config);
-    const deps: EngineDependencies = { port, config, state: store, clock: store.clock, screener };
-    const engine = createSyncEngine(deps, { keyProvider: envVarKeyProvider(config, input.env) });
+    const deps: EngineDependencies =
+      overrides.deps ??
+      (() => {
+        const port = createLinearPort({ config, options: { env: { ...input.env } } });
+        const screener = createDefaultSecurityScreener(config);
+        return { port, config, state: store, clock: store.clock, screener };
+      })();
+    const engine = createSyncEngine(deps, {
+      keyProvider: overrides.keyProvider ?? envVarKeyProvider(config, input.env),
+    });
 
     const plan = await engine.buildSyncPlan({ repositoryRoot: input.repositoryRoot, mode: input.mode });
     const result = await engine.applySyncPlan(plan, {
