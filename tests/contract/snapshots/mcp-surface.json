@@ -1,0 +1,104 @@
+{
+  "config.mcp.authEnvVarName": "TASK_LINEAR_SYNC_MCP_TOKEN",
+  "config.mcp.mutatingToolsEnabled": false,
+  "config.mcp.planReferenceMaxEntries": 1000,
+  "config.mcp.planReferenceTtlSeconds": 3600,
+  "config.mcp.transport": "stdio",
+  "error.-32002": "NOT_INITIALIZED",
+  "error.-32600": "INVALID_REQUEST",
+  "error.-32601": "METHOD_NOT_FOUND",
+  "error.-32602": "INVALID_PARAMS",
+  "error.-32603": "INTERNAL_ERROR",
+  "error.-32700": "PARSE_ERROR",
+  "httpstatus.401": {
+    "body": "{\"error\":\"UNAUTHORIZED\"}",
+    "header": "www-authenticate",
+    "headerValue": "Bearer"
+  },
+  "httpstatus.403": {
+    "body": "{\"error\":\"FORBIDDEN\"}",
+    "header": null,
+    "headerValue": null
+  },
+  "httpstatus.404": {
+    "body": "{\"error\":\"NOT_FOUND\"}",
+    "header": null,
+    "headerValue": null
+  },
+  "httpstatus.405": {
+    "body": "{\"error\":\"METHOD_NOT_ALLOWED\"}",
+    "header": "allow",
+    "headerValue": "POST"
+  },
+  "httpstatus.413": {
+    "body": "{\"error\":\"PAYLOAD_TOO_LARGE\"}",
+    "header": null,
+    "headerValue": null
+  },
+  "httpstatus.500": {
+    "body": "{\"error\":\"INTERNAL\"}",
+    "header": null,
+    "headerValue": null
+  },
+  "protocol.2024-11-05": "supported",
+  "protocol.2025-03-26": "supported",
+  "protocol.2025-06-18": "supported",
+  "protocol.default": "2025-06-18",
+  "tool.task_sync_apply": {
+    "description": "Apply a plan reference produced by task_sync_plan IN THIS SESSION through the same gated engine entry the CLI and queue use. Requires the mcp.enabled setting, the exact confirmation key, and the explicit plan reference; low-confidence plans additionally require acceptLowConfidence.",
+    "visibleByDefault": false
+  },
+  "tool.task_sync_apply.inputSchema": {
+    "additionalProperties": false,
+    "properties": {
+      "acceptLowConfidence": {
+        "default": false,
+        "type": "boolean"
+      },
+      "confirmationKey": {
+        "minLength": 1,
+        "type": "string"
+      },
+      "planReference": {
+        "pattern": "^[0-9a-f]{64}$",
+        "type": "string"
+      }
+    },
+    "required": [
+      "planReference",
+      "confirmationKey"
+    ],
+    "type": "object"
+  },
+  "tool.task_sync_inventory": {
+    "description": "List discoverable task files with the matched framework adapter id and task counts, plus parse refusals and warnings. Paths and counts only - never file contents. Accepts no arguments.",
+    "visibleByDefault": true
+  },
+  "tool.task_sync_inventory.inputSchema": {
+    "additionalProperties": false,
+    "type": "object"
+  },
+  "tool.task_sync_plan": {
+    "description": "Run the read-only plan/check lane over the configured repository and return the sanitized, hash-based plan report as stable-key JSON. Records a plan reference usable by task_sync_apply for the rest of this session. Accepts no arguments.",
+    "visibleByDefault": true
+  },
+  "tool.task_sync_plan.inputSchema": {
+    "additionalProperties": false,
+    "type": "object"
+  },
+  "tool.task_sync_status": {
+    "description": "Read-only run-state snapshot: the last-run marker, the pending queue job, the worker/queue lock, and how many plan references this session may still apply. Performs zero tracker calls and zero writes. Accepts no arguments.",
+    "visibleByDefault": true
+  },
+  "tool.task_sync_status.inputSchema": {
+    "additionalProperties": false,
+    "type": "object"
+  },
+  "transport.http": {
+    "method": "POST",
+    "route": "/mcp"
+  },
+  "transport.stdio": {
+    "framing": "line-delimited JSON-RPC"
+  }
+}

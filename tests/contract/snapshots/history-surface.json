@@ -1,0 +1,59 @@
+{
+  "accessMode.private": "default",
+  "accessMode.public": "opt-in",
+  "config.web.accessControlMode": "private",
+  "config.web.authEnvVarName": "TASK_LINEAR_SYNC_WEB_TOKEN",
+  "config.web.cacheTtlSeconds": 10,
+  "config.web.maxCacheEntries": 500,
+  "config.web.maxConcurrentSseStreams": 16,
+  "config.web.maxConcurrentWalks": 8,
+  "config.web.pollIntervalSeconds": 15,
+  "config.web.realtimeSse": true,
+  "config.web.secureCookies": false,
+  "route.attachment.canonical": {
+    "methods": [
+      "GET",
+      "POST"
+    ],
+    "template": "{baseHost}/{toolId}/{uuid}"
+  },
+  "route.attachment.continuation": {
+    "methods": [
+      "GET",
+      "POST"
+    ],
+    "template": "{baseHost}/{toolId}/{uuid}/{page}"
+  },
+  "selfprotect.admission": {
+    "code": "RATE_LIMITED",
+    "retryAfter": "1",
+    "status": 429
+  },
+  "sse.contentType": "text/event-stream",
+  "sse.cookieAttributes": " Path=/; HttpOnly; SameSite=Strict",
+  "sse.cookieSecure": " Path=/; HttpOnly; SameSite=Strict",
+  "status.401": {
+    "code": "UNAUTHORIZED",
+    "message": "history: authentication is required to view this page"
+  },
+  "status.403": {
+    "code": "FORBIDDEN",
+    "message": "history: the supplied credential is not valid for this surface"
+  },
+  "status.404": {
+    "code": "NOT_FOUND",
+    "message": "history: no synced history is available for this task"
+  },
+  "status.429": {
+    "code": "RATE_LIMITED",
+    "message": "history: the tracker is rate limiting reads; try again later"
+  },
+  "status.500": {
+    "code": "INTERNAL",
+    "message": "history: an internal error prevented a response"
+  },
+  "status.502": {
+    "code": "TRACKER_UNAVAILABLE",
+    "message": "history: the tracker could not be reached to read the history chain"
+  }
+}
