@@ -310,8 +310,17 @@ test("heartbeat: the claim is refreshed on the configured interval until stopped
         isStopped: () => stopped,
       });
 
-      // Drive the (synchronously advancing) fake sleep loop to completion.
-      for (let i = 0; i < 100 && beats < 2; i += 1) await new Promise((resolve) => setImmediate(resolve));
+      // Drive the (synchronously advancing) fake sleep loop to completion. Once the
+      // second beat is observed the first refresh write has necessarily landed (the
+      // loop awaits read+claim between beats), so `beats >= 2` is the real exit.
+      // Under parallel-suite load the fs promises between beats can lag behind a
+      // pure setImmediate pump, so escalate to short timed yields after 25 spins
+      // (bounded, generous; assertions stay time-independent).
+      let spins = 0;
+      while (beats < 2 && spins < 100) {
+        spins += 1;
+        await new Promise<void>((resolve) => (spins > 25 ? setTimeout(resolve, 2) : setImmediate(resolve)));
+      }
 
       const { job } = readPendingJob(h.stateDir);
       assert.ok(job?.claim);
