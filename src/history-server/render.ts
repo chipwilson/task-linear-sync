@@ -133,6 +133,23 @@ export function errorAsHtml(envelope: RenderableError): string {
   );
 }
 
+/**
+ * 401 HTML shell (contracts/access-control.md §3): the fixed message plus a
+ * token-entry form posting to the same address — nothing else ships.
+ */
+export function unauthorizedHtml(envelope: RenderableError, actionPath: string): string {
+  return (
+    "<!doctype html><html lang=\"en\"><head><meta charset=\"utf-8\">" +
+    "<title>Sync history</title>" +
+    `<style>${STYLE}</style></head><body>` +
+    `<h1>Sync history</h1><p class="history-problem">${escapeHtml(envelope.message)}</p>` +
+    `<form method="post" action="${escapeHtml(actionPath)}">` +
+    `<label>Access token <input type="password" name="token" autocomplete="off"></label>` +
+    `<button type="submit">View history</button></form>` +
+    "</body></html>"
+  );
+}
+
 export function errorAsSseFrame(envelope: RenderableError): string {
   return `event: error\ndata: ${errorAsJson(envelope)}\n\n`;
 }

@@ -18,6 +18,12 @@ import type { SecurityScreener } from "../ports/engine.js";
 import type { LinearPort } from "../ports/linear-port.js";
 import { UrlSchemeError, canonicalAttachmentUrl, continuationAttachmentUrl } from "../urls/attachment-url.js";
 import {
+  createAccessGate,
+  parseBootstrapToken,
+  readBodyCapped,
+} from "./auth.js";
+import { createHistoryCache } from "./cache.js";
+import {
   ERROR_ENVELOPES,
   HistoryRequestError,
   HistoryServerConfigError,
@@ -30,6 +36,7 @@ import {
   errorAsJson,
   errorAsSseFrame,
   negotiateFormat,
+  unauthorizedHtml,
   viewAsHtml,
   viewAsJson,
 } from "./render.js";
@@ -37,7 +44,7 @@ import { reconstructHistory, type ReconstructDeps } from "./reconstruct.js";
 import { parseHistoryRoute } from "./routes.js";
 import { listenHistoryApp } from "./serve.js";
 import { startSseStream } from "./sse.js";
-import { defaultHistoryClock, type HistoryPageView, type NegotiatedFormat } from "./types.js";
+import { defaultHistoryClock, type NegotiatedFormat } from "./types.js";
 
 /** Placeholder identity for construction-time scheme probes (never served). */
 const PROBE_UUID = "ac000000-0000-4000-8000-000000000000";
@@ -107,18 +114,29 @@ export function createSyncHistoryServer(deps: SyncHistoryServerDeps): SyncHistor
 
   const clock = deps.clock ?? defaultHistoryClock;
   const screener = deps.screener ?? createDefaultSecurityScreener(config);
-  void env; // consumed by the US2 auth gate (T031)
 
   const reconstructDeps: ReconstructDeps = { port: deps.port, config, clock, screener };
+
+  // US2 collaborators (contracts/access-control.md; component-api §4).
+  const gate = createAccessGate({
+    accessMode: settings.accessMode,
+    tokenEnvVarName: settings.tokenEnvVarName,
+    env,
+    toolId: config.toolId,
+    clock,
+  });
+  const cache = createHistoryCache({ ttlSeconds: settings.cacheTtlSeconds, clock });
 
   function respond(
     res: ServerResponse,
     status: number,
     contentType: string,
     body: string,
+    extraHeaders: Record<string, string> = {},
   ): void {
     res.writeHead(status, {
       ...SECURITY_HEADERS,
+      ...extraHeaders,
       "Content-Type": contentType,
       "Content-Length": Buffer.byteLength(body),
     });
@@ -130,11 +148,14 @@ export function createSyncHistoryServer(deps: SyncHistoryServerDeps): SyncHistor
     res: ServerResponse,
     accept: string | undefined,
     error: { code: string; status: number; message: string },
+    extraHeaders: Record<string, string> = {},
+    htmlActionPath?: string,
   ): void {
     const format = negotiateFormat(accept, settings.sseEnabled);
     if (format === "sse") {
       res.writeHead(error.status, {
         ...SECURITY_HEADERS,
+        ...extraHeaders,
         "Content-Type": "text/event-stream",
         Connection: "keep-alive",
       });
@@ -142,19 +163,47 @@ export function createSyncHistoryServer(deps: SyncHistoryServerDeps): SyncHistor
       return;
     }
     if (format === "json") {
-      respond(res, error.status, "application/json; charset=utf-8", errorAsJson(error));
+      respond(res, error.status, "application/json; charset=utf-8", errorAsJson(error), extraHeaders);
       return;
     }
-    respond(res, error.status, "text/html; charset=utf-8", errorAsHtml(error));
+    const html =
+      htmlActionPath !== undefined
+        ? unauthorizedHtml(error, htmlActionPath)
+        : errorAsHtml(error);
+    respond(res, error.status, "text/html; charset=utf-8", html, extraHeaders);
   }
 
   function toEnvelope(error: unknown): ErrorEnvelope {
     return error instanceof HistoryRequestError ? error.envelope : ERROR_ENVELOPES.INTERNAL;
   }
 
+  /** Private-mode session bootstrap (POST token form; access-control §3). */
+  async function handleBootstrap(
+    req: IncomingMessage,
+    res: ServerResponse,
+    accept: string | undefined,
+    path: string,
+  ): Promise<void> {
+    const body = await readBodyCapped(req);
+    const token = body === undefined ? undefined : parseBootstrapToken(body);
+    if (!gate.bootstrapTokenValid(token)) {
+      // Oversized bodies and wrong/missing tokens share one fixed denial.
+      respondError(res, accept, ERROR_ENVELOPES.FORBIDDEN);
+      return;
+    }
+    res.writeHead(303, {
+      ...SECURITY_HEADERS,
+      Location: path,
+      "Set-Cookie": gate.sessionCookieHeader(),
+      "Content-Length": "0",
+    });
+    res.end();
+  }
+
   async function handleRequest(req: IncomingMessage, res: ServerResponse): Promise<void> {
     const accept = typeof req.headers.accept === "string" ? req.headers.accept : undefined;
-    const outcome = parseHistoryRoute(config, req.url ?? "");
+    const rawPath = req.url ?? "";
+    const outcome = parseHistoryRoute(config, rawPath);
     if (outcome.kind === "notFound") {
       respondError(res, accept, ERROR_ENVELOPES.NOT_FOUND);
       return;
@@ -164,45 +213,86 @@ export function createSyncHistoryServer(deps: SyncHistoryServerDeps): SyncHistor
       return;
     }
 
-    // Session bootstrap POST lands with the US2 auth gate (T031); until then
-    // — and permanently in public mode — anything but GET is refused.
+    // Method routing: GET serves; POST bootstraps a session in private mode
+    // only; everything else is the fixed 405 constant.
+    if (req.method === "POST") {
+      if (settings.accessMode === "private") {
+        await handleBootstrap(req, res, accept, rawPath);
+        return;
+      }
+      respondError(res, accept, METHOD_NOT_ALLOWED);
+      return;
+    }
     if (req.method !== "GET") {
       respondError(res, accept, METHOD_NOT_ALLOWED);
       return;
     }
 
-    const format: NegotiatedFormat = negotiateFormat(accept, settings.sseEnabled);
-    const load = (): Promise<HistoryPageView> =>
-      reconstructHistory(reconstructDeps, outcome.taskUuid);
+    // Auth gate — strictly BEFORE any tracker probe (access-control §3).
+    if (settings.accessMode === "private") {
+      const decision = gate.authorize(req.headers);
+      if (decision.kind === "challenge") {
+        respondError(
+          res,
+          accept,
+          ERROR_ENVELOPES.UNAUTHORIZED,
+          { "WWW-Authenticate": "Bearer" },
+          rawPath,
+        );
+        return;
+      }
+      if (decision.kind === "deny") {
+        respondError(res, accept, ERROR_ENVELOPES.FORBIDDEN, {
+          "WWW-Authenticate": "Bearer",
+        });
+        return;
+      }
+    }
 
-    let view;
+    const format: NegotiatedFormat = negotiateFormat(accept, settings.sseEnabled);
+
+    let cached;
     try {
-      view = await load();
+      cached = await cache.load(outcome.taskUuid, () =>
+        reconstructHistory(reconstructDeps, outcome.taskUuid),
+      );
     } catch (error) {
       respondError(res, accept, toEnvelope(error));
       return;
     }
 
     if (format === "sse") {
+      // Streams refresh by re-walking (the cache must not freeze a live view).
       startSseStream({
         res,
         taskUuid: outcome.taskUuid,
         refreshSeconds: settings.refreshSeconds,
         clock,
-        initialView: view,
-        loadView: load,
+        initialView: cached.value,
+        loadView: (taskUuid) => reconstructHistory(reconstructDeps, taskUuid),
       });
       return;
     }
+    const cacheHeaders: Record<string, string> = {
+      "X-History-Cache": cached.cacheState,
+      ...(cached.cacheState === "hit" ? { "X-History-Age-Ms": String(cached.ageMs) } : {}),
+    };
     if (format === "json") {
-      respond(res, 200, "application/json; charset=utf-8", viewAsJson(view));
+      respond(
+        res,
+        200,
+        "application/json; charset=utf-8",
+        viewAsJson(cached.value),
+        cacheHeaders,
+      );
       return;
     }
     respond(
       res,
       200,
       "text/html; charset=utf-8",
-      viewAsHtml(view, { refreshSeconds: settings.refreshSeconds }),
+      viewAsHtml(cached.value, { refreshSeconds: settings.refreshSeconds }),
+      cacheHeaders,
     );
   }
 

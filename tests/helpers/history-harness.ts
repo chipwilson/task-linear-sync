@@ -481,6 +481,8 @@ export function makeStubPair(opts: {
   req: IncomingMessage;
   res: ServerResponse;
   finished: Promise<{ statusCode: number; headers: Record<string, string | string[]>; body: string }>;
+  /** Bytes captured SO FAR (open streams: SSE) without waiting for end(). */
+  snapshot(): { statusCode: number; headers: Record<string, string | string[]>; body: string };
 } {
   const req = Object.assign(new EventEmitter(), {
     method: opts.method ?? "GET",
@@ -505,15 +507,16 @@ export function makeStubPair(opts: {
     writeHead(code: number, hdrs?: Record<string, string | string[]>) {
       statusCode = code;
       res.statusCode = code;
-      Object.assign(headers, hdrs ?? {});
+      // Node's real ServerResponse stores header keys lowercased; mirror it.
+      for (const [k, v] of Object.entries(hdrs ?? {})) headers[k.toLowerCase()] = v;
       return res;
     },
     setHeader(k: string, v: string | string[]) {
-      headers[k] = v;
+      headers[k.toLowerCase()] = v;
       return res;
     },
     getHeader(k: string) {
-      return headers[k];
+      return headers[k.toLowerCase()];
     },
     write(chunk: string | Buffer) {
       chunks.push(Buffer.from(chunk));
@@ -525,7 +528,12 @@ export function makeStubPair(opts: {
       return res;
     },
   }) as unknown as ServerResponse;
-  return { req, res, finished };
+  const snapshot = () => ({
+    statusCode,
+    headers: { ...headers },
+    body: Buffer.concat(chunks).toString("utf8"),
+  });
+  return { req, res, finished, snapshot };
 }
 
 // -- cookie helpers ---------------------------------------------------------------------
