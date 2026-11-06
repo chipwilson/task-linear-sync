@@ -13,7 +13,7 @@ import type { SecurityScreener } from "../ports/engine.js";
 import type { CliInvoker } from "./cli-invoker.js";
 import { CiArtifactError, CiCliFailureError } from "./errors.js";
 import { evaluateConditions, type EvaluationResult } from "./evaluate.js";
-import { loadReportArtifact } from "./report-input.js";
+import { loadReportArtifact, parseLocator } from "./report-input.js";
 import type { EnforcementSettings } from "./settings.js";
 import { renderSummary } from "./summary.js";
 
@@ -46,19 +46,35 @@ export async function runEnforcement(
   deps: EnforcementDeps,
 ): Promise<EnforcementOutcome> {
   let reportJsonPath: string;
-  const claimedPlanId: string | null = null; // set by the T033 CLI-mode path
+  let claimedPlanId: string | null = null;
 
   if (settings.reportPath !== null) {
     // Artifact-direct mode: read, evaluate — NO spawn (spawns nothing).
     reportJsonPath = settings.reportPath;
   } else {
-    // CLI-mode acquisition (invoker → locator → provenance) is wired in US2 (T033),
-    // driven by its own failing tests first (T030/T031).
-    throw new CiCliFailureError(
-      "task-linear-sync CLI-mode enforcement not yet wired (T033)",
-      settings.command,
-      null,
-    );
+    // CLI-mode acquisition (T033): invoker → locator → provenance.
+    const invoker = deps.cliInvoker;
+    if (invoker === undefined) {
+      throw new CiCliFailureError(
+        "task-linear-sync CLI-mode enforcement requires a cliInvoker seam",
+        settings.command,
+        null,
+      );
+    }
+    const result = await invoker({
+      command: settings.command,
+      workspace: settings.workspace,
+      ...(settings.configFile === null ? {} : { configFile: settings.configFile }),
+      cliEntry: settings.cliEntry,
+      env: deps.env,
+    });
+    const located = parseLocator({
+      command: settings.command,
+      stdout: result.stdout,
+      screener: deps.screener,
+    });
+    claimedPlanId = located.planId;
+    reportJsonPath = located.reportJsonPath;
   }
 
   const report = loadReportArtifact(reportJsonPath);

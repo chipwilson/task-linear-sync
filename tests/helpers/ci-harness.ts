@@ -109,6 +109,8 @@ const worldDoc = JSON.parse(readFileSync(join(worldDir, "world.json"), "utf8"));
 const root = mkdtempSync(join(tmpdir(), "tls-013-entry-"));
 const repositoryRoot = join(root, "repo");
 if (existsSync(join(worldDir, "repo"))) cpSync(join(worldDir, "repo"), repositoryRoot, { recursive: true });
+else if (existsSync(join(worldDir, ".task-linear-sync")))
+  cpSync(worldDir, repositoryRoot, { recursive: true, filter: (src) => !src.endsWith("world.json") });
 else mkdirSync(repositoryRoot, { recursive: true });
 const stateDir = ${opts.stateDir === undefined ? 'join(root, "state")' : JSON.stringify(resolve(opts.stateDir))};
 
@@ -154,6 +156,7 @@ const context = {
 
 // argv from the caller: [command, repo, ...flags] — RAW stdout posture (no prefixes).
 const argv = process.argv.slice(2);
+if (argv.length > 1) argv[1] = repositoryRoot; // fake bin = "runner checkout": scan the world copy
 const outcome = await cli.runCli(argv, context);
 for (const line of stdout) process.stdout.write(line + "\\n");
 for (const line of stderr) process.stderr.write(line + "\\n");
