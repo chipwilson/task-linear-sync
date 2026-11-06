@@ -133,8 +133,8 @@
 - [X] T042 Document the manual sandbox cleanup (`git worktree remove`, `rm -rf "$SANDBOX"`) in quickstart.md §9.1 and add `tests/helpers/queue-cleanup.ts` (remove tmp git metadata + queue dirs) used by the integration/e2e harness teardown
 - [X] T043 [P] Write `docs/queue-hooks.md` in Polish (briefing §5 documentation duty): queue concepts (single-slot pending job, claims, queue lock), the five commands with the frozen exit-code table, the `queue` config block with defaults and bounds, the hook marker block and scaffold shapes, troubleshooting (lock held, reclaimed claims, suppressed notifications)
 - [X] T044 [P] Update `README.md` (Polish prose per the doc convention): commands section adds `enqueue`, `worker`, `last-run`, `install-hooks`, `install-agent-hook`; config section links the `queue` block to docs/queue-hooks.md; background-sync paragraph in the quick-start flow
-- [ ] T045 Run `npm test` (all tiers) + `npx tsc -p tsconfig.json` + all five `queue-*.mjs` scans; record the SC-001 (≤500 ms wall, 100-enqueue storm) and SC-002 (≤1 pending job, exactly 1 live claim, 100% exit-0 hook runs) measurements in the quickstart §8 matrix log
-- [ ] T046 Defect sweep: every quickstart §2-§7 scenario green in BOTH lanes (spawned-CLI degraded-offline + in-process fake port); code comment hygiene (constitution: only constraint comments); no `console.log` outside the CLI presenter layer in `src/queue/**`
+- [X] T045 Run `npm test` (all tiers) + `npx tsc -p tsconfig.json` + all five `queue-*.mjs` scans; record the SC-001 (≤500 ms wall, 100-enqueue storm) and SC-002 (≤1 pending job, exactly 1 live claim, 100% exit-0 hook runs) measurements in the quickstart §8 matrix log
+- [X] T046 Defect sweep: every quickstart §2-§7 scenario green in BOTH lanes (spawned-CLI degraded-offline + in-process fake port); code comment hygiene (constitution: only constraint comments); no `console.log` outside the CLI presenter layer in `src/queue/**`
 
 ---
 

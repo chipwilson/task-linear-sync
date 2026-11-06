@@ -225,6 +225,22 @@ US2 = §5/§6, US3 = §3.
 | SC-002 | §2.2/§6 single live claim + reclaim | `integration/queue-storm` (grep exactly one `claim:`), `unit/queue-lock` |
 | SC-003 | §3.2 byte-scan + §4 degraded-loudly | `integration/queue-hooks-install` (intact user bytes), `contract/queue-hygiene.mjs` (frozen-path zero-delta) |
 
+### 8.1 Matrix log — recorded SC-001 / SC-002 measurements (2026-11-06)
+
+Run on this workspace against a fresh `dist/` build with the CLI on `PATH` (temp-`HOME`
+sandbox, no network — the pre-flight gate ends the background pass in `skipped`):
+
+- **SC-001** — 100 × `task-linear-sync queue enqueue` (the `integration/queue-storm`
+  storm, plus a wall-clock probe): all 100 processes exited **0** in 4.7 s total,
+  average **46.9 ms** and max **66 ms** per enqueue — ~10× under the 500 ms ceiling
+  (the enqueue path makes no network calls).
+- **SC-002** — the same 100-enqueue storm yielded **≤1 pending job** (single-slot
+  dedup, `integration/queue-storm`); with a worker active, exactly **one** `claim:`
+  exists at any moment (the storm test greps exactly one live claim; the reclaim lane
+  covers the dead-worker case), and every git-hook run in
+  `integration/queue-hook-fire` exited **0** (100%), including the degraded
+  (credential-less) one, while consecutive fires still produced **one** pending job.
+
 ## 9. Cleanup & troubleshooting
 
 ```bash
