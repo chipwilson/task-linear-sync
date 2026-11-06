@@ -14,7 +14,6 @@ import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { fileURLToPath } from "node:url";
 
-import { createQueueSurface, type QueueWiring } from "../../src/queue/surface.js";
 import { resolveQueueConfig } from "../../src/queue/config.js";
 import { mergePendingJob, runDrainOnce, type EnginePassResult, type PendingJob } from "../../src/queue/index.js";
 import { makeQueueHarness, readPendingJob } from "../helpers/queue-harness.js";

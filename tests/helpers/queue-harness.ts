@@ -137,8 +137,9 @@ export function stripHookBlock(text: string, markers: readonly [string, string] 
   const end = lines.indexOf(markers[1]);
   if (start === -1 || end === -1 || end < start) return text;
   const out = [...lines.slice(0, start), ...lines.slice(end + 1)];
-  // Collapse the blank line the splice contract inserts before the block.
-  if (start > 0 && out[start] === "" && out[start + 1] === "") out.splice(start, 1);
+  // Collapse the blank line the splice contract inserts before the block: after the
+  // removal it sits at start-1 with the file's trailing element (or tail) at start.
+  if (start > 0 && out[start - 1] === "" && out[start] === "") out.splice(start - 1, 1);
   return out.join(eol);
 }
 
