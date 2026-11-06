@@ -77,9 +77,14 @@ const MSG_INVALID_PARAMS = "invalid params";
 const MSG_INTERNAL = "internal error";
 const MSG_NOT_INITIALIZED = "server not initialized";
 
-/** §2.1 — the supported MCP protocol versions; the newest is the fallback answer. */
-export const SUPPORTED_PROTOCOL_VERSIONS = ["2024-11-05", "2025-03-26"] as const;
-export const DEFAULT_PROTOCOL_VERSION = "2025-03-26";
+/**
+ * §2.1 — the supported MCP protocol versions; the newest is the fallback answer.
+ * `2025-06-18` was added by 014 (assumption A02): that revision defines no stdio-layer
+ * semantics this server does not already implement, so accepting it is a set-membership
+ * change only.
+ */
+export const SUPPORTED_PROTOCOL_VERSIONS = ["2024-11-05", "2025-03-26", "2025-06-18"] as const;
+export const DEFAULT_PROTOCOL_VERSION = "2025-06-18";
 
 function isPlainObject(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);

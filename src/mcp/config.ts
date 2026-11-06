@@ -4,9 +4,11 @@
  * built-ins → config-file `mcp` group → programmatic `settings` overrides; unknown keys
  * and out-of-range values collect ALL problems into exactly ONE dotted-key line and
  * the result carries the pure defaults with `ok: false` (complete listing, never
- * fail-fast). The frozen 001 schema is NOT edited: its derived trio
+ * fail-fast). The frozen 001 schema is NOT edited here: its derived trio
  * (`mutatingToolsEnabled`, `transport`, `authEnvVarName`) reads as the aliases of
- * `enabled`, `transport`, `tokenEnvVarName` — never as unknown keys.
+ * `enabled`, `transport`, `tokenEnvVarName` — never as unknown keys. The 014
+ * amendment's two `planReference*` keys (configuration.md 2026-11-06) are first-class
+ * keys of that frozen group and validate here against their documented ranges.
  */
 
 import { envVarPrefixFor } from "../config/index.js";
@@ -22,6 +24,10 @@ export interface McpSettings {
   readonly port: number;
   /** Env-var NAME holding the bearer token — NAMES only, values live in env. */
   readonly tokenEnvVarName: string;
+  /** Plan-reference session TTL (014 amendment; resource-bounds.md §5). */
+  readonly planReferenceTtlSeconds: number;
+  /** Plan-reference store capacity (014 amendment; resource-bounds.md §5). */
+  readonly planReferenceMaxEntries: number;
 }
 
 export type McpConfigResult =
@@ -36,11 +42,13 @@ export function mcpBuiltins(config: ResolvedConfig): McpSettings {
     host: "127.0.0.1",
     port: 0,
     tokenEnvVarName: `${envVarPrefixFor(config.toolId)}_MCP_TOKEN`,
+    planReferenceTtlSeconds: 3600,
+    planReferenceMaxEntries: 1000,
   };
 }
 
-const FILE_KEYS = ["enabled", "transport", "host", "port", "tokenEnvVarName", "mutatingToolsEnabled", "authEnvVarName"] as const;
-const OVERRIDE_KEYS = ["enabled", "transport", "host", "port", "tokenEnvVarName"] as const;
+const FILE_KEYS = ["enabled", "transport", "host", "port", "tokenEnvVarName", "mutatingToolsEnabled", "authEnvVarName", "planReferenceTtlSeconds", "planReferenceMaxEntries"] as const;
+const OVERRIDE_KEYS = ["enabled", "transport", "host", "port", "tokenEnvVarName", "planReferenceTtlSeconds", "planReferenceMaxEntries"] as const;
 
 const ENV_VAR_NAME_PATTERN = /^[A-Z][A-Z0-9_]*$/;
 
@@ -69,6 +77,14 @@ function validateValue(key: string, value: unknown): string | undefined {
       return typeof value === "string" && ENV_VAR_NAME_PATTERN.test(value)
         ? undefined
         : `${key}: must be an env-var NAME (upper snake-case)`;
+    case "planReferenceTtlSeconds":
+      return typeof value === "number" && Number.isInteger(value) && value >= 60 && value <= 86400
+        ? undefined
+        : `${key}: must be an integer in 60..86400`;
+    case "planReferenceMaxEntries":
+      return typeof value === "number" && Number.isInteger(value) && value >= 1 && value <= 100000
+        ? undefined
+        : `${key}: must be an integer in 1..100000`;
     default:
       return `${key}: unknown key`;
   }
@@ -137,6 +153,8 @@ export function resolveMcpConfig(config: ResolvedConfig, overrides?: Partial<Mcp
     host: pick("host"),
     port: pick("port"),
     tokenEnvVarName: pick("tokenEnvVarName", fileAliasToken ? file["authEnvVarName"] : undefined),
+    planReferenceTtlSeconds: pick("planReferenceTtlSeconds"),
+    planReferenceMaxEntries: pick("planReferenceMaxEntries"),
   };
   return { ok: true, settings };
 }

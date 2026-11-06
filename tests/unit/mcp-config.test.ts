@@ -14,7 +14,7 @@ function configWith(mcpLayer: Record<string, unknown>): ResolvedConfig {
   return loadConfig({ overrides: { mcp: mcpLayer as never } });
 }
 
-test("built-in defaults: enabled false, stdio, loopback, ephemeral port, derived token env-var NAME", () => {
+test("built-in defaults: enabled false, stdio, loopback, ephemeral port, derived token env-var NAME, 014 retention pair", () => {
   const config = loadConfig({});
   const result = resolveMcpConfig(config);
   assert.ok(result.ok, `unexpected problems: ${"errors" in result ? result.errors.join("; ") : ""}`);
@@ -24,6 +24,8 @@ test("built-in defaults: enabled false, stdio, loopback, ephemeral port, derived
     host: "127.0.0.1",
     port: 0,
     tokenEnvVarName: `${envVarPrefixFor(config.toolId)}_MCP_TOKEN`,
+    planReferenceTtlSeconds: 3600, // amendment 2026-11-06
+    planReferenceMaxEntries: 1000, // amendment 2026-11-06
   });
 });
 
@@ -34,9 +36,17 @@ test("token env-var name is toolId-DERIVED at runtime (no literal), tracking con
   assert.equal(result.settings.tokenEnvVarName, "MY_COOL_TOOL_MCP_TOKEN");
 });
 
-test("config-file mcp group wins over built-ins (all five keys via the 012 key names)", () => {
+test("config-file mcp group wins over built-ins (all seven keys via the 012/014 key names)", () => {
   const result = resolveMcpConfig(
-    configWith({ enabled: true, transport: "http", host: "loopback.local", port: 8123, tokenEnvVarName: "ACME_MCP_TOKEN" }),
+    configWith({
+      enabled: true,
+      transport: "http",
+      host: "loopback.local",
+      port: 8123,
+      tokenEnvVarName: "ACME_MCP_TOKEN",
+      planReferenceTtlSeconds: 1800,
+      planReferenceMaxEntries: 50,
+    }),
   );
   assert.ok(result.ok, JSON.stringify(result));
   assert.deepEqual(result.settings, {
@@ -45,9 +55,10 @@ test("config-file mcp group wins over built-ins (all five keys via the 012 key n
     host: "loopback.local",
     port: 8123,
     tokenEnvVarName: "ACME_MCP_TOKEN",
+    planReferenceTtlSeconds: 1800,
+    planReferenceMaxEntries: 50,
   });
 });
-
 test("frozen 001 trio maps into the group: mutatingToolsEnabled ⇒ enabled, authEnvVarName ⇒ tokenEnvVarName", () => {
   const result = resolveMcpConfig(configWith({ mutatingToolsEnabled: true, authEnvVarName: "LEGACY_MCP_TOKEN" }));
   assert.ok(result.ok, JSON.stringify(result));

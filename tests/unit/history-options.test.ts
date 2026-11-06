@@ -16,7 +16,7 @@ function configWith(web: Record<string, unknown>) {
   return loadConfig({ overrides: { web } as unknown as ConfigOverrides });
 }
 
-test("frozen defaults resolve to the documented surface settings", () => {
+test("built-in defaults resolve to the documented surface settings, including the 014 bounds", () => {
   const settings = resolveHistoryServerConfig(loadConfig({}));
   assert.deepEqual(settings, {
     accessMode: "private",
@@ -24,9 +24,23 @@ test("frozen defaults resolve to the documented surface settings", () => {
     sseEnabled: true,
     refreshSeconds: 15,
     cacheTtlSeconds: 10,
+    maxCacheEntries: 500, // amendment 2026-11-06
+    maxConcurrentWalks: 8, // amendment 2026-11-06
+    maxConcurrentSseStreams: 16, // amendment 2026-11-06
+    secureCookies: false, // amendment 2026-11-06
   });
   assert.equal(builtInDefaults.web.cacheTtlSeconds, 10);
   assert.equal(builtInDefaults.web.pollIntervalSeconds, 15);
+});
+
+test("the 014 web defaults equal the documented bounds-table defaults (docs/configuration.md)", () => {
+  // The table's Default column is the normative source; drift here would make the
+  // shipped behavior disagree with the documented defaults (a changed DEFAULT value).
+  const web = builtInDefaults.web;
+  assert.equal(web.maxCacheEntries, 500);
+  assert.equal(web.maxConcurrentWalks, 8);
+  assert.equal(web.maxConcurrentSseStreams, 16);
+  assert.equal(web.secureCookies, false);
 });
 
 test("tokenEnvVarName comes from web.authEnvVarName (toolId-derived)", () => {

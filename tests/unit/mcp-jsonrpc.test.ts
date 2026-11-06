@@ -111,11 +111,13 @@ test("pre-initialize requests ⇒ -32002; pre-initialize notifications dropped w
   assert.equal(await dispatcher.handleMessage({ jsonrpc: "2.0", method: "notifications/cancelled" }), null);
 });
 
-test("initialize echoes a supported version; unknown version answers 2025-03-26; result shape frozen", async () => {
+test("initialize echoes a supported version; unknown version answers 2025-06-18; result shape frozen", async () => {
   for (const [sent, echo] of [
     ["2024-11-05", "2024-11-05"],
     ["2025-03-26", "2025-03-26"],
-    ["2099-01-01", "2025-03-26"],
+    ["2025-06-18", "2025-06-18"],
+    ["2099-01-01", "2025-06-18"],
+    ["not-a-date", "2025-06-18"],
   ] as const) {
     const { dispatcher } = makeDispatcher();
     const reply = await dispatcher.handleMessage({
@@ -136,7 +138,7 @@ test("initialize with missing/garbage protocolVersion still answers the latest s
   const { dispatcher } = makeDispatcher();
   const reply = await dispatcher.handleMessage({ jsonrpc: "2.0", id: 1, method: "initialize", params: {} });
   assert.ok(reply && "result" in reply);
-  assert.equal((reply as { result: { protocolVersion: string } }).result.protocolVersion, "2025-03-26");
+  assert.equal((reply as { result: { protocolVersion: string } }).result.protocolVersion, "2025-06-18");
 });
 
 test("second initialize on the same connection ⇒ -32602 (before AND after notifications/initialized)", async () => {

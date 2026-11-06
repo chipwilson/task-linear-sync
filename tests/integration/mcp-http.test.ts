@@ -88,7 +88,7 @@ test("http: announces the bound port on stderr exactly once and serves a full se
         const init = await post(fx.url, { jsonrpc: "2.0", id: 1, method: "initialize", params: {} });
         assert.equal(init.status, 200);
         assert.deepEqual(asRecord(init.body).result, {
-          protocolVersion: "2025-03-26",
+          protocolVersion: "2025-06-18", // version-less initialize ⇒ server default (014)
           capabilities: { tools: {} },
           serverInfo: { name: "task-linear-sync-mcp", version: "0.2.0" },
         });
