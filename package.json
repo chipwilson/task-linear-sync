@@ -76,6 +76,10 @@
     "./history-server": {
       "types": "./dist/history-server/index.d.ts",
       "default": "./dist/history-server/index.js"
+    },
+    "./mcp": {
+      "types": "./dist/mcp/index.d.ts",
+      "default": "./dist/mcp/index.js"
     }
   },
   "files": [
