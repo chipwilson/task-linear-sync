@@ -23,8 +23,11 @@ node scripts/run-tests.mjs --tier e2e         # ci-enforcement-action (spawned w
 ## Scenario 1 — defaults fail exactly the violating report, pass the clean one (SC-001, FR-003)
 
 ```bash
-# violating artifact (crafted fixture report: 1 high-confidence entry, issueId null)
-node dist/ci/main.js --workspace /tmp/tls-ci-demo --report tests/fixtures/ci/reports/violates-all-three.json
+# violating artifact (crafted fixture report: 1 high-confidence unmapped entry, 2
+# conflict blocks on main, 3 spec-drift entries). PR-run context so condition (b)
+# can classify against the protected set (default protected set = GITHUB_BASE_REF):
+GITHUB_BASE_REF=main node dist/ci/main.js --workspace /tmp/tls-ci-demo \
+  --report tests/fixtures/ci/reports/violates-all-three.json
 # → exit 1, stderr: task-linear-sync enforcement failed — unmapped-high-confidence: 1;
 #     unresolved-conflict-block: 2; spec-drift: 3        (counts from that artifact)
 
@@ -73,8 +76,8 @@ node dist/ci/main.js --workspace /tmp/tls-ci-demo --report /tmp/nope/report.json
 ## Scenario 4 — end-to-end through the REAL built CLI (FR-001; SC-002/SC-003)
 
 Driven by `tests/e2e/ci-enforcement-action.test.ts` (spawned `node dist/ci/main.js` +
-spawned real CLI core wired to the 007 fake via `writeCliEntry` over `tests/fixtures/`
-worlds copied to temp workspaces):
+spawned real CLI core wired to the 007 fake via `writeCliEntry` over harness-built
+fixture worlds materialized in OS temp workspaces):
 
 1. **clean world** → wrapper exit 0, outputs `status=pass`; workspace `hashTree` byte-identical
    before/after (zero repository writes); fake port call log shows zero mutations.
@@ -90,10 +93,10 @@ worlds copied to temp workspaces):
 ## Scenario 5 — contract scans (SC-002, Principle III/V)
 
 ```bash
-node --test build/tests/contract/ci-action-shape.test.ts    # action.yml == contracts/action.md (composite, 13 inputs, 6 outputs, node entry, no docker/credential input)
-node --test build/tests/contract/ci-hygiene.test.ts         # no engine-exec/gates/tracker/cli imports; child_process only in cli-invoker.ts; fs reads only (+ main.ts's $GITHUB_OUTPUT append); zero apply vocabulary
-node --test build/tests/contract/ci-packaging.test.ts       # ./ci export built + typed; deps still exactly {}; bin map unchanged
-node --test build/tests/contract/ci-defaults-scan.test.ts   # action.yml + src/ci + docs: zero org ids/tokens/UUIDs
+node --test build/tests/contract/ci-action-shape.test.js   # action.yml == contracts/action.md (composite, 13 inputs, 6 outputs, node entry, no docker/credential input)
+node --test build/tests/contract/ci-hygiene.test.js        # no module-existence/process surface outside seams; child_process only in cli-invoker.ts; fs reads in main.ts only; zero apply vocabulary
+node --test build/tests/contract/ci-packaging.test.js      # ./ci export built + typed; deps still exactly {}; bin map unchanged
+node --test build/tests/contract/ci-defaults-scan.test.js  # action.yml + src/ci + docs: zero org ids/tokens/UUIDs
 ```
 
 ## FR / SC → test traceability

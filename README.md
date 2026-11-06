@@ -2,7 +2,7 @@
 
 A reusable npm library + CLI that keeps spec-driven-development task files in a repository bidirectionally synced with **Linear** issues — maintaining a "golden thread" of traceability between the specs you plan with and the issues you track work in.
 
-> **Status: Wave 4 in progress.** The frozen foundation (002), the Wave-2 library modules (003–007) and the sync engine (008) are merged on `main`; the **operator CLI (009)** now ships on the `wave-4-surfaces` branch — `task-linear-sync plan` / `check` / `report` / `status` / `validate-spec` run read-only today (exit codes + review reports), with `apply`/`rollback` gated until their apply-surface lands and `queue` reserved for 010. The full `plan → review report → gated apply → rollback` lifecycle runs through `task-linear-sync/engine`. Also shipping on this branch: the **background queue & hooks (010)** (`./queue`) and the read-only **Sync-History web component (011)** (`./history-server` — HTML/JSON/SSE history from the tracker, no local state) and the preview **AI-agent tool interface (012)** (`./mcp` — four MCP-compatible tools over stdio or loopback HTTP, apply disabled by default). The remaining surfaces (CI — 013) follow. See [Current Status](#current-status).
+> **Status: Wave 4 in progress.** The frozen foundation (002), the Wave-2 library modules (003–007) and the sync engine (008) are merged on `main`; the **operator CLI (009)** now ships on the `wave-4-surfaces` branch — `task-linear-sync plan` / `check` / `report` / `status` / `validate-spec` run read-only today (exit codes + review reports), with `apply`/`rollback` gated until their apply-surface lands and `queue` reserved for 010. The full `plan → review report → gated apply → rollback` lifecycle runs through `task-linear-sync/engine`. Also shipping on this branch: the **background queue & hooks (010)** (`./queue`) and the read-only **Sync-History web component (011)** (`./history-server` — HTML/JSON/SSE history from the tracker, no local state) and the preview **AI-agent tool interface (012)** (`./mcp` — four MCP-compatible tools over stdio or loopback HTTP, apply disabled by default). and the **CI enforcement action (013)** (`action.yml` + `./ci` — the read-only GitHub composite action gating PRs on the three hygiene conditions). All Wave-4 surfaces now ship. See [Current Status](#current-status).
 
 ## Proposed Purpose
 
@@ -21,7 +21,7 @@ Planned surfaces, all layered on the same engine:
 | Background queue & hooks | Git hooks and agent hooks that enqueue syncs | 010 |
 | Sync History web page | Read-only HTML/JSON/SSE history served from the tracker | 011 |
 | MCP server | AI-agent tool interface at `<pkg>/mcp` subpath | 012 |
-| CI enforcement | GitHub Action (`task-linear-sync-action`) | 013 |
+| CI enforcement | GitHub Action (`action.yml`) + read-only wrapper at `<pkg>/ci` | 013 |
 
 **Tech stack** (per the ratified constitution; in use since feature 002): TypeScript 5.x in strict mode, ESM with generated `.d.ts`, Node.js ≥ 20, runtime dependencies limited to Node built-ins plus at most one platform transport dependency — still **zero**: feature 007's Linear transport runs on Node ≥ 20's built-in `fetch`, leaving the one-transport allowance unspent; `node:test` for testing.
 
@@ -42,10 +42,11 @@ task-linear-sync/
 │                             #   + engine (008: the composed sync engine)
 │                             #   + cli (009: the operator CLI surface)
 │                             #   + mcp (012: the AI-agent tool surface)
+│                             #   + ci (013: the CI enforcement wrapper)
 ├── tests/                    # unit / contract / integration / e2e (hermetic, zero-network)
 ├── docs/                     # Config reference, amendment rule, per-feature usage guides
 │                             #   (discovery, parsing, routing & titles, matching, tracker,
-│                             #    engine, cli, history-server, agent-tools)
+│                             #    engine, cli, history-server, agent-tools, ci enforcement)
 ├── package.json              # ESM package (zero runtime deps), npm scripts, engines ≥ 20
 └── specs/
     ├── requirements.md       # Master requirements (R1–R29) + glossary
@@ -63,7 +64,7 @@ task-linear-sync/
     ├── 003…007-*/            # Wave-2 specs — implemented and merged (all tasks delivered)
     ├── 008-*/                # sync engine spec — implemented and merged (PR #15)
     ├── 009-*/                # operator CLI spec — implemented (wave-4-surfaces branch)
-    └── 010…013-*/            # 010–012 implemented on this branch; 013 still draft
+    └── 010…013-*/            # 010–013 implemented on this branch
 ```
 
 The **source** layout from `specs/002-core-domain-contracts/plan.md`, created by feature 002:
@@ -80,7 +81,7 @@ tests/
 └── unit | contract | integration | e2e (+ fixtures, helpers, negative-type tests)
 ```
 
-Wave 2 added the `discovery`, `parsing`, `routing`, `titles`, `matching`, and `tracker` modules; Wave 3 added `engine` (008); Wave 4 adds `cli` (009), `queue` (010), `history-server` (011) and `mcp` (012). The published subpath exports today: `.`, `./domain`, `./config`, `./state`, `./urls`, `./gates`, `./ports`, `./tracker`, `./tracker/testing`, `./parsing`, `./matching`, `./discovery`, `./engine`, `./cli`, `./queue`, `./history-server`, `./mcp` (`./routing`/`./titles` are consumed internally per 005's plan; the `./cli` entry point is `runCli(argv, context)`, the `./history-server` entry point is `createSyncHistoryServer(deps)`, the `./mcp` entry point is `createAgentToolServer(deps)`, and the package also installs the `task-linear-sync` bin).
+Wave 2 added the `discovery`, `parsing`, `routing`, `titles`, `matching`, and `tracker` modules; Wave 3 added `engine` (008); Wave 4 adds `cli` (009), `queue` (010), `history-server` (011), `mcp` (012) and `ci` (013). The published subpath exports today: `.`, `./domain`, `./config`, `./state`, `./urls`, `./gates`, `./ports`, `./tracker`, `./tracker/testing`, `./parsing`, `./matching`, `./discovery`, `./engine`, `./cli`, `./queue`, `./history-server`, `./mcp`, `./ci` (`./routing`/`./titles` are consumed internally per 005's plan; the `./cli` entry point is `runCli(argv, context)`, the `./history-server` entry point is `createSyncHistoryServer(deps)`, the `./mcp` entry point is `createAgentToolServer(deps)`, the `./ci` entry point is `runEnforcement(settings, deps)`, and the package also installs the `task-linear-sync` bin).
 
 ## Matching usage (feature 006)
 
@@ -110,7 +111,7 @@ and renames; two issues claiming one task UUID abort the run with
 
 ## Current Status
 
-_Last updated: 2026-11-06 · branch `wave-4-surfaces` (features 009–012 implemented; Wave 3 merged on `main`)_
+_Last updated: 2026-11-06 · branch `wave-4-surfaces` (features 009–013 implemented; Wave 3 merged on `main`)_
 
 - ✅ **Constitution ratified** — `.specify/memory/constitution.md` v1.0.0 (2026-10-20): safety-first, durable identity, overridable defaults, determinism/idempotency, one engine with additive surfaces, test-first quality gates.
 - ✅ **Requirements complete** — `specs/requirements.md` (29 requirements) and the 97-item FR traceability catalog (feature 001) reviewed and checklist-passed.
@@ -120,10 +121,11 @@ _Last updated: 2026-11-06 · branch `wave-4-surfaces` (features 009–012 implem
 - ✅ **Feature 008 (sync engine) implemented and merged (PR #15)** — all 53 tasks delivered test-first across parallel worktree lanes (every story test authored red before its implementation): bootstrap-vs-sync mode selection from checkpoint presence; three-way normalized-hash conflict classification with the FR-004 default action maps; git-style conflict markers with the frozen-block rule; checkbox→workflow completion mapping; the frozen enforcement order `gates → lock → plan-stability re-check → journal-complete-before-first-mutation → screened journaled mutations`; create-intent-before-attempt with indeterminate reconciliation (terminal intents are never replayed); page-0 canonical payload with append-only rolling history pages; resumable guarded `rollbackRun` preserving all history and identity (SC-003); sanitized plan/run reports plus `last-run.json` markers. Ships behind the new `./engine` subpath export; zero runtime dependencies held; the frozen 002 surface never drifted (snapshot-enforced). Reference: [`docs/engine.md`](docs/engine.md); normative behavior in `specs/008-sync-engine-apply-rollback/contracts/`.
 - ✅ **Feature 009 (operator CLI) implemented** on the `wave-4-surfaces` branch — all 38 tasks delivered test-first: the `task-linear` bin and the `./cli` subpath export (`runCli(argv, context)`), a hand-rolled strict argv parser, the full command grammar from `specs/009-operator-cli-plan-report/contracts/command-surface.md` (plan / check / report / status / validate-spec live; apply / rollback staged behind the still-to-wire apply surface; queue seam-gated for 010 with exit 7; inventory / discover-metadata as explicit pre-flight commands), the frozen 0–8 exit-code map with the `task-linear: error:` stderr shape, a programmatic `CheckSummary` whose counts are read back from the persisted plan report artifact, and the plan-review report surfaced from the engine's own artifact pair (`reports/<runId>/report.{json,md}` — never re-rendered). Read-only commands run behind a runtime `ReadOnlyGuard` on the engine/port/state seams (violations → exit 5, tree byte-identical), and `queue` imports its `QueueSurface` lazily so the 010 module's absence never crashes the CLI. Zero runtime dependencies held; the frozen 002 surface never drifted. Usage: [`docs/cli.md`](docs/cli.md).
 - ✅ **Feature 012 (AI-agent tool interface) implemented** on the `wave-4-surfaces` branch — all 37 tasks delivered test-first: the `./mcp` subpath export (`createAgentToolServer(deps)`), an MCP-compatible JSON-RPC 2.0 surface with four tools — `task_sync_plan`, `task_sync_status`, `task_sync_inventory` (all read-only, reusing the CLI's guarded read lanes) and the gated `task_sync_apply` — over line-delimited stdio (default) or a loopback HTTP listener with constant-time bearer auth. The apply tool is **disabled by default**: it is invisible in `tools/list` and a call to it is refused before any engine or port code runs (SC-001 pinned by an end-to-end port-call census); when enabled it makes exactly one `engine.applySyncPlan` call with the frozen GateRequest. In-memory per-session plan store, no credentials held, every tool result screened through the feature-002 hygiene screeners, `node:fs` never touched by `src/mcp`. Zero runtime dependencies held; the frozen 002 surface never drifted. Preview reference: [`docs/agent-tools.md`](docs/agent-tools.md).
-- 📝 **Feature 013 remains a draft spec** — CI enforcement (`task-linear-sync-action`) layers on the shipped, frozen engine surface; the background queue & hooks (010), sync-history web page (011), and MCP server (012) now ship on this branch.
-- ✅ **The repo builds and tests** — `npm ci && npm test` (also `lint`, `typecheck`, `build`, and per-tier `test:unit|contract|integration|e2e` scripts, plus `test:cli`): **1424/1424 tests green** across the four tiers, coverage 80.6% lines / 81.0% branches / 80.8% functions against the 80/70/80 gate, CI green on the Node 20 + 24 matrix. Scope: the complete brain, the engine, and the read-only operator surface now exist — discovery, parsing, routing/titles, matching, the tracker port with real + fake adapters, the composed engine with gated apply and rollback, and the CLI with review reports and exit-code contracts. What remains is the apply surface wiring on top of the CLI (009's `apply`/`rollback` commands), then the CI action (013); the queue (010), web viewer (011), and MCP server (012) now ship on this branch.
+- ✅ **Feature 013 (CI enforcement layer) implemented** on the `wave-4-surfaces` branch — all 61 tasks delivered test-first: the `./ci` subpath export and the `task-linear-sync-ci` entry point (`runEnforcement(settings, deps)`), which gate a pipeline on the report the published CLI already produces — the wrapper invokes `task-linear-sync check|plan --format json` (or reads a pre-generated `--report` artifact), validates it against the feature-009 report shape, and evaluates exactly three independently toggleable conditions: high-confidence unmapped work items (`unmapped-high-confidence`), unresolved-conflict blocks touching the protected target branch (`unresolved-conflict-block`, scoped by the injected `protectedBranches` set and the issue `branchContext`), and changed-or-missing specs for mapped items (`spec-drift`). It never re-derives findings and structurally cannot write: the apply path is unreachable from `src/ci` (zero `node:fs` in the pipeline, hygiene-scanned; no command line can reach apply). The composite GitHub Action (`action.yml`, node24 via `actions/setup-node`) builds the shipped sources, runs the entry point, and reports failure as one CI-screened, count-only `workflow_job_summary` line per contract; exit map 0 pass / 1 violations / 2 missing-or-malformed artifact / 3 CLI failure; a skipped conflict check (unresolvable target branch) warns but never fails (SC-004). Zero runtime dependencies held; the frozen 002 surface never drifted. Usage: [`docs/ci-enforcement.md`](docs/ci-enforcement.md).
+- 📝 **Wave 4 status** — the background queue & hooks (010), sync-history web page (011), MCP server (012) and CI enforcement layer (013) now ship on this branch.
+- ✅ **The repo builds and tests** — `npm ci && npm test` (also `lint`, `typecheck`, `build`, and per-tier `test:unit|contract|integration|e2e` scripts, plus `test:cli`): **1520/1520 tests green** across the four tiers, coverage 81.3% lines / 80.4% branches / 80.8% functions against the 80/70/80 gate, CI green on the Node 20 + 24 matrix. Scope: the complete brain, the engine, and the read-only operator surface now exist — discovery, parsing, routing/titles, matching, the tracker port with real + fake adapters, the composed engine with gated apply and rollback, and the CLI with review reports and exit-code contracts. What remains is the apply surface wiring on top of the CLI (009's `apply`/`rollback` commands); the queue (010), web viewer (011), MCP server (012), and CI enforcement layer (013) ship on this branch.
 
-**Next steps:** finish Wave 4's surfaces on top of the shipped engine and CLI — wire the `apply`/`rollback` command lanes to the apply surface (gates + confirmation, 009 follow-up), then 010 (background queue & hooks, which fills the CLI's `QueueSurface` seam), then 011–013, each via the same `/speckit.*` pipeline (`/speckit.plan`, `/speckit.tasks`, `/speckit.implement`).
+**Next steps:** finish Wave 4's surfaces on top of the shipped engine and CLI — wire the `apply`/`rollback` command lanes to the apply surface (gates + confirmation, 009 follow-up), then 010 (background queue & hooks, which fills the CLI's `QueueSurface` seam), each via the same `/speckit.*` pipeline (`/speckit.plan`, `/speckit.tasks`, `/speckit.implement`).
 
 ## Tracker integration port (feature 007)
 
@@ -261,6 +263,34 @@ const server = createAgentToolServer({
   repositoryRoot: "/srv/repos/acme",
 });
 await server.serveStdio();  // or: await server.listenHttp()
+```
+
+## CI enforcement layer (feature 013)
+
+`task-linear-sync/ci` is the pipeline gate around the report the CLI already produces.
+The wrapper never re-derives findings: it invokes the published CLI
+(`task-linear-sync check|plan --format json`, or consumes a pre-generated `--report`
+artifact), validates the artifact against the feature-009 report shape (anything else
+exits 2 and names the artifact — never a silent pass), and evaluates exactly three
+independently toggleable conditions — high-confidence unmapped work items,
+unresolved-conflict blocks against the protected target branch, and changed-or-missing
+specs for mapped items. Failure prints one CI-screened, count-only summary line naming
+each triggered condition; the apply path is unreachable from this surface (no `node:fs`
+in the pipeline, and no command line can reach apply). The composite GitHub Action
+(`action.yml`) builds the shipped sources, runs the `task-linear-sync-ci` entry point,
+and writes the same summary to the job summary. Full reference:
+[`docs/ci-enforcement.md`](docs/ci-enforcement.md).
+
+```ts
+import { loadCiSettings, parseLocator, runEnforcement } from "task-linear-sync/ci";
+
+const settings = loadCiSettings({
+  env: process.env,
+  cliCommand: "npx task-linear-sync",
+  cliLocator: parseLocator("check --spec-root specs/"),
+});
+const result = await runEnforcement(settings);
+// result.exitCode: 0 pass · 1 violations · 2 missing/malformed artifact · 3 CLI failure
 ```
 
 ## Running what works today
