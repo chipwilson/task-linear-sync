@@ -2,7 +2,7 @@
 
 A reusable npm library + CLI that keeps spec-driven-development task files in a repository bidirectionally synced with **Linear** issues — maintaining a "golden thread" of traceability between the specs you plan with and the issues you track work in.
 
-> **Status: Wave 4 in progress.** The frozen foundation (002), the Wave-2 library modules (003–007) and the sync engine (008) are merged on `main`; the **operator CLI (009)** now ships on the `wave-4-surfaces` branch — `task-linear-sync plan` / `check` / `report` / `status` / `validate-spec` run read-only today (exit codes + review reports), with `apply`/`rollback` gated until their apply-surface lands and `queue` reserved for 010. The full `plan → review report → gated apply → rollback` lifecycle runs through `task-linear-sync/engine`. The remaining surfaces (queue, web, MCP, CI — 010–013) follow. See [Current Status](#current-status).
+> **Status: Wave 4 in progress.** The frozen foundation (002), the Wave-2 library modules (003–007) and the sync engine (008) are merged on `main`; the **operator CLI (009)** now ships on the `wave-4-surfaces` branch — `task-linear-sync plan` / `check` / `report` / `status` / `validate-spec` run read-only today (exit codes + review reports), with `apply`/`rollback` gated until their apply-surface lands and `queue` reserved for 010. The full `plan → review report → gated apply → rollback` lifecycle runs through `task-linear-sync/engine`. Also shipping on this branch: the **background queue & hooks (010)** (`./queue`) and the read-only **Sync-History web component (011)** (`./history-server` — HTML/JSON/SSE history from the tracker, no local state). The remaining surfaces (MCP, CI — 012–013) follow. See [Current Status](#current-status).
 
 ## Proposed Purpose
 
@@ -19,7 +19,7 @@ Planned surfaces, all layered on the same engine:
 | Core library | Domain, contracts, discovery, parsing, matching, tracker port, engine | 002–008 |
 | Operator CLI | `plan` / `apply` / `rollback` with review reports and gates | 009 |
 | Background queue & hooks | Git hooks and agent hooks that enqueue syncs | 010 |
-| Sync History web page | Optional Next.js/React viewer of sync runs | 011 |
+| Sync History web page | Read-only HTML/JSON/SSE history served from the tracker | 011 |
 | MCP server | AI-agent tool interface at `<pkg>/mcp` subpath | 012 |
 | CI enforcement | GitHub Action (`task-linear-sync-action`) | 013 |
 
@@ -79,7 +79,7 @@ tests/
 └── unit | contract | integration | e2e (+ fixtures, helpers, negative-type tests)
 ```
 
-Wave 2 added the `discovery`, `parsing`, `routing`, `titles`, `matching`, and `tracker` modules; Wave 3 added `engine` (008); Wave 4 adds `cli` (009). The published subpath exports today: `.`, `./domain`, `./config`, `./state`, `./urls`, `./gates`, `./ports`, `./tracker`, `./tracker/testing`, `./parsing`, `./matching`, `./discovery`, `./engine`, `./cli` (`./routing`/`./titles` are consumed internally per 005's plan; the `./cli` entry point is `runCli(argv, context)`, and the package also installs the `task-linear-sync` bin).
+Wave 2 added the `discovery`, `parsing`, `routing`, `titles`, `matching`, and `tracker` modules; Wave 3 added `engine` (008); Wave 4 adds `cli` (009), `queue` (010) and `history-server` (011). The published subpath exports today: `.`, `./domain`, `./config`, `./state`, `./urls`, `./gates`, `./ports`, `./tracker`, `./tracker/testing`, `./parsing`, `./matching`, `./discovery`, `./engine`, `./cli`, `./queue`, `./history-server` (`./routing`/`./titles` are consumed internally per 005's plan; the `./cli` entry point is `runCli(argv, context)`, the `./history-server` entry point is `createSyncHistoryServer(deps)`, and the package also installs the `task-linear-sync` bin).
 
 ## Matching usage (feature 006)
 
@@ -109,7 +109,7 @@ and renames; two issues claiming one task UUID abort the run with
 
 ## Current Status
 
-_Last updated: 2026-11-05 · branch `wave-4-surfaces` (feature 009 implemented; Wave 3 merged on `main`)_
+_Last updated: 2026-11-06 · branch `wave-4-surfaces` (features 009–011 implemented; Wave 3 merged on `main`)_
 
 - ✅ **Constitution ratified** — `.specify/memory/constitution.md` v1.0.0 (2026-10-20): safety-first, durable identity, overridable defaults, determinism/idempotency, one engine with additive surfaces, test-first quality gates.
 - ✅ **Requirements complete** — `specs/requirements.md` (29 requirements) and the 97-item FR traceability catalog (feature 001) reviewed and checklist-passed.
@@ -218,6 +218,19 @@ kodem wyjścia `0`, nawet bez danych uwierzytelniających; powtórne zgłoszenia
 pojedyncze zadanie. Pełna dokumentacja (polecenia, zamrożona mapa kodów wyjścia, blok
 konfiguracji `queue`, kształt bloków hooka i scaffolda, rozwiązywanie problemów):
 [`docs/queue-hooks.md`](docs/queue-hooks.md).
+
+## Sync-History web page (feature 011)
+
+`task-linear-sync/history-server` is the read-only Sync-History surface: it
+reconstructs a task's sync timeline purely from the tracker (through the frozen
+`LinearPort` — never from local manifests or state files) and serves it as a
+self-contained HTML page, a JSON view, or a Server-Sent Events stream, with an
+automatic polling fallback. Private-by-default access (bearer token or a
+stateless signed session cookie bootstrapped from a token form; 401/403 with
+zero history bytes, authorization strictly before any tracker read), a
+clock-injected TTL cache with single-flight de-duplication, and a serverless
+deployment shape (`app.handle` with `cacheTtlSeconds: 0`, no `listen()`).
+Full reference: [`docs/history-server.md`](docs/history-server.md).
 
 ## Running what works today
 

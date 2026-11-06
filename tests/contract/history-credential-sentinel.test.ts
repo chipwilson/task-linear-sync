@@ -73,10 +73,13 @@ function scenario(spec: Scenario): {
       });
       app.handle(pair.req, pair.res);
       // A served SSE stream stays open on purpose: capture its live bytes.
+      // NOTE: the fallback timer is deliberately NOT unref'd — stub pairs have
+      // no sockets, so an unref'd timer lets the event loop drain and Node
+      // cancels the pending test.
       const raced = await Promise.race([
         pair.finished.then((r) => ({ kind: "done" as const, r })),
         new Promise<{ kind: "open" }>((resolve) => {
-          setTimeout(() => resolve({ kind: "open" }), 250).unref?.();
+          setTimeout(() => resolve({ kind: "open" }), 250);
         }),
       ]);
       if (raced.kind === "done") return raced.r;
@@ -240,7 +243,10 @@ test("history-sentinel: the 403/401 bodies also name no credential or local path
     const un = await s.serve(path, { accept });
     const bad = await s.serve(path, { accept, headers: { authorization: "Bearer nope" } });
     for (const res of [un, bad]) {
-      for (const banned of ["token", "TASK_LINEAR_SYNC", "Bearer", "/home/", "src/"]) {
+      // Leak rule (access-control §4): no credential VALUE, no env-var NAME,
+      // no local paths. The mandated 401 token-form shell uses the generic
+      // word "token" as UI text, which names no credential.
+      for (const banned of [TOKEN_SENTINEL, "TASK_LINEAR_SYNC", "lin_api_", "/home/", "src/"]) {
         assert.equal(
           res.body.includes(banned),
           false,

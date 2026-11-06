@@ -6,7 +6,6 @@
  */
 
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
-import type { AddressInfo } from "node:net";
 
 export interface ListenTarget {
   handle(req: IncomingMessage, res: ServerResponse): void;
@@ -22,7 +21,10 @@ export async function listenHistoryApp(
     server.once("error", reject);
     server.listen(port, host, () => resolve());
   });
-  const bound = server.address() as AddressInfo;
+  const bound = server.address();
+  if (bound === null || typeof bound === "string") {
+    throw new Error("history: the listener did not bind to a TCP port");
+  }
   return {
     port: bound.port,
     close: () =>
