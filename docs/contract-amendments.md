@@ -90,8 +90,9 @@ so entries can never be silently dropped.
 - 2026-11-06 · history · `status.429` · tracker-origin trigger only → also self-protective
   (walk/stream admission) with `Retry-After: 1` header · 014 R3 bounded inbound load ·
   clients treat the self-protective 429 exactly like the tracker one (retry later)
-- 2026-11-06 · history · `sse.cookieAttributes` · base set → base set + conditional `Secure`
-  on `web.secureCookies: true` · 014 R4 TLS-front-door deployments · default `false` keeps
+- 2026-11-06 · history · `sse.cookieAttributes` / `sse.cookieSecure` · base set → base set
+  (default unchanged) with `sse.cookieSecure` gaining conditional `Secure` on
+  `web.secureCookies: true` · 014 R4 TLS-front-door deployments · default `false` keeps
   the cookie byte-identical
 
 ### Log — mcp surface

@@ -335,7 +335,14 @@ export interface WithHistoryServerOptions {
     pollIntervalSeconds: number;
     cacheTtlSeconds: number;
     authEnvVarName: string;
+    // 014 amendment keys (configuration.md amendment 2026-11-06)
+    maxCacheEntries: number;
+    maxConcurrentWalks: number;
+    maxConcurrentSseStreams: number;
+    secureCookies: boolean;
   }>;
+  /** Wrap the fake port (e.g. to gate walk resolution in admission tests). */
+  wrapPort?: (port: FakeLinearPort) => LinearPort;
   extraOverrides?: ConfigOverrides;
   /** Token env value (default: sentinel). Set `env` explicitly to blank it. */
   token?: string;
@@ -380,7 +387,7 @@ export async function withHistoryServer(
   const env: Record<string, string | undefined> =
     opts.env ?? { [tokenEnvVarName]: opts.token ?? TOKEN_SENTINEL };
   const app = factory({
-    port: world.fake,
+    port: opts.wrapPort ? opts.wrapPort(world.fake) : world.fake,
     config,
     clock,
     screener: opts.screener,

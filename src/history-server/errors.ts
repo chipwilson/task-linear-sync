@@ -27,9 +27,20 @@ export interface ErrorEnvelope {
   readonly code: HistoryErrorCode;
   readonly status: number;
   readonly message: string;
+  /**
+   * 014 (resource-bounds.md §3/§7): a 429 may also be triggered by SELF-
+   * protection (walk/SSE-stream admission). Same frozen body, one header
+   * addition — the header delta travels here so the trigger site applies it
+   * and the tracker-originated mapping stays header-free.
+   */
+  readonly selfProtective?: { readonly headers: Readonly<Record<string, string>> };
 }
 
-/** Closed status/code/message table — the only error text this surface ships. */
+/**
+ * Closed status/code/message table — the only error text this surface ships.
+ * `RATE_LIMITED.selfProtective` is a T022 addition (header delta only; the
+ * rendered body stays the frozen `{error:{code,message}}` shape).
+ */
 export const ERROR_ENVELOPES: Readonly<Record<HistoryErrorCode, ErrorEnvelope>> = {
   NOT_FOUND: {
     code: "NOT_FOUND",
@@ -50,6 +61,7 @@ export const ERROR_ENVELOPES: Readonly<Record<HistoryErrorCode, ErrorEnvelope>> 
     code: "RATE_LIMITED",
     status: 429,
     message: "history: the tracker is rate limiting reads; try again later",
+    selfProtective: { headers: { "Retry-After": "1" } },
   },
   TRACKER_UNAVAILABLE: {
     code: "TRACKER_UNAVAILABLE",

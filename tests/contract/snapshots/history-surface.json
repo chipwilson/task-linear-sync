@@ -31,7 +31,7 @@
   },
   "sse.contentType": "text/event-stream",
   "sse.cookieAttributes": " Path=/; HttpOnly; SameSite=Strict",
-  "sse.cookieSecure": " Path=/; HttpOnly; SameSite=Strict",
+  "sse.cookieSecure": " Path=/; HttpOnly; SameSite=Strict; Secure",
   "status.401": {
     "code": "UNAUTHORIZED",
     "message": "history: authentication is required to view this page"

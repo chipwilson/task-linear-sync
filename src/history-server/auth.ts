@@ -146,6 +146,8 @@ export interface AccessGateDeps {
   readonly env: Readonly<Record<string, string | undefined>>;
   readonly toolId: string;
   readonly clock: HistoryClock;
+  /** 014 (resource-bounds.md §4): append `; Secure`; no X-Forwarded-Proto sniffing. */
+  readonly secureCookies?: boolean;
 }
 
 export interface AccessGate {
@@ -222,7 +224,9 @@ export function createAccessGate(deps: AccessGateDeps): AccessGate {
       const cookie = issueSessionCookieValue({ token: token(), toolId: deps.toolId, clock: deps.clock });
       return (
         `${historySessionCookieName(deps.toolId)}=${cookie}; ` +
-        "Path=/; HttpOnly; SameSite=Strict"
+        "Path=/; HttpOnly; SameSite=Strict" +
+        // 014 (resource-bounds.md §4): opt-in suffix; the base string is untouched.
+        (deps.secureCookies === true ? "; Secure" : "")
       );
     },
   };
