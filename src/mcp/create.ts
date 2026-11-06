@@ -22,7 +22,7 @@ import type { EngineDependencies, LinearPort, SecurityScreener } from "../ports/
 import type { McpSettings } from "./config.js";
 import { resolveMcpConfig } from "./config.js";
 import { McpConfigError, renderCoreRefusal, renderSingleRefusal } from "./errors.js";
-import { createReadHandlers } from "./handlers.js";
+import { createReadHandlers, createApplyHandler } from "./handlers.js";
 import type { ToolCoreOutcome } from "./handlers.js";
 import { createDispatcher } from "./jsonrpc.js";
 import type { JsonRpcReply, ToolCallResult } from "./jsonrpc.js";
@@ -71,6 +71,8 @@ export interface AgentToolServerApp {
   readonly settings: McpSettings;
   /** The ONE session-scoped plan-reference store (restart ⇒ empty). */
   readonly store: PlanReferenceStore;
+  /** Shared story-core bag (cores wire via registerCore). */
+  readonly bag: ServerBag;
   /** Release transport resources (http listener; stdio ends with the host streams). */
   close(): Promise<void>;
 }
@@ -156,6 +158,21 @@ export function createAgentToolServer(deps: AgentToolServerDeps): AgentToolServe
   cores.set("task_sync_plan", wrapOutcome(readHandlers.task_sync_plan));
   cores.set("task_sync_inventory", wrapOutcome(readHandlers.task_sync_inventory));
   cores.set("task_sync_status", wrapOutcome(readHandlers.task_sync_status));
+
+  // T043 — the apply core: the ONE engine.applySyncPlan call site on this surface.
+  const applyCore = createApplyHandler({ settings, store, state, engine, screener, config: deps.config });
+  cores.set("task_sync_apply", async (args: unknown) => {
+    const outcome = await applyCore((typeof args === "object" && args !== null ? args : {}) as Record<string, unknown>);
+    if (outcome.ok) return textBlock(JSON.stringify(outcome.payload));
+    if ("gateFailures" in outcome) {
+      // Engine refusals list EVERY {code, detail} verbatim (complete-listing posture).
+      return textBlock(
+        JSON.stringify({ schemaVersion: 1, status: "refused", error: outcome.gateFailures }),
+        true,
+      );
+    }
+    return textBlock(renderCoreRefusal(outcome.refusal), true);
+  });
   let httpClose: (() => Promise<void>) | null = null;
 
   const dispatcher = createDispatcher({
@@ -209,7 +226,7 @@ export function createAgentToolServer(deps: AgentToolServerDeps): AgentToolServe
     },
   };
 
-  const app: AgentToolServerApp & { readonly bag: ServerBag } = {
+  const app: AgentToolServerApp = {
     settings,
     store,
     bag,

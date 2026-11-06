@@ -12,14 +12,17 @@
 
 import type { CliContext } from "../cli/index.js";
 import { ExitCode, runCli } from "../cli/index.js";
+import type { ResolvedConfig } from "../config/index.js";
 import { derivePlanReportRunId } from "../engine/index.js";
 import type { PlanReportJson } from "../engine/index.js";
 import { readPendingJob, readQueueLockRecord } from "../queue/index.js";
-import type { SecurityScreener } from "../ports/index.js";
+import type { SecurityScreener, SyncEngine } from "../ports/index.js";
 import { readLastRunMarker } from "../state/index.js";
 import type { Clock, StateStore } from "../state/index.js";
+import type { McpSettings } from "./config.js";
 import type { ToolRefusal } from "./errors.js";
 import type { PlanReferenceStore } from "./plan-store.js";
+import { validateToolArguments } from "./tools.js";
 
 /** A core answered: a stable-key payload, or a refusal with taxonomy code + detail. */
 export type ToolCoreOutcome =
@@ -193,5 +196,125 @@ export function createReadHandlers(deps: ReadHandlerDeps): McpReadHandlers {
     task_sync_plan: taskSyncPlan,
     task_sync_inventory: taskSyncInventory,
     task_sync_status: taskSyncStatus,
+  };
+}
+
+// ───────────────── T042 [US2] — the apply core (apply-gating.md §1 pipeline) ─────────
+
+export interface ApplyHandlerDeps {
+  readonly settings: McpSettings;
+  readonly store: PlanReferenceStore;
+  readonly state: StateStore;
+  readonly engine: SyncEngine;
+  readonly screener: SecurityScreener;
+  readonly config: ResolvedConfig;
+}
+
+/** An engine refusal keeps EVERY gate failure — the single-refusal type cannot hold it. */
+export type ApplyCoreOutcome =
+  | { readonly ok: true; readonly payload: Record<string, unknown> }
+  | { readonly ok: false; readonly refusal: ToolRefusal }
+  | { readonly ok: false; readonly gateFailures: readonly { code: string; detail: string }[] };
+
+/**
+ * The ONE `task_sync_apply` core (apply-gating.md §1): steps 1–4 are surface POLICY
+ * (enablement, argument shape, session membership, plan presence) and short-circuit with
+ * ZERO engine/port/state touch; step 5 makes the single `engine.applySyncPlan` call with
+ * exactly the frozen `GateRequest` fields — the module owns zero gate/sync logic.
+ */
+export function createApplyHandler(deps: ApplyHandlerDeps): (args: Record<string, unknown>) => Promise<ApplyCoreOutcome> {
+  const screen = (value: string): string => {
+    const outcome = deps.screener.screen(value);
+    return outcome.blocked.length > 0 ? "[redacted]" : outcome.output;
+  };
+
+  return async (args) => {
+    // 1. Enablement — the SAME settings object that gates visibility (SC-003).
+    if (!deps.settings.enabled) {
+      return {
+        ok: false,
+        refusal: {
+          code: "MUTATING_TOOLS_DISABLED",
+          detail: "mutating tools are disabled for this surface — set the config key mcp.enabled to true and restart the server",
+        },
+      };
+    }
+    // 2. Argument shape — the SAME validator the inputSchema advertises; ALL issues.
+    const issues = validateToolArguments("task_sync_apply", args);
+    if (issues.length > 0) {
+      return {
+        ok: false,
+        refusal: { code: "INVALID_ARGUMENTS", detail: issues.join("; ") },
+      };
+    }
+    const planReference = String(args["planReference"]);
+    const confirmationKey = String(args["confirmationKey"]);
+    // 3. Session membership — BEFORE any state read (restart rule, §2.2).
+    if (!deps.store.has(planReference)) {
+      return {
+        ok: false,
+        refusal: { code: "PLAN_REFERENCE_UNKNOWN", detail: "no plan reference produced in this session; run task_sync_plan" },
+      };
+    }
+    // 4. Stored plan presence — zero port calls on absence.
+    const stored = await deps.state.readJson<{ plan?: unknown }>(`plans/${planReference}.json`);
+    if (stored === null || typeof stored !== "object" || stored.plan === undefined) {
+      return {
+        ok: false,
+        refusal: { code: "PLAN_REFERENCE_UNKNOWN", detail: `no stored plan found for planReference '${planReference}'` },
+      };
+    }
+    // 5. THE single engine call — verbatim GateRequest, nothing added (V invariant).
+    // The gate detail embeds the PRESENTED key verbatim (frozen engine wording), so the
+    // surface sanitizes it before rendering: the refusal names the CODE, never the value.
+    const sanitizeGateDetail = (code: string, detail: string, presented: string): string =>
+      code === "CONFIRMATION_KEY_MISMATCH"
+        ? detail.split(presented).join("[redacted]")
+        : screen(detail);
+    const result = await deps.engine.applySyncPlan(stored.plan as Parameters<SyncEngine["applySyncPlan"]>[0], {
+      applyFlag: true,
+      confirmationKey, // verbatim; never defaulted, never echoed
+      acceptLowConfidence: args["acceptLowConfidence"] === true, // never implied (010 posture)
+      planReference,
+    });
+
+    if (result.status === "refused") {
+      // 6a. EVERY gate failure listed verbatim — no surface-local gate codes, no key echo.
+      return {
+        ok: false,
+        gateFailures: result.gateFailures.map((failure) => ({
+          code: failure.code,
+          detail: sanitizeGateDetail(failure.code, failure.detail, confirmationKey),
+        })),
+      };
+    }
+    if (result.status === "aborted") {
+      // Presentation of the engine's abort status — surface code (no gate code invented).
+      return {
+        ok: false,
+        refusal: {
+          code: "LANE_FAILURE",
+          detail: `apply aborted (run ${result.runId}) — mutations were reversed where possible; see the run reports`,
+        },
+      };
+    }
+    let applied = 0;
+    let skipped = 0;
+    let failed = 0;
+    for (const outcome of result.operations) {
+      if (outcome.status === "applied") applied += 1;
+      else if (outcome.status === "skipped") skipped += 1;
+      else failed += 1;
+    }
+    return {
+      ok: true,
+      payload: {
+        schemaVersion: 1,
+        runId: result.runId,
+        status: "applied",
+        counts: { applied, skipped, failed },
+        reportPaths: result.reportPaths ?? null,
+      },
+    };
   };
 }

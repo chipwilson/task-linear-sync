@@ -4,12 +4,13 @@
  */
 
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
 
-import { cliWorldDir } from "../helpers/cli-harness.js";
+import { cliWorldDir, hashTree } from "../helpers/cli-harness.js";
 import { emitMcpDriver, spawnMcpDriver } from "../helpers/mcp-harness.js";
 
 const scratch = await mkdtemp(join(tmpdir(), "tls-012-e2e-us1-"));
@@ -84,4 +85,105 @@ test("mcp-user-stories: stdout is protocol-only and malformed traffic never kill
   } finally {
     await child.close();
   }
+});
+
+const MUTATING_METHODS = new Set([
+  "createIssue",
+  "updateIssue",
+  "archiveIssue",
+  "upsertAttachmentByUrl",
+  "updateAttachment",
+]);
+
+function callLogMethods(stderr: string): string[] {
+  const line = stderr.split("\n").find((l) => l.startsWith("MCP-CALL-LOG "));
+  assert.ok(line, `driver stderr carries the MCP-CALL-LOG line; got: ${stderr.slice(-200)}`);
+  return JSON.parse(line.slice("MCP-CALL-LOG ".length)) as string[];
+}
+
+test("mcp-user-stories: US2 walkthrough — enabled child plans then applies; a fresh child refuses the same reference (SC-001)", async () => {
+  const worldDir = cliWorldDir("review-report");
+  const confirmationKey = String(
+    (JSON.parse(readFileSync(join(worldDir, "world.json"), "utf8")) as { config?: { confirmationKey?: string } }).config
+      ?.confirmationKey,
+  );
+  assert.ok(confirmationKey, "the world fixture configures a confirmation key");
+  const stateDir = join(scratch, "us2-state");
+
+  // Child A: apply enabled — full plan → apply succeeds over the wire.
+  const driverA = join(scratch, "driver-us2-apply.mjs");
+  await emitMcpDriver({ driverPath: driverA, worldDir, stateDir, applyEnabled: true });
+  const childA = spawnMcpDriver(driverA);
+  let planReference = "";
+  try {
+    childA.send({ jsonrpc: "2.0", id: 1, method: "initialize", params: { protocolVersion: "2025-03-26" } });
+    await childA.waitFor((m) => m.id === 1);
+    childA.send({ jsonrpc: "2.0", method: "notifications/initialized" });
+
+    const list = await (async () => {
+      childA.send({ jsonrpc: "2.0", id: 2, method: "tools/list" });
+      return childA.waitFor((m) => m.id === 2);
+    })();
+    const names = (list.result as { tools: Array<{ name: string }> }).tools.map((t) => t.name);
+    assert.equal(names.includes("task_sync_apply"), true, "apply is advertised when enabled");
+
+    childA.send({ jsonrpc: "2.0", id: 3, method: "tools/call", params: { name: "task_sync_plan", arguments: {} } });
+    const planPayload = JSON.parse(textOf(await childA.waitFor((m) => m.id === 3))) as { planReference: string };
+    planReference = planPayload.planReference;
+
+    childA.send({
+      jsonrpc: "2.0",
+      id: 4,
+      method: "tools/call",
+      params: {
+        name: "task_sync_apply",
+        arguments: { planReference, confirmationKey, acceptLowConfidence: true },
+      },
+    });
+    const applied = JSON.parse(textOf(await childA.waitFor((m) => m.id === 4))) as Record<string, unknown>;
+    assert.equal(applied.status, "applied", JSON.stringify(applied));
+    assert.ok((applied.counts as { applied: number }).applied > 0, `the run applied entries: ${JSON.stringify(applied)}`);
+  } finally {
+    const exitA = await childA.close();
+    assert.equal(exitA.code, 0);
+  }
+  assert.ok(
+    callLogMethods(childA.stderr).some((m) => MUTATING_METHODS.has(m)),
+    "child A's fake port received the engine's mutations",
+  );
+
+  // Child B: fresh process, SAME state dir — the reference is another session's.
+  const stateHash = hashTree(stateDir);
+  const driverB = join(scratch, "driver-us2-fresh.mjs");
+  await emitMcpDriver({ driverPath: driverB, worldDir, stateDir, applyEnabled: true });
+  const childB = spawnMcpDriver(driverB);
+  try {
+    childB.send({ jsonrpc: "2.0", id: 1, method: "initialize", params: { protocolVersion: "2025-03-26" } });
+    await childB.waitFor((m) => m.id === 1);
+    childB.send({ jsonrpc: "2.0", method: "notifications/initialized" });
+
+    childB.send({
+      jsonrpc: "2.0",
+      id: 2,
+      method: "tools/call",
+      params: { name: "task_sync_apply", arguments: { planReference, confirmationKey, acceptLowConfidence: true } },
+    });
+    const refused = await childB.waitFor((m) => m.id === 2);
+    const result = refused.result as { isError?: boolean; content: Array<{ text: string }> };
+    assert.equal(result.isError, true);
+    assert.ok(result.content[0]!.text.includes("PLAN_REFERENCE_UNKNOWN"), result.content[0]!.text);
+    assert.ok(
+      result.content[0]!.text.includes("task_sync_plan"),
+      "the refusal points the agent at task_sync_plan",
+    );
+  } finally {
+    const exitB = await childB.close();
+    assert.equal(exitB.code, 0);
+  }
+  assert.deepEqual(
+    callLogMethods(childB.stderr).filter((m) => MUTATING_METHODS.has(m)),
+    [],
+    "SC-001: the refusing child performed ZERO port mutations",
+  );
+  assert.equal(hashTree(stateDir), stateHash, "SC-001: the refusing child wrote NOTHING to the state dir");
 });
