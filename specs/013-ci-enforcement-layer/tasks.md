@@ -200,3 +200,16 @@ Task: "Implement summary in src/ci/summary.ts"         # T026
   `argv[1]` to that copy after recording the untouched argv in the census —
   modeling "the runner's checkout" while the census still proves the wrapper's
   exact argument surface. Frozen modules untouched.
+- **T043 scan scope.** The identity scan covers feature 013's own artifacts
+  (`action.yml`, `src/ci/**`, `docs/ci-enforcement.md`, `tests/fixtures/ci/**`);
+  the README's pre-existing 012-era example snippets (which use an example org
+  literal and scoped-package `@…` names) predate the scan and were left as
+  authored. Placeholder shapes (single-repeat hex digests, the documented
+  `ac000000-…` fixture UUID seed) are explicitly allowed and documented in the
+  scan's header.
+- **Quickstart errata fixed during T060 validation** (spec artifact, not
+  behavior): Scenario 1's first command now sets `GITHUB_BASE_REF=main` (the
+  all-three-names expectation requires a PR-run context so condition (b) can
+  classify — behavior itself was already contract-correct), Scenario 5's scan
+  commands point at compiled `.js` paths, and Scenario 4's fixture-world
+  wording matches the harness (worlds are materialized in OS temp dirs).
