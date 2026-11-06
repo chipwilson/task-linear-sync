@@ -1,0 +1,111 @@
+name: "task-linear-sync CI enforcement"
+description: >-
+  Gates a pull request on sync hygiene: wraps the published read-only task-linear-sync
+  check/plan commands, consumes only the sanitized plan-report JSON, and fails the step on
+  the three configurable violation conditions. Zero tracker mutations, zero repository
+  writes, no apply or mutate mode.
+author: "task-linear-sync contributors"
+inputs:
+  workspace:
+    description: "Repository root to enforce (wrapper --workspace)."
+    default: "${{ github.workspace }}"
+  config:
+    description: "CLI config file path, passed to the wrapped CLI verbatim (--config). Empty ⇒ the CLI's own resolution."
+    default: ""
+  command:
+    description: "Wrapped read-only command: check or plan."
+    default: "check"
+  report:
+    description: "Artifact-direct mode: evaluate this plan-report JSON and spawn nothing. Empty ⇒ run the wrapped command."
+    default: ""
+  cli-entry:
+    description: "CLI entry override. Empty ⇒ action dist, workspace dist, then workspace node_modules resolution."
+    default: ""
+  fail-on-unmapped:
+    description: "Condition (a): fail when high-confidence unmapped entries EXCEED unmapped-threshold."
+    default: "true"
+  unmapped-threshold:
+    description: "Condition (a) threshold (count exceeds to trigger)."
+    default: "0"
+  fail-on-conflicts:
+    description: "Condition (b): fail when unresolved-conflict marker blocks land on a protected branch."
+    default: "true"
+  fail-on-drift:
+    description: "Condition (c): fail when matched-entry spec/Linear drift EXCEEDS drift-threshold."
+    default: "true"
+  drift-threshold:
+    description: "Condition (c) threshold (count exceeds to trigger)."
+    default: "0"
+  protected-branches:
+    description: "CSV protected branch set for condition (b). Empty ⇒ GITHUB_BASE_REF fallback."
+    default: ""
+  branch:
+    description: "Target-branch override. Empty ⇒ GITHUB_BASE_REF then GITHUB_REF_NAME."
+    default: ""
+  auto-build:
+    description: "Build the package (npm ci && npm run build) inside the action dir when dist/ci/main.js is absent."
+    default: "true"
+outputs:
+  status:
+    description: "pass or fail — the enforcement decision."
+    value: ${{ steps.enforce.outputs.status }}
+  unmapped-count:
+    description: "Condition (a) count — always computed, even when the toggle is off."
+    value: ${{ steps.enforce.outputs.unmapped-count }}
+  conflict-count:
+    description: "Condition (b) count (unresolved-conflict marker blocks)."
+    value: ${{ steps.enforce.outputs.conflict-count }}
+  drift-count:
+    description: "Condition (c) count (matched-entry spec/Linear drift)."
+    value: ${{ steps.enforce.outputs.drift-count }}
+  summary:
+    description: "Screened one-line summary safe to annotate on the check run."
+    value: ${{ steps.enforce.outputs.summary }}
+  report-json:
+    description: "Absolute path of the consumed report artifact."
+    value: ${{ steps.enforce.outputs.report-json }}
+runs:
+  using: composite
+  steps:
+    - name: "task-linear-sync: ensure the enforcement build is present"
+      shell: bash
+      env:
+        ACTION_ROOT: ${{ github.action_path }}
+        AUTO_BUILD: ${{ inputs.auto-build }}
+      run: |
+        if [ "$AUTO_BUILD" = "true" ] && ! test -f "$ACTION_ROOT/dist/ci/main.js"; then
+          cd "$ACTION_ROOT" && npm ci && npm run build
+        fi
+        test -f "$ACTION_ROOT/dist/ci/main.js"
+    - name: "task-linear-sync: enforcement gate (read-only)"
+      id: enforce
+      shell: bash
+      env:
+        ACTION_ROOT: ${{ github.action_path }}
+        IN_WORKSPACE: ${{ inputs.workspace }}
+        IN_CONFIG: ${{ inputs.config }}
+        IN_COMMAND: ${{ inputs.command }}
+        IN_REPORT: ${{ inputs.report }}
+        IN_CLI_ENTRY: ${{ inputs.cli-entry }}
+        IN_FAIL_ON_UNMAPPED: ${{ inputs.fail-on-unmapped }}
+        IN_UNMAPPED_THRESHOLD: ${{ inputs.unmapped-threshold }}
+        IN_FAIL_ON_CONFLICTS: ${{ inputs.fail-on-conflicts }}
+        IN_FAIL_ON_DRIFT: ${{ inputs.fail-on-drift }}
+        IN_DRIFT_THRESHOLD: ${{ inputs.drift-threshold }}
+        IN_PROTECTED_BRANCHES: ${{ inputs.protected-branches }}
+        IN_BRANCH: ${{ inputs.branch }}
+      run: |
+        set -euo pipefail
+        args=(--workspace "$IN_WORKSPACE")
+        [ "$IN_CONFIG" = "" ] || args+=(--config "$IN_CONFIG")
+        [ "$IN_COMMAND" = "check" ] || args+=(--command "$IN_COMMAND")
+        [ "$IN_REPORT" = "" ] || args+=(--report "$IN_REPORT")
+        [ "$IN_CLI_ENTRY" = "" ] || args+=(--cli-entry "$IN_CLI_ENTRY")
+        [ "$IN_FAIL_ON_UNMAPPED" = "true" ] || args+=(--fail-on-unmapped "$IN_FAIL_ON_UNMAPPED")
+        [ "$IN_UNMAPPED_THRESHOLD" = "0" ] || args+=(--unmapped-threshold "$IN_UNMAPPED_THRESHOLD")
+        [ "$IN_FAIL_ON_CONFLICTS" = "true" ] || args+=(--fail-on-conflicts "$IN_FAIL_ON_CONFLICTS")
+        [ "$IN_FAIL_ON_DRIFT" = "true" ] || args+=(--fail-on-drift "$IN_FAIL_ON_DRIFT")
+        [ "$IN_DRIFT_THRESHOLD" = "0" ] || args+=(--drift-threshold "$IN_DRIFT_THRESHOLD")
+        [ "$IN_PROTECTED_BRANCHES" = "" ] || args+=(--protected-branches "$IN_PROTECTED_BRANCHES")
+        [ "$IN_BRANCH" = "" ] || args+=(--branch "$IN_BRANCH")
+        node "$ACTION_ROOT/dist/ci/main.js" "${args[@]}"

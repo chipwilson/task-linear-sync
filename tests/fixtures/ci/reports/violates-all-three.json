@@ -1,0 +1,192 @@
+{
+  "schemaVersion": 1,
+  "planId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  "generatedAt": "2026-11-06T00:00:00.000Z",
+  "repositoryRoot": "/fixture/tls-demo",
+  "guards": {
+    "fileHashes": {
+      "specs/demo/task-01.md": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+    },
+    "headCommit": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
+  },
+  "lowConfidencePresent": false,
+  "securityAssertions": [
+    {
+      "guarantee": "read-only-plan-zero-mutations",
+      "status": "pass"
+    },
+    {
+      "guarantee": "no-raw-body-or-description-fields",
+      "status": "pass"
+    }
+  ],
+  "groups": [
+    {
+      "project": "tlsproj",
+      "milestone": "M1",
+      "entries": [
+        {
+          "taskUuid": "ac000000-0000-4000-8000-000000000001",
+          "issueId": null,
+          "decision": "create",
+          "framework": "spec-kit",
+          "featureName": "demo-feature",
+          "filePath": "specs/demo/task-01.md",
+          "confidence": "high",
+          "score": 120,
+          "margin": 40,
+          "reasons": [],
+          "alternatives": [],
+          "changedFields": [],
+          "descriptionContentHash": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+          "expectedMarkdownChanges": [],
+          "lowConfidenceGateStatus": "passed",
+          "unresolvedConflict": false,
+          "routing": {
+            "teamKey": "tls",
+            "project": "tlsproj",
+            "matchedPrefix": "specs/demo",
+            "defaulted": false
+          }
+        },
+        {
+          "taskUuid": "ac000000-0000-4000-8000-000000000002",
+          "issueId": "TLS-201",
+          "decision": "conflict",
+          "framework": "spec-kit",
+          "featureName": "demo-feature",
+          "filePath": "specs/demo/task-02.md",
+          "confidence": "high",
+          "score": 120,
+          "margin": 40,
+          "reasons": [
+            "conflict:linear-changed"
+          ],
+          "alternatives": [],
+          "changedFields": [],
+          "descriptionContentHash": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+          "expectedMarkdownChanges": [],
+          "lowConfidenceGateStatus": "passed",
+          "unresolvedConflict": true,
+          "routing": {
+            "teamKey": "tls",
+            "project": "tlsproj",
+            "matchedPrefix": "specs/demo",
+            "defaulted": false
+          }
+        },
+        {
+          "taskUuid": "ac000000-0000-4000-8000-000000000003",
+          "issueId": "TLS-202",
+          "decision": "conflict",
+          "framework": "spec-kit",
+          "featureName": "demo-feature",
+          "filePath": "specs/demo/task-03.md",
+          "confidence": "high",
+          "score": 120,
+          "margin": 40,
+          "reasons": [
+            "conflict:linear-changed"
+          ],
+          "alternatives": [],
+          "changedFields": [],
+          "descriptionContentHash": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+          "expectedMarkdownChanges": [],
+          "lowConfidenceGateStatus": "passed",
+          "unresolvedConflict": true,
+          "routing": {
+            "teamKey": "tls",
+            "project": "tlsproj",
+            "matchedPrefix": "specs/demo",
+            "defaulted": false
+          }
+        }
+      ]
+    },
+    {
+      "project": "tlsproj",
+      "milestone": "M1",
+      "entries": [
+        {
+          "taskUuid": "ac000000-0000-4000-8000-000000000004",
+          "issueId": "TLS-203",
+          "decision": "update",
+          "framework": "spec-kit",
+          "featureName": "demo-feature",
+          "filePath": "specs/demo/task-04.md",
+          "confidence": "high",
+          "score": 120,
+          "margin": 40,
+          "reasons": [
+            "conflict:spec-changed"
+          ],
+          "alternatives": [],
+          "changedFields": [],
+          "descriptionContentHash": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+          "expectedMarkdownChanges": [],
+          "lowConfidenceGateStatus": "passed",
+          "unresolvedConflict": false,
+          "routing": {
+            "teamKey": "tls",
+            "project": "tlsproj",
+            "matchedPrefix": "specs/demo",
+            "defaulted": false
+          }
+        },
+        {
+          "taskUuid": "ac000000-0000-4000-8000-000000000005",
+          "issueId": "TLS-204",
+          "decision": "update",
+          "framework": "spec-kit",
+          "featureName": "demo-feature",
+          "filePath": "specs/demo/task-05.md",
+          "confidence": "high",
+          "score": 120,
+          "margin": 40,
+          "reasons": [],
+          "alternatives": [],
+          "changedFields": [
+            "title"
+          ],
+          "descriptionContentHash": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+          "expectedMarkdownChanges": [],
+          "lowConfidenceGateStatus": "passed",
+          "unresolvedConflict": false,
+          "routing": {
+            "teamKey": "tls",
+            "project": "tlsproj",
+            "matchedPrefix": "specs/demo",
+            "defaulted": false
+          }
+        },
+        {
+          "taskUuid": "ac000000-0000-4000-8000-000000000006",
+          "issueId": "TLS-205",
+          "decision": "update",
+          "framework": "spec-kit",
+          "featureName": "demo-feature",
+          "filePath": "specs/demo/task-06.md",
+          "confidence": "high",
+          "score": 120,
+          "margin": 40,
+          "reasons": [],
+          "alternatives": [],
+          "changedFields": [],
+          "descriptionContentHash": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+          "expectedMarkdownChanges": [
+            "- [ ] Task 6.1 -> - [x] Task 6.1"
+          ],
+          "lowConfidenceGateStatus": "passed",
+          "unresolvedConflict": false,
+          "routing": {
+            "teamKey": "tls",
+            "project": "tlsproj",
+            "matchedPrefix": "specs/demo",
+            "defaulted": false
+          }
+        }
+      ]
+    }
+  ],
+  "unmapped": []
+}

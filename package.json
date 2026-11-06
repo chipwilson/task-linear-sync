@@ -9,6 +9,9 @@
   },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
+  "bin": {
+    "task-linear-sync": "./dist/cli/main.js"
+  },
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
@@ -61,6 +64,26 @@
     "./engine": {
       "types": "./dist/engine/index.d.ts",
       "default": "./dist/engine/index.js"
+    },
+    "./cli": {
+      "types": "./dist/cli/index.d.ts",
+      "default": "./dist/cli/index.js"
+    },
+    "./queue": {
+      "types": "./dist/queue/index.d.ts",
+      "import": "./dist/queue/index.js"
+    },
+    "./history-server": {
+      "types": "./dist/history-server/index.d.ts",
+      "default": "./dist/history-server/index.js"
+    },
+    "./mcp": {
+      "types": "./dist/mcp/index.d.ts",
+      "default": "./dist/mcp/index.js"
+    },
+    "./ci": {
+      "types": "./dist/ci/index.d.ts",
+      "default": "./dist/ci/index.js"
     }
   },
   "files": [

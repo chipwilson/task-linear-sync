@@ -1,0 +1,120 @@
+{
+  "$comment": "Schema authority: tests/helpers/engine-harness.ts header docblock. Placeholders only (Principle III).",
+  "name": "review-report",
+  "clock": "2026-01-01T00:00:00.000Z",
+  "teams": [
+    {
+      "key": "TEAM-A",
+      "id": "ac000000-0000-4000-8000-000000000101",
+      "projects": [
+        { "id": "proj-alpha", "name": "Project Alpha" },
+        { "id": "proj-beta", "name": "Project Beta" },
+        { "id": "proj-secret", "name": "Secret Lab SECRET555" }
+      ],
+      "workflowStates": [
+        { "id": "ac000000-0000-4000-8000-000000000201", "name": "Backlog", "type": "backlog" },
+        { "id": "ac000000-0000-4000-8000-000000000202", "name": "Todo", "type": "todo" },
+        { "id": "ac000000-0000-4000-8000-000000000203", "name": "Done", "type": "completed" }
+      ]
+    }
+  ],
+  "issues": [
+    {
+      "id": "ac000000-0000-4000-8000-000000000301",
+      "key": "ACME-1",
+      "teamKey": "TEAM-A",
+      "projectId": "proj-alpha",
+      "title": "Align the alpha ledger",
+      "description": "SENTINEL-RAW-DESCRIPTION-ALPHA-ONE — raw tracker description that must never reach a report artifact.\n",
+      "stateType": "todo",
+      "updatedAt": "2026-01-01T00:00:01.000Z"
+    },
+    {
+      "id": "ac000000-0000-4000-8000-000000000302",
+      "key": "ACME-2",
+      "teamKey": "TEAM-A",
+      "projectId": "proj-alpha",
+      "title": "Freeze the alpha widget",
+      "description": "Tracker-side widget freeze body from before the historical conflict.\n",
+      "stateType": "todo",
+      "updatedAt": "2026-01-01T00:00:02.000Z"
+    },
+    {
+      "id": "ac000000-0000-4000-8000-000000000303",
+      "key": "ACME-3",
+      "teamKey": "TEAM-A",
+      "projectId": "proj-alpha",
+      "title": "Execute the sibling alpha child",
+      "description": "Sibling child body — mirrored on the spec side after normalization.\n",
+      "stateType": "todo",
+      "updatedAt": "2026-01-01T00:00:03.000Z"
+    },
+    {
+      "id": "ac000000-0000-4000-8000-000000000304",
+      "key": "ACME-4",
+      "teamKey": "TEAM-A",
+      "projectId": "proj-beta",
+      "title": "Synchronize the beta roster",
+      "description": "Beta roster body — mirrored on the spec side after normalization.\n",
+      "stateType": "todo",
+      "updatedAt": "2026-01-01T00:00:04.000Z"
+    },
+    {
+      "id": "ac000000-0000-4000-8000-000000000390",
+      "key": "ACME-90",
+      "teamKey": "TEAM-A",
+      "projectId": "proj-beta",
+      "title": "Orphaned lineage coordinator",
+      "description": "Tracker copy of the lineage coordinator — never mapped; claimed by a proj-alpha task, so pairing is project-gated and the issue stays unmapped.\n",
+      "stateType": "todo",
+      "updatedAt": "2026-01-01T00:00:05.000Z"
+    },
+    {
+      "id": "ac000000-0000-4000-8000-000000000391",
+      "key": "ACME-91",
+      "teamKey": "TEAM-A",
+      "projectId": "proj-alpha",
+      "title": "Execute the alpha lineage child",
+      "description": "Lineage child body — mirrored on the spec side after normalization; its mapping is what makes ACME-90 parentMapped.\n",
+      "stateType": "todo",
+      "updatedAt": "2026-01-01T00:00:06.000Z"
+    },
+    {
+      "id": "ac000000-0000-4000-8000-000000000392",
+      "key": "ACME-92",
+      "teamKey": "TEAM-A",
+      "projectId": "proj-beta",
+      "title": "Orphaned sibling coordinator",
+      "description": "Tracker copy of the sibling coordinator — never mapped; its only mapped relation is a sibling task, so parentMapped must stay false.\n",
+      "stateType": "todo",
+      "updatedAt": "2026-01-01T00:00:07.000Z"
+    }
+  ],
+  "attachments": [],
+  "config": {
+    "teams": {
+      "TEAM-A": {
+        "projects": ["proj-alpha", "proj-beta", "proj-secret"],
+        "workflowStates": {
+          "backlog": "Backlog",
+          "todo": "Todo",
+          "done": "Done",
+          "completedTypes": ["completed"],
+          "ignoredTypes": ["canceled", "duplicate"]
+        }
+      }
+    },
+    "projectByPath": [
+      { "prefix": "specs/alpha-feature", "teamKey": "TEAM-A", "project": "proj-alpha" },
+      { "prefix": "specs/beta-feature", "teamKey": "TEAM-A", "project": "proj-beta" },
+      { "prefix": "specs/gamma-feature", "teamKey": "TEAM-A", "project": "proj-alpha" }
+    ],
+    "defaultTeamKey": "TEAM-A",
+    "defaultProject": "proj-alpha",
+    "confirmationKey": "ACME",
+    "descriptionNormalizationProfile": "default"
+  },
+  "metadata": {
+    "scenario": "009 review-report world: multi-project/multi-milestone groups, unmapped parent mapped by descendant (ACME-90) vs mapped-sibling-only parent (ACME-92), one unresolved-conflict task, SC-001 sentinels, SECRET-shaped project name for output screening."
+  }
+}

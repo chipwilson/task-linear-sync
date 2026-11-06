@@ -2,7 +2,7 @@
 
 A reusable npm library + CLI that keeps spec-driven-development task files in a repository bidirectionally synced with **Linear** issues — maintaining a "golden thread" of traceability between the specs you plan with and the issues you track work in.
 
-> **Status: Wave 3 complete.** The frozen foundation (002), the Wave-2 library modules (003–007) and the sync engine (008) are merged on `main` — 949 tests green behind CI. The full `plan → apply → rollback` lifecycle runs today through `task-linear-sync/engine`. User-facing surfaces (CLI, queue, web, MCP, CI — 009–013) follow in Wave 4. See [Current Status](#current-status).
+> **Status: Wave 4 in progress.** The frozen foundation (002), the Wave-2 library modules (003–007) and the sync engine (008) are merged on `main`; the **operator CLI (009)** now ships on the `wave-4-surfaces` branch — `task-linear-sync plan` / `check` / `report` / `status` / `validate-spec` run read-only today (exit codes + review reports), with `apply`/`rollback` gated until their apply-surface lands and `queue` reserved for 010. The full `plan → review report → gated apply → rollback` lifecycle runs through `task-linear-sync/engine`. Also shipping on this branch: the **background queue & hooks (010)** (`./queue`) and the read-only **Sync-History web component (011)** (`./history-server` — HTML/JSON/SSE history from the tracker, no local state) and the preview **AI-agent tool interface (012)** (`./mcp` — four MCP-compatible tools over stdio or loopback HTTP, apply disabled by default). and the **CI enforcement action (013)** (`action.yml` + `./ci` — the read-only GitHub composite action gating PRs on the three hygiene conditions). All Wave-4 surfaces now ship. See [Current Status](#current-status).
 
 ## Proposed Purpose
 
@@ -19,9 +19,9 @@ Planned surfaces, all layered on the same engine:
 | Core library | Domain, contracts, discovery, parsing, matching, tracker port, engine | 002–008 |
 | Operator CLI | `plan` / `apply` / `rollback` with review reports and gates | 009 |
 | Background queue & hooks | Git hooks and agent hooks that enqueue syncs | 010 |
-| Sync History web page | Optional Next.js/React viewer of sync runs | 011 |
+| Sync History web page | Read-only HTML/JSON/SSE history served from the tracker | 011 |
 | MCP server | AI-agent tool interface at `<pkg>/mcp` subpath | 012 |
-| CI enforcement | GitHub Action (`task-linear-sync-action`) | 013 |
+| CI enforcement | GitHub Action (`action.yml`) + read-only wrapper at `<pkg>/ci` | 013 |
 
 **Tech stack** (per the ratified constitution; in use since feature 002): TypeScript 5.x in strict mode, ESM with generated `.d.ts`, Node.js ≥ 20, runtime dependencies limited to Node built-ins plus at most one platform transport dependency — still **zero**: feature 007's Linear transport runs on Node ≥ 20's built-in `fetch`, leaving the one-transport allowance unspent; `node:test` for testing.
 
@@ -40,9 +40,13 @@ task-linear-sync/
 ├── src/                      # 002 contracts/config/run-state + Wave-2 modules
 │                             #   (discovery, parsing, routing, titles, matching, tracker)
 │                             #   + engine (008: the composed sync engine)
+│                             #   + cli (009: the operator CLI surface)
+│                             #   + mcp (012: the AI-agent tool surface)
+│                             #   + ci (013: the CI enforcement wrapper)
 ├── tests/                    # unit / contract / integration / e2e (hermetic, zero-network)
 ├── docs/                     # Config reference, amendment rule, per-feature usage guides
-│                             #   (discovery, parsing, routing & titles, matching, tracker, engine)
+│                             #   (discovery, parsing, routing & titles, matching, tracker,
+│                             #    engine, cli, history-server, agent-tools, ci enforcement)
 ├── package.json              # ESM package (zero runtime deps), npm scripts, engines ≥ 20
 └── specs/
     ├── requirements.md       # Master requirements (R1–R29) + glossary
@@ -59,7 +63,8 @@ task-linear-sync/
     │                         # URLs, gates, tracker port, plan-report schema
     ├── 003…007-*/            # Wave-2 specs — implemented and merged (all tasks delivered)
     ├── 008-*/                # sync engine spec — implemented and merged (PR #15)
-    └── 009…013-*/            # draft feature specs (one per capability)
+    ├── 009-*/                # operator CLI spec — implemented (wave-4-surfaces branch)
+    └── 010…013-*/            # 010–013 implemented on this branch
 ```
 
 The **source** layout from `specs/002-core-domain-contracts/plan.md`, created by feature 002:
@@ -76,7 +81,7 @@ tests/
 └── unit | contract | integration | e2e (+ fixtures, helpers, negative-type tests)
 ```
 
-Wave 2 added the `discovery`, `parsing`, `routing`, `titles`, `matching`, and `tracker` modules; Wave 3 added `engine` (008). The published subpath exports today: `.`, `./domain`, `./config`, `./state`, `./urls`, `./gates`, `./ports`, `./tracker`, `./tracker/testing`, `./parsing`, `./matching`, `./discovery`, `./engine` (`./routing`/`./titles` are consumed internally per 005's plan; the `cli` module arrives with 009).
+Wave 2 added the `discovery`, `parsing`, `routing`, `titles`, `matching`, and `tracker` modules; Wave 3 added `engine` (008); Wave 4 adds `cli` (009), `queue` (010), `history-server` (011), `mcp` (012) and `ci` (013). The published subpath exports today: `.`, `./domain`, `./config`, `./state`, `./urls`, `./gates`, `./ports`, `./tracker`, `./tracker/testing`, `./parsing`, `./matching`, `./discovery`, `./engine`, `./cli`, `./queue`, `./history-server`, `./mcp`, `./ci` (`./routing`/`./titles` are consumed internally per 005's plan; the `./cli` entry point is `runCli(argv, context)`, the `./history-server` entry point is `createSyncHistoryServer(deps)`, the `./mcp` entry point is `createAgentToolServer(deps)`, the `./ci` entry point is `runEnforcement(settings, deps)`, and the package also installs the `task-linear-sync` bin).
 
 ## Matching usage (feature 006)
 
@@ -106,7 +111,7 @@ and renames; two issues claiming one task UUID abort the run with
 
 ## Current Status
 
-_Last updated: 2026-11-05 · branch `main` (Wave 3 complete)_
+_Last updated: 2026-11-06 · branch `wave-4-surfaces` (features 009–013 implemented; Wave 3 merged on `main`)_
 
 - ✅ **Constitution ratified** — `.specify/memory/constitution.md` v1.0.0 (2026-10-20): safety-first, durable identity, overridable defaults, determinism/idempotency, one engine with additive surfaces, test-first quality gates.
 - ✅ **Requirements complete** — `specs/requirements.md` (29 requirements) and the 97-item FR traceability catalog (feature 001) reviewed and checklist-passed.
@@ -114,10 +119,13 @@ _Last updated: 2026-11-05 · branch `main` (Wave 3 complete)_
 - ✅ **Feature 002 (core domain contracts) implemented** — all 54 tasks delivered: canonical entities, the config model with a secret-free provenanced baseline, the run-state lifecycle (manifests, durable intents, advisory locking, atomic state filesystem), the attachment URL scheme, the gate vocabulary, and the frozen `Linear_Port` / `buildSyncPlan` / `applySyncPlan` boundaries. Backed by 111 hermetic zero-network tests across four tiers, an enforced coverage threshold gate (80/70/80 lines/branches/functions), and CI on the Node 20–24 range. The frozen export surface is guarded by a checked-in snapshot; changes follow `docs/contract-amendments.md`. Usage and configuration docs: `docs/configuration.md`, `docs/validation-002.md`.
 - ✅ **Wave 2 complete — features 003–007 all merged** (planning PRs #2–#6; implementation PRs #7, #9, #11, #12, #13), each built on its own branch/worktree in parallel atop the frozen 002 contracts and delivered TDD-first with its full task list: **003** discovery & framework adapters (38 tasks; safe deterministic traversal, five built-in adapters behind the snapshot-frozen `FrameworkAdapter` interface, git-context capture — `./discovery`); **004** task parsing & line rendering (34 tasks; strict CommonMark task lists, stable identities, byte-exact rendering — `./parsing`); **005** routing & title derivation (31 tasks; frozen `RoutingResolution`, prefix-stable titles); **006** task↔issue matching (40 tasks; eight-signal scoring, globally optimal JV/Hungarian assignment verified against a brute-force oracle, durable-identity survival — `./matching`); **007** issue-tracker integration port (51 tasks; real + fake `Linear_Port` with byte-identical conformance parity, retry/backoff with create-never-retried, credential screening, attachment chain walk — `./tracker` + `./tracker/testing`). Per-feature usage guides live in `docs/`. Zero runtime dependencies held throughout; the frozen 002 surface never drifted (snapshot-enforced).
 - ✅ **Feature 008 (sync engine) implemented and merged (PR #15)** — all 53 tasks delivered test-first across parallel worktree lanes (every story test authored red before its implementation): bootstrap-vs-sync mode selection from checkpoint presence; three-way normalized-hash conflict classification with the FR-004 default action maps; git-style conflict markers with the frozen-block rule; checkbox→workflow completion mapping; the frozen enforcement order `gates → lock → plan-stability re-check → journal-complete-before-first-mutation → screened journaled mutations`; create-intent-before-attempt with indeterminate reconciliation (terminal intents are never replayed); page-0 canonical payload with append-only rolling history pages; resumable guarded `rollbackRun` preserving all history and identity (SC-003); sanitized plan/run reports plus `last-run.json` markers. Ships behind the new `./engine` subpath export; zero runtime dependencies held; the frozen 002 surface never drifted (snapshot-enforced). Reference: [`docs/engine.md`](docs/engine.md); normative behavior in `specs/008-sync-engine-apply-rollback/contracts/`.
-- 📝 **Features 009–013 remain draft specs** — operator CLI (009), background queue & hooks (010), sync-history web page (011), MCP server (012), and CI enforcement (013) now layer on the shipped, frozen engine surface.
-- ✅ **The repo builds and tests** — `npm ci && npm test` (also `lint`, `typecheck`, `build`, and per-tier `test:unit|contract|integration|e2e` scripts): **949/949 tests green** across the four tiers, coverage 87.2% lines / 78.9% branches / 88.4% functions against the 80/70/80 gate, CI green on the Node 20 + 24 matrix. Scope: the complete brain *and* engine now exist — discovery, parsing, routing/titles, matching, the tracker port with real + fake adapters, and the composed engine with gated apply and rollback. What remains is user-facing surface: the CLI, queue, web viewer, MCP server, and CI action (009–013).
+- ✅ **Feature 009 (operator CLI) implemented** on the `wave-4-surfaces` branch — all 38 tasks delivered test-first: the `task-linear` bin and the `./cli` subpath export (`runCli(argv, context)`), a hand-rolled strict argv parser, the full command grammar from `specs/009-operator-cli-plan-report/contracts/command-surface.md` (plan / check / report / status / validate-spec live; apply / rollback staged behind the still-to-wire apply surface; queue seam-gated for 010 with exit 7; inventory / discover-metadata as explicit pre-flight commands), the frozen 0–8 exit-code map with the `task-linear: error:` stderr shape, a programmatic `CheckSummary` whose counts are read back from the persisted plan report artifact, and the plan-review report surfaced from the engine's own artifact pair (`reports/<runId>/report.{json,md}` — never re-rendered). Read-only commands run behind a runtime `ReadOnlyGuard` on the engine/port/state seams (violations → exit 5, tree byte-identical), and `queue` imports its `QueueSurface` lazily so the 010 module's absence never crashes the CLI. Zero runtime dependencies held; the frozen 002 surface never drifted. Usage: [`docs/cli.md`](docs/cli.md).
+- ✅ **Feature 012 (AI-agent tool interface) implemented** on the `wave-4-surfaces` branch — all 37 tasks delivered test-first: the `./mcp` subpath export (`createAgentToolServer(deps)`), an MCP-compatible JSON-RPC 2.0 surface with four tools — `task_sync_plan`, `task_sync_status`, `task_sync_inventory` (all read-only, reusing the CLI's guarded read lanes) and the gated `task_sync_apply` — over line-delimited stdio (default) or a loopback HTTP listener with constant-time bearer auth. The apply tool is **disabled by default**: it is invisible in `tools/list` and a call to it is refused before any engine or port code runs (SC-001 pinned by an end-to-end port-call census); when enabled it makes exactly one `engine.applySyncPlan` call with the frozen GateRequest. In-memory per-session plan store, no credentials held, every tool result screened through the feature-002 hygiene screeners, `node:fs` never touched by `src/mcp`. Zero runtime dependencies held; the frozen 002 surface never drifted. Preview reference: [`docs/agent-tools.md`](docs/agent-tools.md).
+- ✅ **Feature 013 (CI enforcement layer) implemented** on the `wave-4-surfaces` branch — all 61 tasks delivered test-first: the `./ci` subpath export and the `task-linear-sync-ci` entry point (`runEnforcement(settings, deps)`), which gate a pipeline on the report the published CLI already produces — the wrapper invokes `task-linear-sync check|plan --format json` (or reads a pre-generated `--report` artifact), validates it against the feature-009 report shape, and evaluates exactly three independently toggleable conditions: high-confidence unmapped work items (`unmapped-high-confidence`), unresolved-conflict blocks touching the protected target branch (`unresolved-conflict-block`, scoped by the injected `protectedBranches` set and the issue `branchContext`), and changed-or-missing specs for mapped items (`spec-drift`). It never re-derives findings and structurally cannot write: the apply path is unreachable from `src/ci` (zero `node:fs` in the pipeline, hygiene-scanned; no command line can reach apply). The composite GitHub Action (`action.yml`, node24 via `actions/setup-node`) builds the shipped sources, runs the entry point, and reports failure as one CI-screened, count-only `workflow_job_summary` line per contract; exit map 0 pass / 1 violations / 2 missing-or-malformed artifact / 3 CLI failure; a skipped conflict check (unresolvable target branch) warns but never fails (SC-004). Zero runtime dependencies held; the frozen 002 surface never drifted. Usage: [`docs/ci-enforcement.md`](docs/ci-enforcement.md).
+- 📝 **Wave 4 status** — the background queue & hooks (010), sync-history web page (011), MCP server (012) and CI enforcement layer (013) now ship on this branch.
+- ✅ **The repo builds and tests** — `npm ci && npm test` (also `lint`, `typecheck`, `build`, and per-tier `test:unit|contract|integration|e2e` scripts, plus `test:cli`): **1520/1520 tests green** across the four tiers, coverage 81.3% lines / 80.4% branches / 80.8% functions against the 80/70/80 gate, CI green on the Node 20 + 24 matrix. Scope: the complete brain, the engine, and the read-only operator surface now exist — discovery, parsing, routing/titles, matching, the tracker port with real + fake adapters, the composed engine with gated apply and rollback, and the CLI with review reports and exit-code contracts. What remains is the apply surface wiring on top of the CLI (009's `apply`/`rollback` commands); the queue (010), web viewer (011), MCP server (012), and CI enforcement layer (013) ship on this branch.
 
-**Next steps:** run Wave 4's parallel surfaces on top of the shipped engine — start with 009 (operator CLI: `plan` / `apply` / `rollback` with exit codes and gate mapping), then 010–013, each via the same `/speckit.*` pipeline (`/speckit.plan`, `/speckit.tasks`, `/speckit.implement`).
+**Next steps:** finish Wave 4's surfaces on top of the shipped engine and CLI — wire the `apply`/`rollback` command lanes to the apply surface (gates + confirmation, 009 follow-up), then 010 (background queue & hooks, which fills the CLI's `QueueSurface` seam), each via the same `/speckit.*` pipeline (`/speckit.plan`, `/speckit.tasks`, `/speckit.implement`).
 
 ## Tracker integration port (feature 007)
 
@@ -168,15 +176,133 @@ if (result.status === "applied") {
                                            // deleted), zero history events lost
 ```
 
+## Operator CLI (feature 009)
+
+`task-linear-sync/cli` is the operator surface over the engine: a hand-rolled strict
+argv parser, the command grammar, the frozen 0–8 exit-code map, and the review-report
+flow — all read-only, all hermetic against the fake tracker. The live commands are
+`plan`, `check`, `report`, `status` and `validate-spec`; `apply`/`rollback` are
+implemented but exit "not wired" until their apply surface lands; the five `queue`
+commands działają od funkcji 010 (patrz sekcja poniżej). Full reference: [`docs/cli.md`](docs/cli.md).
+
+```sh
+# From a repo with a task-linear-sync.json (placeholders only in the docs):
+task-linear-sync validate-spec --spec-root specs/ --format json   # exit 0 / 3
+task-linear-sync plan        --spec-root specs/                   # plan + review report
+task-linear-sync check       --spec-root specs/                   # machine-readable CheckSummary
+task-linear-sync report      --plan-id <64-hex>                   # render the stored report
+task-linear-sync status                                           # state-dir + last plan/run
+# Exit codes: 0 ok · 1 engine · 2 usage · 3 spec findings · 4 confirmation/apply gate
+#             5 plan missing/stale · 6 config · 7 queue (010) · 8 check findings
+```
+
+The review report is the engine's own artifact pair (`reports/<runId>/report.{json,md}`
+under the configured state directory) — the CLI renders and points at it, never re-renders
+it, and every output passes the engine's sanitization pipeline.
+
+## Synchronizacja w tle i hooki (feature 010)
+
+Kolejka tła zmienia synchronizację z polecenia uruchamianego ręcznie w proces działający w
+tle: `enqueue` zapisuje pojedyncze zadanie w trwałym slocie (`pending-job.json` w katalogu
+stanu, ≤ 500 ms), cicho uruchamia odłączony worker, a ten wykonuje pełny cykl synchronizacji
+silnika i zostawia zamrożony znacznik `last-run.json` z parą raportów oraz (domyślnie)
+powiadomienie o zakończeniu. Szybki przepływ operatora:
+
+```sh
+task-linear-sync install-hooks        # zarządzane bloki w hookach git (idempotentne)
+task-linear-sync enqueue              # ręczne zgłoszenie synchronizacji (tryb: sync)
+task-linear-sync worker --once        # jeden cykl odpływu na pierwszym planie
+task-linear-sync last-run --json      # wynik ostatniego uruchomienia (maszynowo)
+task-linear-sync install-agent-hook --framework kiro   # scaffold hooka agenta
+```
+
+Po zainstalowaniu hooków każda operacja git (domyślnie `pre-push` i `post-merge`) wypisuje
+wynik ostatniego uruchomienia na `stderr` i zgłasza synchronizację do kolejki — zawsze z
+kodem wyjścia `0`, nawet bez danych uwierzytelniających; powtórne zgłoszenia łączą się w
+pojedyncze zadanie. Pełna dokumentacja (polecenia, zamrożona mapa kodów wyjścia, blok
+konfiguracji `queue`, kształt bloków hooka i scaffolda, rozwiązywanie problemów):
+[`docs/queue-hooks.md`](docs/queue-hooks.md).
+
+## Sync-History web page (feature 011)
+
+`task-linear-sync/history-server` is the read-only Sync-History surface: it
+reconstructs a task's sync timeline purely from the tracker (through the frozen
+`LinearPort` — never from local manifests or state files) and serves it as a
+self-contained HTML page, a JSON view, or a Server-Sent Events stream, with an
+automatic polling fallback. Private-by-default access (bearer token or a
+stateless signed session cookie bootstrapped from a token form; 401/403 with
+zero history bytes, authorization strictly before any tracker read), a
+clock-injected TTL cache with single-flight de-duplication, and a serverless
+deployment shape (`app.handle` with `cacheTtlSeconds: 0`, no `listen()`).
+Full reference: [`docs/history-server.md`](docs/history-server.md).
+
+## AI-agent tool surface (feature 012)
+
+`task-linear-sync/mcp` is the preview AI-agent tool interface: an MCP-compatible
+JSON-RPC 2.0 server exposing four tools — `task_sync_plan` (dry-run sync plan with
+branch → `ACME-####` resolution), `task_sync_status`, `task_sync_inventory` (local-only,
+no tracker calls), and the gated `task_sync_apply` — over line-delimited stdio (the
+default, so any MCP-style client can spawn it) or a loopback HTTP listener behind
+constant-time bearer auth (`POST /mcp`, token from an env var named in settings).
+Mutating is opt-in: with the default settings `task_sync_apply` is invisible in
+`tools/list` and refused before any engine or port code runs; when enabled it makes
+the single `engine.applySyncPlan` call with the same GateRequest the CLI's apply
+lane uses. Per-session state is in-memory only, no credentials are held, and every
+tool result passes the feature-002 hygiene screeners before serialization.
+Full reference: [`docs/agent-tools.md`](docs/agent-tools.md).
+
+```ts
+import { createAgentToolServer } from "task-linear-sync/mcp";
+import { loadConfig } from "task-linear-sync/config";
+import { createLinearPort } from "task-linear-sync/tracker";
+
+const config = loadConfig();
+const server = createAgentToolServer({
+  config,
+  port: createLinearPort(config), // the ONLY route to the tracker
+  repositoryRoot: "/srv/repos/acme",
+});
+await server.serveStdio();  // or: await server.listenHttp()
+```
+
+## CI enforcement layer (feature 013)
+
+`task-linear-sync/ci` is the pipeline gate around the report the CLI already produces.
+The wrapper never re-derives findings: it invokes the published CLI
+(`task-linear-sync check|plan --format json`, or consumes a pre-generated `--report`
+artifact), validates the artifact against the feature-009 report shape (anything else
+exits 2 and names the artifact — never a silent pass), and evaluates exactly three
+independently toggleable conditions — high-confidence unmapped work items,
+unresolved-conflict blocks against the protected target branch, and changed-or-missing
+specs for mapped items. Failure prints one CI-screened, count-only summary line naming
+each triggered condition; the apply path is unreachable from this surface (no `node:fs`
+in the pipeline, and no command line can reach apply). The composite GitHub Action
+(`action.yml`) builds the shipped sources, runs the `task-linear-sync-ci` entry point,
+and writes the same summary to the job summary. Full reference:
+[`docs/ci-enforcement.md`](docs/ci-enforcement.md).
+
+```ts
+import { loadCiSettings, parseLocator, runEnforcement } from "task-linear-sync/ci";
+
+const settings = loadCiSettings({
+  env: process.env,
+  cliCommand: "npx task-linear-sync",
+  cliLocator: parseLocator("check --spec-root specs/"),
+});
+const result = await runEnforcement(settings);
+// result.exitCode: 0 pass · 1 violations · 2 missing/malformed artifact · 3 CLI failure
+```
+
 ## Running what works today
 
-The package is a library (the operator CLI is feature 009), and everything below is
-hermetic and offline — no Linear credentials, no network, no wall-clock:
+The package is a library plus the `task-linear` operator CLI (feature 009), and
+everything below is hermetic and offline — no Linear credentials, no network, no wall-clock:
 
 ```sh
 npm ci                      # zero runtime dependencies — Node ≥ 20 is the only requirement
 npm test                    # build + compile tests + the full four-tier suite + coverage gate
 npm run test:unit           # …or per-tier: test:contract / test:integration / test:e2e
+npm run test:cli            # every test whose name matches "cli" (all four tiers)
 npm run lint                # eslint
 npm run typecheck           # tsc --noEmit across src + tests
 npm run build               # emit dist/ + .d.ts (the published surface)
@@ -205,5 +331,8 @@ Notes:
   default `LINEAR_ACCESS_TOKEN`), set the `stateDirectory` config field to a directory
   **outside** the repo working tree (a compliant default is derived automatically), and
   provide a manifest-key provider — see [`docs/configuration.md`](docs/configuration.md).
+- Blok `queue` (opóźnienie workera, limit ponowień, limit blokady, prefix i katalogi hooków)
+  opisano wraz z domyślnymi wartościami i zakresami w [`docs/queue-hooks.md`](docs/queue-hooks.md);
+  powiązany zamrożony klucz to `worker.claimTimeoutSeconds`.
 - Every plan/run leaves a sanitized report at `reports/<runId>/` plus a
   `last-run.json` marker in the state dir.
