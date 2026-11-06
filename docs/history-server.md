@@ -8,6 +8,9 @@ no checkpoint) and never becomes a tracker client beyond the injected
 
 All identifiers in this document are placeholders (Principle III).
 
+This feature is in preview; its wire surface is pinned by feature 011's
+specs, but treat it as preview-grade until the surface stabilizes.
+
 ## Usage
 
 ```ts
@@ -135,3 +138,29 @@ responses carry no cache headers and no history bytes.
 - Responses are `no-store` with `X-Content-Type-Options: nosniff` and a
   default-deny CSP; `node:http` is the only transport (inbound only — the
   component never acts as a client).
+
+## Stability
+
+- **Status**: preview — hardening in progress (feature 014); stable upon promotion.
+
+**Guaranteed scope** — pointer list only; the pointers ARE the scope definition:
+
+- `specs/011-sync-history-web-page/contracts/http-surface.md`
+- `specs/011-sync-history-web-page/contracts/access-control.md`
+- `specs/011-sync-history-web-page/contracts/history-reconstruction.md`
+- `specs/011-sync-history-web-page/contracts/component-api.md`
+- `tests/contract/snapshots/history-surface.json` — the machine-readable frozen inventory
+
+**Not guaranteed**: behavior outside the frozen inventory (internal refactors,
+formatting, diagnostics) may change without notice.
+
+**Explicit non-goals** (one bullet per deferred decision record — populated
+before promotion by feature 014 US2/US4, per
+`specs/014-preview-to-stable-hardening/data-model.md` §4):
+
+- (none recorded yet)
+
+**Deployment assumptions**: production exposure puts a TLS-terminating front
+door in front of the component; set `web.secureCookies: true` behind it so the
+session cookie carries `Secure`. Plain loopback or same-origin hosting works
+with the default (`false`).

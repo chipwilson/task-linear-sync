@@ -221,3 +221,29 @@ Three invariants the surface is built around, each pinned by tests:
   002 path-safety and output-hygiene screeners before it is serialized,
   so raw absolute paths and secret-shaped substrings never reach the
   agent — blocked segments surface as `[blocked:<category>]` markers.
+
+## Stability
+
+- **Status**: preview — hardening in progress (feature 014); stable upon promotion.
+
+**Guaranteed scope** — pointer list only; the pointers ARE the scope definition:
+
+- `specs/012-ai-agent-tool-interface/contracts/tool-definitions.md`
+- `specs/012-ai-agent-tool-interface/contracts/jsonrpc-stdio.md`
+- `specs/012-ai-agent-tool-interface/contracts/transport-auth.md`
+- `specs/012-ai-agent-tool-interface/contracts/apply-gating.md`
+- `specs/012-ai-agent-tool-interface/contracts/component-api.md`
+- `tests/contract/snapshots/mcp-surface.json` — the machine-readable frozen inventory
+
+**Not guaranteed**: behavior outside the frozen inventory (internal refactors,
+formatting, diagnostics) may change without notice.
+
+**Explicit non-goals** (one bullet per deferred decision record — populated
+before promotion by feature 014 US2/US4, per
+`specs/014-preview-to-stable-hardening/data-model.md` §4):
+
+- (none recorded yet)
+
+**Deployment assumptions**: stdio is the default transport; the HTTP transport
+is loopback-only — put any TLS termination in front, the server never exposes a
+public socket by itself.

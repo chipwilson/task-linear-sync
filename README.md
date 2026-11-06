@@ -95,7 +95,7 @@ _Last updated: 2026-11-06 · all features merged on `main` (Wave 4 via PR #17)_
 - ✅ **Feature 011 (Sync-History web component)** — `./history-server`: read-only HTML/JSON/SSE history reconstructed live from the tracker (never from local state), private-by-default token auth with leak-free 401/403/404, TTL cache with single-flight, serverless deployment shape. Usage: [`docs/history-server.md`](docs/history-server.md).
 - ✅ **Feature 012 (AI-agent tool interface, preview)** — `./mcp`: MCP-compatible JSON-RPC 2.0 surface with three read-only tools and a gated `task_sync_apply`, over stdio (default) or loopback HTTP with constant-time bearer auth; apply **disabled by default** and refused before any engine or port code runs; `node:fs` is never touched by `src/mcp`. Usage: [`docs/agent-tools.md`](docs/agent-tools.md).
 - ✅ **Feature 013 (CI enforcement layer)** — `action.yml` + `./ci`: the composite action wraps the published read-only CLI (`check` / `plan`), consumes only the plan-report JSON artifact, and gates on three independently toggleable conditions; structurally cannot write or apply. Usage: [`docs/ci-enforcement.md`](docs/ci-enforcement.md).
-- ✅ **The repo builds and tests** — `npm ci && npm test` (also `lint`, `typecheck`, `build`, per-tier `test:unit|contract|integration|e2e`, `test:cli`): **1520/1520 tests green** across the four tiers, coverage 81.3% lines / 80.4% branches / 80.8% functions against the 80/70/80 gate, CI green on the Node 20 + 24 matrix. Zero runtime dependencies held across all twelve features; the frozen 002 surface never drifted (snapshot-enforced).
+- ✅ **The repo builds and tests** — `npm ci && npm test` (also `lint`, `typecheck`, `build`, per-tier `test:unit|contract|integration|e2e`): **1520/1520 tests green** across the four tiers, coverage 81.3% lines / 80.4% branches / 80.8% functions against the 80/70/80 gate, CI green on the Node 20 + 24 matrix. Zero runtime dependencies held across all twelve features; the frozen 002 surface never drifted (snapshot-enforced).
 
 **Next steps:** harden the preview surfaces (012 MCP, 011 history server) toward stable-1.0, package publish tooling, and real-project dogfooding beyond the hermetic fake tracker.
 
@@ -352,7 +352,6 @@ The package is a library plus the `task-linear-sync` operator CLI, and everythin
 npm ci                      # zero runtime dependencies — Node ≥ 20 is the only requirement
 npm test                    # build + compile tests + the full four-tier suite + coverage gate
 npm run test:unit           # …or per-tier: test:contract / test:integration / test:e2e
-npm run test:cli            # every test whose name matches "cli" (all four tiers)
 npm run lint                # eslint
 npm run typecheck           # tsc --noEmit across src + tests
 npm run build               # emit dist/ + .d.ts (the published surface)
