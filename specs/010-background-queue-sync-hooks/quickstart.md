@@ -231,6 +231,8 @@ US2 = §5/§6, US3 = §3.
 # 9.1 sandbox teardown — the EXIT trap owns it; the harness never touches the repo itself:
 git worktree remove "$SANDBOX/repo" 2>/dev/null || true   # only if you used a worktree instead of mktemp
 rm -rf "$SANDBOX"
+#     automated counterpart for harness teardown: tests/helpers/queue-cleanup.ts
+#     (removeGitMetadata + removeQueueArtifacts, wired into makeQueueHarness().dispose())
 # 9.2 state residue lives OUTSIDE the repository (stateDirectory) — rm -rf "$SANDBOX/state/tls";
 #     managed hook blocks: splice out via uninstall (marker-bounded, byte-honest)
 ```

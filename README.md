@@ -178,8 +178,8 @@ if (result.status === "applied") {
 argv parser, the command grammar, the frozen 0–8 exit-code map, and the review-report
 flow — all read-only, all hermetic against the fake tracker. The live commands are
 `plan`, `check`, `report`, `status` and `validate-spec`; `apply`/`rollback` are
-implemented but exit "not wired" until their apply surface lands; `queue` returns exit 7
-until 010 provides `QueueSurface`. Full reference: [`docs/cli.md`](docs/cli.md).
+implemented but exit "not wired" until their apply surface lands; the five `queue`
+commands działają od funkcji 010 (patrz sekcja poniżej). Full reference: [`docs/cli.md`](docs/cli.md).
 
 ```sh
 # From a repo with a task-linear-sync.json (placeholders only in the docs):
@@ -195,6 +195,29 @@ task-linear-sync status                                           # state-dir + 
 The review report is the engine's own artifact pair (`reports/<runId>/report.{json,md}`
 under the configured state directory) — the CLI renders and points at it, never re-renders
 it, and every output passes the engine's sanitization pipeline.
+
+## Synchronizacja w tle i hooki (feature 010)
+
+Kolejka tła zmienia synchronizację z polecenia uruchamianego ręcznie w proces działający w
+tle: `enqueue` zapisuje pojedyncze zadanie w trwałym slocie (`pending-job.json` w katalogu
+stanu, ≤ 500 ms), cicho uruchamia odłączony worker, a ten wykonuje pełny cykl synchronizacji
+silnika i zostawia zamrożony znacznik `last-run.json` z parą raportów oraz (domyślnie)
+powiadomienie o zakończeniu. Szybki przepływ operatora:
+
+```sh
+task-linear-sync install-hooks        # zarządzane bloki w hookach git (idempotentne)
+task-linear-sync enqueue              # ręczne zgłoszenie synchronizacji (tryb: sync)
+task-linear-sync worker --once        # jeden cykl odpływu na pierwszym planie
+task-linear-sync last-run --json      # wynik ostatniego uruchomienia (maszynowo)
+task-linear-sync install-agent-hook --framework kiro   # scaffold hooka agenta
+```
+
+Po zainstalowaniu hooków każda operacja git (domyślnie `pre-push` i `post-merge`) wypisuje
+wynik ostatniego uruchomienia na `stderr` i zgłasza synchronizację do kolejki — zawsze z
+kodem wyjścia `0`, nawet bez danych uwierzytelniających; powtórne zgłoszenia łączą się w
+pojedyncze zadanie. Pełna dokumentacja (polecenia, zamrożona mapa kodów wyjścia, blok
+konfiguracji `queue`, kształt bloków hooka i scaffolda, rozwiązywanie problemów):
+[`docs/queue-hooks.md`](docs/queue-hooks.md).
 
 ## Running what works today
 
@@ -234,5 +257,8 @@ Notes:
   default `LINEAR_ACCESS_TOKEN`), set the `stateDirectory` config field to a directory
   **outside** the repo working tree (a compliant default is derived automatically), and
   provide a manifest-key provider — see [`docs/configuration.md`](docs/configuration.md).
+- Blok `queue` (opóźnienie workera, limit ponowień, limit blokady, prefix i katalogi hooków)
+  opisano wraz z domyślnymi wartościami i zakresami w [`docs/queue-hooks.md`](docs/queue-hooks.md);
+  powiązany zamrożony klucz to `worker.claimTimeoutSeconds`.
 - Every plan/run leaves a sanitized report at `reports/<runId>/` plus a
   `last-run.json` marker in the state dir.

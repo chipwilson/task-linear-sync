@@ -29,6 +29,8 @@ import { tmpdir } from "node:os";
 import { loadConfig, type ConfigOverrides, type ResolvedConfig } from "task-linear-sync/config";
 import { createStateStore, type StateStore, type StateStorePaths } from "task-linear-sync/state";
 
+import { removeGitMetadata, removeQueueArtifacts } from "./queue-cleanup.js";
+
 import { FakeClock } from "./test-utils.js";
 
 const HARNESS_START_ISO = "2026-01-01T00:00:00.000Z";
@@ -338,6 +340,9 @@ export async function makeQueueHarness(options: QueueHarnessOptions = {}): Promi
       } catch {
         /* already gone */
       }
+      // T042 teardown lanes (quickstart §9.1) run before the whole-root removal.
+      removeQueueArtifacts(stateDir);
+      removeGitMetadata(repositoryRoot);
       rmSync(root, { recursive: true, force: true, maxRetries: 3 });
     },
   };
