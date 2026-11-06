@@ -80,6 +80,10 @@
     "./mcp": {
       "types": "./dist/mcp/index.d.ts",
       "default": "./dist/mcp/index.js"
+    },
+    "./ci": {
+      "types": "./dist/ci/index.d.ts",
+      "default": "./dist/ci/index.js"
     }
   },
   "files": [

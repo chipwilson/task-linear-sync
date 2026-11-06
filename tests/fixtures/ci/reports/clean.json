@@ -1,0 +1,168 @@
+{
+  "schemaVersion": 1,
+  "planId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "generatedAt": "2026-11-06T00:00:00.000Z",
+  "repositoryRoot": "/fixture/tls-demo",
+  "guards": {
+    "fileHashes": {
+      "specs/demo/task-01.md": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+    },
+    "headCommit": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
+  },
+  "lowConfidencePresent": false,
+  "securityAssertions": [
+    {
+      "guarantee": "read-only-plan-zero-mutations",
+      "status": "pass"
+    },
+    {
+      "guarantee": "no-raw-body-or-description-fields",
+      "status": "pass"
+    }
+  ],
+  "groups": [
+    {
+      "project": "tlsproj",
+      "milestone": "M1",
+      "entries": [
+        {
+          "taskUuid": "ac000000-0000-4000-8000-000000000001",
+          "issueId": "TLS-101",
+          "decision": "update",
+          "framework": "spec-kit",
+          "featureName": "demo-feature",
+          "filePath": "specs/demo/task-01.md",
+          "confidence": "high",
+          "score": 120,
+          "margin": 40,
+          "reasons": [
+            "title-exact"
+          ],
+          "alternatives": [],
+          "changedFields": [],
+          "descriptionContentHash": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+          "expectedMarkdownChanges": [],
+          "lowConfidenceGateStatus": "passed",
+          "unresolvedConflict": false,
+          "routing": {
+            "teamKey": "tls",
+            "project": "tlsproj",
+            "matchedPrefix": "specs/demo",
+            "defaulted": false
+          }
+        },
+        {
+          "taskUuid": "ac000000-0000-4000-8000-000000000002",
+          "issueId": "TLS-102",
+          "decision": "no-change",
+          "framework": "spec-kit",
+          "featureName": "demo-feature",
+          "filePath": "specs/demo/task-02.md",
+          "confidence": "high",
+          "score": 120,
+          "margin": 40,
+          "reasons": [],
+          "alternatives": [],
+          "changedFields": [],
+          "descriptionContentHash": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+          "expectedMarkdownChanges": [],
+          "lowConfidenceGateStatus": "passed",
+          "unresolvedConflict": false,
+          "routing": {
+            "teamKey": "tls",
+            "project": "tlsproj",
+            "matchedPrefix": "specs/demo",
+            "defaulted": false
+          }
+        }
+      ]
+    },
+    {
+      "project": "tlsproj",
+      "milestone": "M1",
+      "entries": [
+        {
+          "taskUuid": "ac000000-0000-4000-8000-000000000003",
+          "issueId": null,
+          "decision": "create",
+          "framework": "spec-kit",
+          "featureName": "demo-feature",
+          "filePath": "specs/demo/task-03.md",
+          "confidence": "medium",
+          "score": 120,
+          "margin": 40,
+          "reasons": [],
+          "alternatives": [],
+          "changedFields": [],
+          "descriptionContentHash": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+          "expectedMarkdownChanges": [],
+          "lowConfidenceGateStatus": "passed",
+          "unresolvedConflict": false,
+          "routing": {
+            "teamKey": "tls",
+            "project": "tlsproj",
+            "matchedPrefix": "specs/demo",
+            "defaulted": false
+          }
+        },
+        {
+          "taskUuid": "ac000000-0000-4000-8000-000000000004",
+          "issueId": null,
+          "decision": "create",
+          "framework": "spec-kit",
+          "featureName": "demo-feature",
+          "filePath": "specs/demo/task-04.md",
+          "confidence": "unmatched",
+          "score": 10,
+          "margin": 0,
+          "reasons": [],
+          "alternatives": [],
+          "changedFields": [],
+          "descriptionContentHash": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+          "expectedMarkdownChanges": [],
+          "lowConfidenceGateStatus": "passed",
+          "unresolvedConflict": false,
+          "routing": {
+            "teamKey": "tls",
+            "project": "tlsproj",
+            "matchedPrefix": "specs/demo",
+            "defaulted": false
+          }
+        },
+        {
+          "taskUuid": "ac000000-0000-4000-8000-000000000005",
+          "issueId": "TLS-105",
+          "decision": "update",
+          "framework": "spec-kit",
+          "featureName": "demo-feature",
+          "filePath": "specs/demo/task-05.md",
+          "confidence": "low",
+          "score": 120,
+          "margin": 40,
+          "reasons": [],
+          "alternatives": [],
+          "changedFields": [],
+          "descriptionContentHash": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+          "expectedMarkdownChanges": [],
+          "lowConfidenceGateStatus": "failed",
+          "unresolvedConflict": false,
+          "routing": {
+            "teamKey": "tls",
+            "project": "tlsproj",
+            "matchedPrefix": "specs/demo",
+            "defaulted": false
+          }
+        }
+      ]
+    }
+  ],
+  "unmapped": [
+    {
+      "issueId": "TLS-9999",
+      "teamKey": "tls",
+      "project": "tlsproj",
+      "title": "Orphan placeholder issue",
+      "parentMapped": false
+    }
+  ]
+}
