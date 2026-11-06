@@ -32,8 +32,8 @@ Single npm package: `src/mcp/` (012's disjoint module group), `tests/{unit,contr
 
 **Purpose**: Packaging surface and module skeleton for the mcp module group
 
-- [ ] T001 Add one additive `"./mcp"` subpath export to `package.json` (`types` `./dist/mcp/index.d.ts`, `default` `./dist/mcp/index.js`) — zero dependency changes, zero other manifest edits, no new `bin` (research R1; contracts/component-api.md §4)
-- [ ] T002 Create the empty module group skeleton: `src/mcp/index.ts` placeholder barrel + `src/mcp/errors.ts` (re-export placeholder for the §7 taxonomy) so the build has a target; `npm run typecheck` + `npm run build` pass and emit `dist/mcp/index.js` + `dist/mcp/index.d.ts` (build wildcards cover `src/mcp`)
+- [X] T001 Add one additive `"./mcp"` subpath export to `package.json` (`types` `./dist/mcp/index.d.ts`, `default` `./dist/mcp/index.js`) — zero dependency changes, zero other manifest edits, no new `bin` (research R1; contracts/component-api.md §4)
+- [X] T002 Create the empty module group skeleton: `src/mcp/index.ts` placeholder barrel + `src/mcp/errors.ts` (re-export placeholder for the §7 taxonomy) so the build has a target; `npm run typecheck` + `npm run build` pass and emit `dist/mcp/index.js` + `dist/mcp/index.d.ts` (build wildcards cover `src/mcp`)
 
 **Checkpoint**: Packaging entry + skeleton compile; nothing functional yet
 
@@ -133,9 +133,9 @@ Single npm package: `src/mcp/` (012's disjoint module group), `tests/{unit,contr
 
 - [X] T060 Write `docs/agent-tools.md` (documentation duty, placeholder identifiers only): usage scenario for `createAgentToolServer` (the consumer supplies config/state/port — the packaging story), the four-tool table with the visibility rule, the settings reference (all five keys + defaults table, verbatim from data-model §3), the transport story (stdio default, http opt-in + token env-var setup + stderr port line), the session semantics (plan references die with the process; run `task_sync_plan` first), the apply posture ("same gates as CLI/queue — refusals are tool results"), and the stdio framing rules for host implementers
 - [X] T061 Update `README.md`: Wave-4 status line for 012, the `./mcp` entry in the surface/export table, and a docs link to `docs/agent-tools.md`
-- [ ] T062 Run every quickstart.md scenario against the built `dist/` (Scenarios 1–5, including the contract-scan table); fix any drift artifact-first, then code
-- [ ] T063 Run `npm test` (full suite, all tiers) GREEN including the coverage gate (lines 80 / branches 70 / functions 80) with `tracker-dependency-budget` still asserting SPENT 0; fix any 012-at-fault regressions; mark completed tasks `[X]` in this file
-- [ ] T064 Close coverage gaps in `src/mcp/**` with additional focused unit tests under `tests/unit/` (only if T063 reports shortfalls) and sweep every 012 artifact for `NEEDS CLARIFICATION` (must be zero)
+- [X] T062 Run every quickstart.md scenario against the built `dist/` (Scenarios 1–5, including the contract-scan table); fix any drift artifact-first, then code
+- [X] T063 Run `npm test` (full suite, all tiers) GREEN including the coverage gate (lines 80 / branches 70 / functions 80) with `tracker-dependency-budget` still asserting SPENT 0; fix any 012-at-fault regressions; mark completed tasks `[X]` in this file
+- [X] T064 Close coverage gaps in `src/mcp/**` with additional focused unit tests under `tests/unit/` (only if T063 reports shortfalls) and sweep every 012 artifact for `NEEDS CLARIFICATION` (must be zero)
 
 ---
 
