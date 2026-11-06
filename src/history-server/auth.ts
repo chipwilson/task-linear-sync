@@ -161,12 +161,20 @@ export interface AccessGate {
   sessionCookieHeader(): string;
 }
 
+/**
+ * 014 (bearer-parity.md §1): the MCP canonical parser — `<ows>* bearer <token>`
+ * matched case-insensitively, whitespace-tolerant, capture trimmed. A non-Bearer
+ * shape (wrong scheme, no/empty token) reads as NO credential; callers keep the
+ * existing 401-scheme / 403-token posture (research R5).
+ */
 export function readBearer(headers: HeadersLike): string | undefined {
   const raw = headers["authorization"];
   const value = Array.isArray(raw) ? raw[0] : raw;
   if (value === undefined) return undefined;
-  if (!value.startsWith("Bearer ")) return undefined;
-  return value.slice("Bearer ".length);
+  const match = /^\s*bearer\s+(.+)$/i.exec(value);
+  if (match === null) return undefined;
+  const presented = match[1]!.trim();
+  return presented.length === 0 ? undefined : presented;
 }
 
 export function readSessionCookie(headers: HeadersLike, toolId: string): string | undefined {
@@ -205,13 +213,16 @@ export function createAccessGate(deps: AccessGateDeps): AccessGate {
     authorize(headers) {
       if (deps.accessMode === "public") return { kind: "allow" };
 
-      const bearerPresented = headers["authorization"] !== undefined;
+      // 014 (bearer-parity.md §1/§2): "presented" means a PARSEABLE bearer or a
+      // session cookie — a non-Bearer scheme or an empty token reads as NO
+      // credential (challenge), matching the MCP gate exactly.
+      const bearerPresented = readBearer(headers) !== undefined;
       const cookiePresented = readSessionCookie(headers, deps.toolId) !== undefined;
       if (!bearerPresented && !cookiePresented) return { kind: "challenge" };
 
       if (bearerPresented && bearerValid(headers)) return { kind: "allow" };
       if (cookiePresented && cookieValid(headers)) return { kind: "allow" };
-      // A presented credential that fails is never downgraded to a 401.
+      // A credential that PARSED but fails to verify is never downgraded to 401.
       return { kind: "deny" };
     },
     bootstrapTokenValid(presented) {

@@ -145,7 +145,12 @@ export function createAgentToolServer(deps: AgentToolServerDeps): AgentToolServe
     queueSurface: createDefaultQueueSurface(),
   };
 
-  const store = createPlanReferenceStore(clock);
+  // 014 (resource-bounds.md §5): the store is bounded by the settings pair —
+  // expired ≡ evicted ≡ unknown via the step-3 gate in handlers.ts.
+  const store = createPlanReferenceStore(clock, {
+    ttlSeconds: settings.planReferenceTtlSeconds,
+    maxEntries: settings.planReferenceMaxEntries,
+  });
   const cores = new Map<ToolName, ToolHandler>();
 
   // T034 — the three read cores register NOW (P1); the apply core registers in US2.

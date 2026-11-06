@@ -197,13 +197,24 @@ layer ever echoes secrets, tokens, or file contents back:
 
 Each server session keeps a small **in-memory plan-reference store**:
 every successful `task_sync_plan` records its `planReference` (a 64-hex
-id) in a `Map` — no plan bodies stored, nothing persisted, zero TTL. It
+id) in a `Map` — no plan bodies stored, nothing persisted. It
 is what makes `task_sync_apply` execute *a plan this session actually
 previewed*: the `planReference` must be one of this session's recorded
 ids, and a cold or restarted process answers `PLAN_REFERENCE_UNKNOWN`
 for every previously handed-out reference. The store is private to the
 session and disappears with the process; it never becomes cross-session
 shared state.
+
+Retention is bounded (feature 014): entries expire lazily past
+`mcp.planReferenceTtlSeconds` (integer `60..86400`, default 3600) and the
+store trims to `mcp.planReferenceMaxEntries` (integer `1..100000`,
+default 1000), evicting the oldest recorded reference first. No timers
+are involved — expiry and eviction are checked on read and on record.
+An **expired or evicted reference is indistinguishable from a
+never-known one**: `task_sync_apply` answers the same
+`PLAN_REFERENCE_UNKNOWN` refusal, before the engine, any port call, or
+any state-directory access, so long-lived sessions cannot accumulate
+unbounded references.
 
 ## Safety model
 

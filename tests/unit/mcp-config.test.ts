@@ -138,6 +138,60 @@ test("the read is PURE over ResolvedConfig — the frozen config object is never
   assert.equal(JSON.stringify(config), before);
 });
 
+// ── T027 (feature 014) — guards for the amended planReference* pair
+// (resource-bounds.md §1/§5; ranges verbatim from the configuration.md amendment) ──
+
+test("planReferenceTtlSeconds must be an integer in 60..86400; planReferenceMaxEntries in 1..100000", () => {
+  for (const bad of [0, 59, 86401, 3600.5, true] as const) {
+    const result = resolveMcpConfig(configWith({ planReferenceTtlSeconds: bad as never }));
+    assert.equal(result.ok, false, `ttl ${String(bad)} must be rejected`);
+    if (!result.ok) {
+      assert.ok(result.errors[0]?.includes("planReferenceTtlSeconds"), result.errors[0]);
+      assert.ok(result.errors[0]?.includes("60..86400"), "the range is quoted verbatim");
+    }
+  }
+  for (const bad of [0, 100001, 2.5, "10" as never] as const) {
+    const result = resolveMcpConfig(configWith({ planReferenceMaxEntries: bad as never }));
+    assert.equal(result.ok, false, `maxEntries ${String(bad)} must be rejected`);
+    if (!result.ok) {
+      assert.ok(result.errors[0]?.includes("planReferenceMaxEntries"), result.errors[0]);
+      assert.ok(result.errors[0]?.includes("1..100000"), "the range is quoted verbatim");
+    }
+  }
+  for (const good of [60, 3600, 86400]) {
+    const result = resolveMcpConfig(configWith({ planReferenceTtlSeconds: good }));
+    assert.ok(result.ok, `ttl ${good} is in range`);
+    if (result.ok) assert.equal(result.settings.planReferenceTtlSeconds, good);
+  }
+  for (const good of [1, 1000, 100000]) {
+    const result = resolveMcpConfig(configWith({ planReferenceMaxEntries: good }));
+    assert.ok(result.ok, `maxEntries ${good} is in range`);
+    if (result.ok) assert.equal(result.settings.planReferenceMaxEntries, good);
+  }
+});
+
+test("both 014 keys out of range list ALL problems at once, one dotted-key entry each", () => {
+  const result = resolveMcpConfig(configWith({ planReferenceTtlSeconds: 30, planReferenceMaxEntries: 0 }));
+  assert.equal(result.ok, false);
+  if (result.ok) return;
+  assert.equal(result.errors.length, 1, "complete listing lands in exactly ONE line");
+  const line = result.errors[0] ?? "";
+  for (const key of ["mcp.planReferenceTtlSeconds", "mcp.planReferenceMaxEntries"]) {
+    assert.ok(line.includes(key), `line must name ${key}: ${line}`);
+  }
+  assert.deepEqual(result.settings, resolveMcpConfig(loadConfig({})).settings, "pure defaults on failure");
+});
+
+test("the 014 retention pair resolves through the programmatic override layer too", () => {
+  const result = resolveMcpConfig(loadConfig({}), { planReferenceTtlSeconds: 120, planReferenceMaxEntries: 5 });
+  assert.ok(result.ok);
+  assert.equal(result.settings.planReferenceTtlSeconds, 120);
+  assert.equal(result.settings.planReferenceMaxEntries, 5);
+  const bad = resolveMcpConfig(loadConfig({}), { planReferenceTtlSeconds: 1 } as never);
+  assert.equal(bad.ok, false);
+  if (!bad.ok) assert.ok(bad.errors[0]?.includes("settings.planReferenceTtlSeconds"), bad.errors[0]);
+});
+
 test("frozen defaults alone (mutatingToolsEnabled:false + transport + authEnvVarName) are NOT flagged as unknown", () => {
   // The resolved config ALWAYS carries the frozen trio from 001 defaults; the group
   // must accept them — otherwise every resolution would fail out of the box.

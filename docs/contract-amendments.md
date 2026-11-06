@@ -94,6 +94,12 @@ so entries can never be silently dropped.
   (default unchanged) with `sse.cookieSecure` gaining conditional `Secure` on
   `web.secureCookies: true` · 014 R4 TLS-front-door deployments · default `false` keeps
   the cookie byte-identical
+- 2026-11-06 · history · `status.401` / `status.403` · case-sensitive `Bearer ` prefix
+  with any `Authorization` header counting as a presented credential → MCP-canonical
+  `<ows>* bearer <token>` (case-insensitive, whitespace-tolerant); a malformed scheme
+  or empty token now reads as NO credential ⇒ `401` challenge (was `403`) · 014 R5
+  cross-surface bearer parity · envelopes themselves unchanged; well-formed credentials
+  keep the exact 401-absent / 403-invalid split
 
 ### Log — mcp surface
 

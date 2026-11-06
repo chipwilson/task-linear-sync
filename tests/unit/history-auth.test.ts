@@ -43,7 +43,10 @@ test("history-auth: missing credential ⇒ challenge; invalid credential ⇒ den
   assert.deepEqual(gate.authorize({ cookie: "other=1" }), { kind: "challenge" });
 
   assert.deepEqual(gate.authorize({ authorization: "Bearer wrong-token" }), { kind: "deny" });
-  assert.deepEqual(gate.authorize({ authorization: "Token whatever" }), { kind: "deny" });
+  // 014 bearer-parity.md §2: a non-Bearer scheme reads as NO credential ⇒ challenge.
+  assert.deepEqual(gate.authorize({ authorization: "Token whatever" }), { kind: "challenge" });
+  assert.deepEqual(gate.authorize({ authorization: "Basic whatever" }), { kind: "challenge" });
+  assert.deepEqual(gate.authorize({ authorization: "Bearer" }), { kind: "challenge" });
   assert.deepEqual(gate.authorize({ cookie: `${COOKIE_NAME}=garbage` }), { kind: "deny" });
   assert.deepEqual(
     gate.authorize({ authorization: "Bearer wrong", cookie: `${COOKIE_NAME}=junk` }),
@@ -63,9 +66,12 @@ test("history-auth: valid bearer and valid cookie both allow; bearer compare is 
   });
 
   assert.deepEqual(gate.authorize({ authorization: `Bearer ${TOKEN}` }), { kind: "allow" });
-  assert.deepEqual(gate.authorize({ authorization: `Bearer ${TOKEN} ` }), { kind: "deny" });
+  // 014 bearer-parity.md §1: canonical parser — whitespace-tolerant around the
+  // capture and case-insensitive on the scheme, identical to the MCP gate.
+  assert.deepEqual(gate.authorize({ authorization: `Bearer ${TOKEN} ` }), { kind: "allow" });
+  assert.deepEqual(gate.authorize({ authorization: `  bearer ${TOKEN}` }), { kind: "allow" });
+  assert.deepEqual(gate.authorize({ authorization: `BEARER ${TOKEN}` }), { kind: "allow" });
   assert.deepEqual(gate.authorize({ authorization: `Bearer ${TOKEN.slice(0, 10)}` }), { kind: "deny" });
-  assert.deepEqual(gate.authorize({ authorization: `bearer ${TOKEN}` }), { kind: "deny" });
 
   const cookie = issueSessionCookieValue({ token: TOKEN, toolId: TOOL_ID, clock });
   assert.deepEqual(gate.authorize({ cookie: `${COOKIE_NAME}=${cookie}` }), { kind: "allow" });

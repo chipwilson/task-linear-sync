@@ -21,9 +21,10 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { buildCliWorld } from "../helpers/cli-harness.js";
+import { buildCliWorld, hashTree } from "../helpers/cli-harness.js";
 import { createAgentToolServer } from "../../src/mcp/create.js";
 import { McpConfigError } from "../../src/mcp/errors.js";
+import type { Clock, StateStore } from "../../src/state/index.js";
 import { MCP_TEST_TOKEN, withHttpServer, withMcpServer } from "../helpers/mcp-harness.js";
 import type { JsonRpcMessage } from "../helpers/mcp-harness.js";
 
@@ -293,4 +294,157 @@ test("http: close() stops the listener and the host setting is honored", async (
   } finally {
     await world.dispose();
   }
+});
+
+// ── T028 (feature 014) — bounded plan-reference store over a long-lived http
+// server (resource-bounds.md §5; expired ≡ evicted ≡ unknown with zero
+// engine/port/state touch, apply-gating.md step 3) ─────────────────────────────
+
+function mutableClock(startIso: string): Clock & { advanceMs(ms: number): void } {
+  let ms = Date.parse(startIso);
+  return {
+    now: () => new Date(ms),
+    elapsed: (sinceIso: string) => ms - Date.parse(sinceIso),
+    advanceMs: (delta: number) => {
+      ms += delta;
+    },
+  };
+}
+
+/**
+ * Method-counting proxy that also SWAPS `state.clock` to the app clock — the
+ * engine derives plan-report run ids from `state.clock` while writing them with
+ * its injected clock, so both must be the same advancing instance.
+ */
+function spyingState(state: StateStore, clockOverride: Clock): { store: StateStore; calls: () => number } {
+  let count = 0;
+  const store = new Proxy(state, {
+    get(target, prop) {
+      if (prop === "clock") return clockOverride;
+      const value = Reflect.get(target, prop) as unknown;
+      if (typeof value === "function") {
+        return (...args: unknown[]) => {
+          count += 1;
+          return (value as (...a: unknown[]) => unknown).apply(target, args);
+        };
+      }
+      return value;
+    },
+  });
+  return { store, calls: () => count };
+}
+
+let t028Id = 10;
+
+async function callTool(
+  url: string,
+  name: string,
+  args: Record<string, unknown>,
+): Promise<{ status: number; body: unknown; text: string }> {
+  const res = await post(url, {
+    jsonrpc: "2.0",
+    id: t028Id++,
+    method: "tools/call",
+    params: { name, arguments: args },
+  });
+  return { status: res.status, body: res.body, text: toolText(res.body) };
+}
+
+async function openHttpSession(url: string): Promise<void> {
+  const init = await post(url, {
+    jsonrpc: "2.0",
+    id: t028Id++,
+    method: "initialize",
+    params: { protocolVersion: "2025-03-26" },
+  });
+  assert.equal(init.status, 200);
+  await post(url, { jsonrpc: "2.0", method: "notifications/initialized" });
+}
+
+test("http T028: an EXPIRED plan reference answers PLAN_REFERENCE_UNKNOWN with zero engine/port/state touch", async () => {
+  const clock = mutableClock("2026-02-01T00:00:00.000Z");
+  let spy: { store: StateStore; calls: () => number } | undefined;
+  await withHttpServer(
+    async (fx) => {
+      await openHttpSession(fx.url);
+      const planned = await callTool(fx.url, "task_sync_plan", {});
+      assert.notEqual(asRecord(planned.body).result && (asRecord(asRecord(planned.body).result) as { isError?: boolean }).isError, true, planned.text);
+      const { planReference } = JSON.parse(planned.text) as { planReference: string };
+      assert.ok(planReference.length === 64, "sanity: a 64-hex reference was handed out");
+
+      const callsBefore = fx.world.fake.callLog.length;
+      const stateBefore = spy?.calls() ?? -1;
+      const dirHash = hashTree(fx.world.stateDir);
+
+      clock.advanceMs(61_000); // past the 60 s ttl
+
+      const applied = await callTool(fx.url, "task_sync_apply", {
+        planReference,
+        confirmationKey: fx.world.config.confirmationKey,
+      });
+      assert.equal(applied.status, 200);
+      const result = asRecord(asRecord(applied.body).result) as { isError?: boolean };
+      assert.equal(result.isError, true, "expired reference fails closed");
+      assert.ok(applied.text.includes("PLAN_REFERENCE_UNKNOWN"), applied.text);
+      assert.ok(applied.text.includes("run task_sync_plan"), "message unchanged");
+
+      assert.equal(fx.world.fake.callLog.length, callsBefore, "zero port calls");
+      assert.equal(spy?.calls(), stateBefore, "zero state-store method calls");
+      assert.equal(hashTree(fx.world.stateDir), dirHash, "state-dir tree byte-unchanged");
+    },
+    {
+      settings: { enabled: true, planReferenceTtlSeconds: 60, planReferenceMaxEntries: 3 },
+      clock,
+      wrapState: (state) => {
+        spy = spyingState(state, clock);
+        return spy.store;
+      },
+    },
+  );
+});
+
+test("http T028: a CAPACITY-EVICTED reference is byte-identical to a never-known one; survivors still pass step 3", async () => {
+  const clock = mutableClock("2026-02-01T00:00:00.000Z");
+  await withHttpServer(
+    async (fx) => {
+      await openHttpSession(fx.url);
+      const refs: string[] = [];
+      for (let i = 0; i < 4; i += 1) {
+        const planned = await callTool(fx.url, "task_sync_plan", {});
+        refs.push((JSON.parse(planned.text) as { planReference: string }).planReference);
+        clock.advanceMs(10_000); // distinct recordedAt values
+      }
+      assert.ok(new Set(refs).size === 4, `four DISTINCT references expected, got ${JSON.stringify(refs)}`);
+
+      const callsBefore = fx.world.fake.callLog.length;
+      const evicted = await callTool(fx.url, "task_sync_apply", {
+        planReference: refs[0]!,
+        confirmationKey: fx.world.config.confirmationKey,
+      });
+      const unknown = await callTool(fx.url, "task_sync_apply", {
+        planReference: "e".repeat(64),
+        confirmationKey: fx.world.config.confirmationKey,
+      });
+      assert.ok(evicted.text.includes("PLAN_REFERENCE_UNKNOWN"), evicted.text);
+      assert.equal(
+        JSON.stringify(asRecord(evicted.body).result),
+        JSON.stringify(asRecord(unknown.body).result),
+        "evicted ≡ unknown — the refusal renders byte-identically",
+      );
+      assert.equal(fx.world.fake.callLog.length, callsBefore, "both refusals touch zero port calls");
+
+      // The three survivors (refs 1..3) clear the step-3 gate — they can only be
+      // refused further down the ladder, never as PLAN_REFERENCE_UNKNOWN.
+      const survivor = await callTool(fx.url, "task_sync_apply", {
+        planReference: refs[3]!,
+        confirmationKey: fx.world.config.confirmationKey,
+      });
+      assert.equal(survivor.text.includes("PLAN_REFERENCE_UNKNOWN"), false, survivor.text);
+    },
+    {
+      settings: { enabled: true, planReferenceTtlSeconds: 3_600, planReferenceMaxEntries: 3 },
+      clock,
+      wrapState: (state) => spyingState(state, clock).store,
+    },
+  );
 });

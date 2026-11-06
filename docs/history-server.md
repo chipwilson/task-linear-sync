@@ -91,8 +91,15 @@ error names only the variable NAME, never a value.
   (`HMAC` under an HKDF-derived key, expiry 3600 s, verified against the
   injected clock; the cookie value never contains a substring of the token).
   No credential at all ⇒ `401` (+ `WWW-Authenticate: Bearer`, with a token
-  form in the HTML shell); a presented-but-invalid credential ⇒ `403`, never
-  downgraded to a 401. Authorization runs strictly **before** any tracker
+  form in the HTML shell); a credential that parses but fails to verify ⇒
+  `403`, never downgraded to a 401. The `Authorization` scheme is matched
+  like RFC 7235 defines it: case-insensitive and whitespace-tolerant
+  (`bearer`, `BEARER`, `  Bearer  <token>` all present the token), and a
+  value that is not a well-formed Bearer credential — bare `Bearer`, an
+  empty token, `Basic …` — counts as **no credential** (401), not as a
+  failed one. This is the same parser the MCP HTTP transport uses; the
+  parity is pinned by a cross-surface test, not by a shared module.
+  Authorization runs strictly **before** any tracker
   probe.
 - **`public` (explicit opt-in via `web.accessControlMode`).** Any credential
   is ignored; every request serves. Intended for private networks / sidecars
