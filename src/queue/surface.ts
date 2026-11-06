@@ -151,6 +151,7 @@ export function createQueueSurface(wiring: QueueWiring = {}): QueueSurfaceImpl {
             workerId: surfaceWorkerId,
             pid: process.pid,
             clock,
+            ...(wiring.sleep !== undefined ? { sleep: wiring.sleep } : {}),
             notifier: productionNotifier(),
             runApply: (job) =>
               import("./apply-runner.js").then(({ runEnginePass }) =>
