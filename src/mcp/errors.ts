@@ -1,44 +1,52 @@
 /**
- * 012 shared error types (T014, research R12).
+ * T021 — the refusal taxonomy (data-model §7) + the construction-time config error.
  *
- * Surfacing rules are strict about where each code may appear:
- *
- *  - SurfaceError carries the three tool-surface codes (INVALID_ARGUMENTS,
- *    MUTATING_TOOLS_DISABLED, LANE_FAILURE). These NEVER cross the wire as
- *    JSON-RPC error objects: tool-level problems come back as tool-call
- *    results with isError:true (contracts/apply-gating.md §1,
- *    contracts/tool-definitions.md §1). The dispatcher converts.
- *  - McpConfigError is construction-time only: the surface refuses to come
- *    up with an ambiguous configuration and the message names the offending
- *    keys — or, for the token binding, only the env-var NAME, never a value
- *    (contracts/transport-auth.md §4).
- *  - Protocol-level failures use the closed JSON-RPC code set carried by
- *    JsonRpcFailure in jsonrpc.ts; nothing outside that set is ever emitted.
+ * Two channels, never mixed (tasks Notes): protocol faults are JSON-RPC error objects
+ * (closed code set, `jsonrpc.ts`); EVERY tool-level refusal is an `isError: true`
+ * tool RESULT carrying one of these data shapes. No gate codes are re-implemented here —
+ * `GateFailureCode` is reused verbatim from the frozen `src/gates` vocabulary; the
+ * `SurfaceCode` trio covers only policy this module owns (enablement, argument shape,
+ * lane failure).
  */
 
-export const SURFACE_ERROR_CODES = ["INVALID_ARGUMENTS", "MUTATING_TOOLS_DISABLED", "LANE_FAILURE"] as const;
+import type { GateFailureCode } from "../gates/index.js";
 
-export type SurfaceErrorCode = (typeof SURFACE_ERROR_CODES)[number];
+export const SURFACE_CODES = ["MUTATING_TOOLS_DISABLED", "INVALID_ARGUMENTS", "LANE_FAILURE"] as const;
 
-export interface SurfaceIssue {
-  readonly path: string;
-  readonly message: string;
+export type SurfaceCode = (typeof SURFACE_CODES)[number];
+
+/** Refusal codes: the module's own surface codes plus the FROZEN engine gate vocabulary. */
+export type RefusalCode = SurfaceCode | GateFailureCode;
+
+/** One refusal line — stable-key, machine-readable, screened by the producer. */
+export interface ToolRefusal {
+  readonly code: RefusalCode;
+  readonly detail: string;
 }
 
-export class SurfaceError extends Error {
-  readonly code: SurfaceErrorCode;
-
-  /** Screening is applied by the producer before throwing (lane stderr). */
-  readonly issues: readonly SurfaceIssue[];
-
-  constructor(code: SurfaceErrorCode, message: string, issues: readonly SurfaceIssue[] = []) {
-    super(message);
-    this.name = "SurfaceError";
-    this.code = code;
-    this.issues = issues;
-  }
+/**
+ * Render one refusal payload as the single JSON text block of an `isError` tool result:
+ * `schemaVersion` first (stable-key posture, tool-definitions.md §3); EVERY failure is
+ * listed (complete-listing posture — the engine's multi-failure contract, apply-gating §1.6).
+ */
+export function renderRefusal(topCode: RefusalCode, failures: readonly ToolRefusal[]): string {
+  return JSON.stringify({
+    schemaVersion: 1,
+    status: "refused",
+    error: topCode,
+    failures: failures.map((f) => ({ code: f.code, detail: f.detail })),
+  });
 }
 
+/** Single-refusal shorthand (surface codes never multi-list). */
+export function renderSingleRefusal(code: SurfaceCode, detail: string): string {
+  return renderRefusal(code, [{ code, detail }]);
+}
+
+/**
+ * Construction-time only: the surface refuses to come up with an ambiguous configuration.
+ * Messages name config KEYS or env-var NAMES — never values (transport-auth.md §2.3).
+ */
 export class McpConfigError extends Error {
   constructor(message: string) {
     super(message);
