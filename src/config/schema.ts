@@ -48,6 +48,15 @@ export interface WebSurfaceConfig {
   readonly cacheTtlSeconds: number;
   /** toolId-derived env-var NAME. */
   readonly authEnvVarName: string;
+  // ── 014 amendment (configuration.md): history resource bounds ──
+  /** Display-cache LRU cap; int 1..100000, default 500. */
+  readonly maxCacheEntries: number;
+  /** Concurrent chain-walk admissions; int 1..64, default 8. */
+  readonly maxConcurrentWalks: number;
+  /** Concurrent SSE stream admissions; int 1..1000, default 16. */
+  readonly maxConcurrentSseStreams: number;
+  /** Append `Secure` to the session cookie; default false (explicit TLS-front-door opt-in). */
+  readonly secureCookies: boolean;
 }
 
 export interface McpSurfaceConfig {
@@ -56,6 +65,11 @@ export interface McpSurfaceConfig {
   readonly transport: "stdio" | "http";
   /** toolId-derived env-var NAME. */
   readonly authEnvVarName: string;
+  // ── 014 amendment (configuration.md): plan-reference store bounds ──
+  /** Plan-reference session TTL; int 60..86400, default 3600. */
+  readonly planReferenceTtlSeconds: number;
+  /** Plan-reference store capacity; int 1..100000, default 1000. */
+  readonly planReferenceMaxEntries: number;
 }
 
 export interface WorkerConfig {
