@@ -47,6 +47,13 @@ export function renderSingleRefusal(code: SurfaceCode, detail: string): string {
  * Construction-time only: the surface refuses to come up with an ambiguous configuration.
  * Messages name config KEYS or env-var NAMES — never values (transport-auth.md §2.3).
  */
+/** Render one core refusal: surface codes take the single-code text, gate codes the list. */
+export function renderCoreRefusal(refusal: ToolRefusal): string {
+  return (SURFACE_CODES as readonly string[]).includes(refusal.code)
+    ? renderSingleRefusal(refusal.code as SurfaceCode, refusal.detail)
+    : JSON.stringify({ schemaVersion: 1, status: "refused", error: [{ code: refusal.code, detail: refusal.detail }] });
+}
+
 export class McpConfigError extends Error {
   constructor(message: string) {
     super(message);

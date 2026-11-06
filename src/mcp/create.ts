@@ -18,11 +18,12 @@ import { createDefaultSecurityScreener, createSyncEngine, envVarKeyProvider } fr
 import { createStateStore, systemClock } from "../state/index.js";
 import type { Clock, StateStore } from "../state/index.js";
 import { createLinearPort } from "../tracker/index.js";
-import type { EngineDependencies, SecurityScreener } from "../ports/engine.js";
-import type { LinearPort } from "../ports/linear-port.js";
+import type { EngineDependencies, LinearPort, SecurityScreener } from "../ports/index.js";
 import type { McpSettings } from "./config.js";
 import { resolveMcpConfig } from "./config.js";
-import { McpConfigError, renderSingleRefusal } from "./errors.js";
+import { McpConfigError, renderCoreRefusal, renderSingleRefusal } from "./errors.js";
+import { createReadHandlers } from "./handlers.js";
+import type { ToolCoreOutcome } from "./handlers.js";
 import { createDispatcher } from "./jsonrpc.js";
 import type { JsonRpcReply, ToolCallResult } from "./jsonrpc.js";
 import { createPlanReferenceStore } from "./plan-store.js";
@@ -141,6 +142,20 @@ export function createAgentToolServer(deps: AgentToolServerDeps): AgentToolServe
 
   const store = createPlanReferenceStore(clock);
   const cores = new Map<ToolName, ToolHandler>();
+
+  // T034 — the three read cores register NOW (P1); the apply core registers in US2.
+  const readHandlers = createReadHandlers({ cliContext, state, clock, screener, repositoryRoot, store });
+  const wrapOutcome =
+    (run: () => Promise<ToolCoreOutcome>): ToolHandler =>
+    async () => {
+      const outcome = await run();
+      return outcome.ok
+        ? textBlock(JSON.stringify(outcome.payload))
+        : textBlock(renderCoreRefusal(outcome.refusal), true);
+    };
+  cores.set("task_sync_plan", wrapOutcome(readHandlers.task_sync_plan));
+  cores.set("task_sync_inventory", wrapOutcome(readHandlers.task_sync_inventory));
+  cores.set("task_sync_status", wrapOutcome(readHandlers.task_sync_status));
   let httpClose: (() => Promise<void>) | null = null;
 
   const dispatcher = createDispatcher({

@@ -34,7 +34,7 @@ export const MCP_TEST_TOKEN_ENV = "MCP_HARNESS_TOKEN";
 export const MCP_TEST_TOKEN = "mcp-harness-token-012";
 
 export interface McpFixtureOptions {
-  readonly profile?: "minimal" | "review-report";
+  readonly profile?: "zero-task" | "review-report";
   readonly settings?: Record<string, unknown>;
   readonly env?: Record<string, string>;
   readonly token?: string;
@@ -75,7 +75,7 @@ export async function startMcpFixture(options: McpFixtureOptions = {}): Promise<
     screener: world.world.screener,
     settings: {
       transport: "stdio",
-      auth: { tokenEnvVarName: MCP_TEST_TOKEN_ENV },
+      tokenEnvVarName: MCP_TEST_TOKEN_ENV,
       ...(options.settings ?? {}),
     } as never,
   });
@@ -140,8 +140,8 @@ export async function withHttpServer(
       screener: world.world.screener,
       settings: {
         transport: "http",
-        auth: { tokenEnvVarName: MCP_TEST_TOKEN_ENV },
-        http: { port: 0 },
+        tokenEnvVarName: MCP_TEST_TOKEN_ENV,
+        port: 0,
         ...(options.settings ?? {}),
       } as never,
     });
@@ -173,6 +173,8 @@ interface LinePump {
 
 function createLinePump(): LinePump {
   const lines: string[] = [];
+  const messages: Array<JsonRpcMessage | undefined> = [];
+  const consumed = new Set<number>();
   const waiters: Array<{
     pred: (m: JsonRpcMessage) => boolean;
     resolve: (m: JsonRpcMessage) => void;
@@ -180,6 +182,26 @@ function createLinePump(): LinePump {
     timer: NodeJS.Timeout;
   }> = [];
   let buffer = "";
+
+  /** Hand the oldest unconsumed matching message to its waiter, if any. */
+  const drain = (): void => {
+    for (let w = 0; w < waiters.length; w++) {
+      const waiter = waiters[w]!;
+      for (let i = 0; i < messages.length; i++) {
+        if (consumed.has(i)) continue;
+        const msg = messages[i];
+        if (msg !== undefined && waiter.pred(msg)) {
+          consumed.add(i);
+          clearTimeout(waiter.timer);
+          waiters.splice(w, 1);
+          waiter.resolve(msg);
+          w--;
+          break;
+        }
+      }
+    }
+  };
+
   const ingest = (chunk: string): void => {
     buffer += chunk;
     for (;;) {
@@ -189,22 +211,12 @@ function createLinePump(): LinePump {
       buffer = buffer.slice(nl + 1);
       if (line.trim() === "") continue;
       lines.push(line);
-      let msg: JsonRpcMessage | undefined;
       try {
-        msg = JSON.parse(line) as JsonRpcMessage;
+        messages.push(JSON.parse(line) as JsonRpcMessage);
       } catch {
-        /* non-JSON line: recorded, not dispatched */
+        messages.push(undefined); // non-JSON line: recorded, not dispatched
       }
-      if (msg !== undefined) {
-        for (let i = 0; i < waiters.length; i++) {
-          if (waiters[i]!.pred(msg)) {
-            clearTimeout(waiters[i]!.timer);
-            waiters[i]!.resolve(msg);
-            waiters.splice(i, 1);
-            break;
-          }
-        }
-      }
+      drain();
     }
   };
   return {
@@ -215,7 +227,9 @@ function createLinePump(): LinePump {
           () => reject(new Error("MCP fixture: no matching message within the timeout")),
           timeoutMs,
         );
+        // Late registration must still see lines that arrived while unserved.
         waiters.push({ pred, resolve: resolvePromise, reject, timer });
+        drain();
       });
     },
     attach(stream) {
@@ -284,6 +298,9 @@ export interface EmitMcpDriverOptions {
   /** Shared state dir so two children see the same stored plans. */
   readonly stateDir?: string;
   readonly startIso?: string;
+  /** "stdio" (default): the app serves NDJSON on the child's own stdin/stdout.
+   * "http": the child runs the http transport and mirrors stdin lines to it. */
+  readonly transport?: "stdio" | "http";
 }
 
 /** Emit the child-process MCP driver (see module header). */
@@ -378,19 +395,36 @@ const keyValue = createHash("sha256")
   .update("task-linear-sync/009-driver/test-manifest-key/" + config.manifestKeyId)
   .digest("hex");
 
-const app = mcpMod.createAgentToolServer({
+${
+  opts.transport === "http"
+    ? `const app = mcpMod.createAgentToolServer({
   config,
   state,
   port: fake,
   clock,
   repositoryRoot,
   env: { [config.manifestKeyEnvVarName]: keyValue, MCP_HARNESS_TOKEN: process.env.MCP_HARNESS_TOKEN },
-  settings: { transport: "http", auth: { tokenEnvVarName: "MCP_HARNESS_TOKEN" }, http: { port: 0 } },
+  settings: { transport: "http", tokenEnvVarName: "MCP_HARNESS_TOKEN", port: 0 },
 });
 const server = await app.listenHttp();
 process.stdout.write("MCP-LISTENING " + server.port + "\\n");
 
-const url = "http://127.0.0.1:" + address.port + "/";
+const url = "http://127.0.0.1:" + server.port + "/";`
+    : `const app = mcpMod.createAgentToolServer({
+  config,
+  state,
+  port: fake,
+  clock,
+  repositoryRoot,
+  env: { [config.manifestKeyEnvVarName]: keyValue },
+});
+// DEFAULT settings: stdio transport, mutating tools disabled. NDJSON on our streams.
+const session = app.serveStdio();
+void session;`
+}
+${
+  opts.transport === "http"
+    ? `
 for await (const line of process.stdin) {
   const text = String(line).trim();
   if (text === "") continue;
@@ -411,6 +445,20 @@ for await (const line of process.stdin) {
     );
   }
 }
+process.exit(0);`
+    : `
+// serveStdio already drains process.stdin and answers on process.stdout; closing
+// stdin must end the child promptly (quickstart: hosts manage the child's lifetime).
+await onceStdinEnd();
+await app.close();
 process.exit(0);
+
+function onceStdinEnd() {
+  return new Promise((res) => {
+    process.stdin.on("end", () => res());
+    process.stdin.resume();
+  });
+}`
+}
 `;
 }

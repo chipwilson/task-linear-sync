@@ -109,7 +109,8 @@ export function parseMessage(raw: unknown): JsonRpcInbound {
 
   const params = raw.params;
   if (params !== undefined && !isPlainObject(params) && !Array.isArray(params)) {
-    return { kind: "invalid", code: RPC_ERROR_CODES.INVALID_REQUEST, id, message: MSG_INVALID_REQUEST };
+    // §4: params of the wrong JSON type is an invalid PARAMS, not an invalid envelope.
+    return { kind: "invalid", code: RPC_ERROR_CODES.INVALID_PARAMS, id, message: MSG_INVALID_PARAMS };
   }
 
   return hasId
