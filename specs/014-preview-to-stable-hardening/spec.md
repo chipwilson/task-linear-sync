@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-06
 
-**Status**: Draft
+**Status**: Delivered
 
 **Input**: User description: "harden the preview surfaces (012 MCP, 011 history server) toward
 stable-1.0" (`README.md` → Current Status → Next steps). Split with feature 015, which owns the

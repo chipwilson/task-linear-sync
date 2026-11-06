@@ -11,8 +11,8 @@ drive it. This guide covers embedding `createAgentToolServer` in your own
 process or tooling, the settings that shape it, the transport and token
 setup, and what happens when things go wrong.
 
-This feature is in preview; its wire surface is pinned by feature 012's
-specs, but treat it as preview-grade until the surface stabilizes.
+This feature's wire surface is pinned by feature 012's specs and the
+frozen surface snapshot — see `## Stability` at the end of this document.
 
 > **Security note:** `task_sync_apply` runs the real engine — the same
 > gated `applySyncPlan` entry the CLI and queue use. The apply tool is
@@ -235,7 +235,7 @@ Three invariants the surface is built around, each pinned by tests:
 
 ## Stability
 
-- **Status**: preview — hardening in progress (feature 014); stable upon promotion.
+- **Status**: Stable · effective 2026-11-06 · promoted by feature 014.
 
 **Guaranteed scope** — pointer list only; the pointers ARE the scope definition:
 

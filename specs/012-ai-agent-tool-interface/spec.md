@@ -4,7 +4,7 @@
 
 **Created**: 2026-10-21
 
-**Status**: Draft
+**Status**: Stable (promoted by feature 014, 2026-11-06)
 
 **Input**: Decomposition of `specs/001-extract-functional-requirements/spec.md` (clarification session 2026-10-21). Absorbs 001 group Q (AI-agent tool interface, source R25).
 

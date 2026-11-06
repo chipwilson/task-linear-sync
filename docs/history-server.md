@@ -8,8 +8,8 @@ no checkpoint) and never becomes a tracker client beyond the injected
 
 All identifiers in this document are placeholders (Principle III).
 
-This feature is in preview; its wire surface is pinned by feature 011's
-specs, but treat it as preview-grade until the surface stabilizes.
+This feature's wire surface is pinned by feature 011's specs and the
+frozen surface snapshot — see `## Stability` at the end of this document.
 
 ## Usage
 
@@ -180,7 +180,7 @@ delta is recorded in `docs/contract-amendments.md`.
 
 ## Stability
 
-- **Status**: preview — hardening in progress (feature 014); stable upon promotion.
+- **Status**: Stable · effective 2026-11-06 · promoted by feature 014.
 
 **Guaranteed scope** — pointer list only; the pointers ARE the scope definition:
 
