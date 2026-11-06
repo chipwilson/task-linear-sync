@@ -68,9 +68,12 @@ test("drift-set math: unamended drift fails, amended drift passes", () => {
   // The freeze tests' pass rule: driftIds ⊆ amendmentEntryIds.
   const entries = new Set(amendmentEntryIds("mcp"));
   const live = mcpInventory();
-  const drifted = { ...live, "protocol.default": "1999-01-01" }; // cited? no → must fail
+  // Pick an element NO mcp entry cites (stays valid as the log grows).
+  const uncitedId = Object.keys(live).find((id) => !entries.has(id));
+  assert.ok(uncitedId !== undefined, "the inventory must contain at least one uncited element");
+  const drifted = { ...live, [uncitedId]: "1999-01-01" }; // cited? no → must fail
   const driftIds = driftElementIds(diffInventories(live, drifted));
-  assert.deepEqual(driftIds, ["protocol.default"]);
+  assert.deepEqual(driftIds, [uncitedId]);
   assert.ok(driftIds.some((id) => !entries.has(id)), "uncited drift must leave CI red");
 
   const cited = { ...live };

@@ -159,6 +159,12 @@ export function createDispatcher(deps: DispatcherDeps) {
 
   function initialize(id: RpcId, params: unknown): JsonRpcReply {
     const requested = isPlainObject(params) ? params.protocolVersion : undefined;
+    // 014 (quickstart Scenario 5): a PRESENT but non-string protocolVersion is a
+    // params shape fault — answered without advancing the handshake so a corrected
+    // retry can succeed. MISSING stays lenient (version-less clients get the default).
+    if (requested !== undefined && typeof requested !== "string") {
+      return errorReply(id, RPC_ERROR_CODES.INVALID_PARAMS, MSG_INVALID_PARAMS);
+    }
     const protocolVersion =
       typeof requested === "string" && (SUPPORTED_PROTOCOL_VERSIONS as readonly string[]).includes(requested)
         ? requested

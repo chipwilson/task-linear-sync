@@ -143,14 +143,14 @@ required slug in both Stability sections with non-empty triggers.
 
 ### Tests for User Story 4 ⚠️ (red first)
 
-- [ ] T035 [P] [US4] Extend `tests/unit/mcp-jsonrpc.test.ts`: `initialize` echoes each of `2024-11-05` / `2025-03-26` / `2025-06-18`; unsupported `"2099-01-01"` → result carries newest supported `"2025-06-18"`; `protocolVersion: 42` (non-string) → `-32602`; `DEFAULT_PROTOCOL_VERSION === "2025-06-18"`; `SUPPORTED_PROTOCOL_VERSIONS` is exactly the three-item set
-- [ ] T036 [P] [US4] Extend `tests/integration/mcp-stdio.test.ts` with the quickstart Scenario 5 handshake rows end-to-end over the line-transport harness
+- [x] T035 [P] [US4] Extend `tests/unit/mcp-jsonrpc.test.ts`: `initialize` echoes each of `2024-11-05` / `2025-03-26` / `2025-06-18`; unsupported `"2099-01-01"` → result carries newest supported `"2025-06-18"`; `protocolVersion: 42` (non-string) → `-32602`; `DEFAULT_PROTOCOL_VERSION === "2025-06-18"`; `SUPPORTED_PROTOCOL_VERSIONS` is exactly the three-item set
+- [x] T036 [P] [US4] Extend `tests/integration/mcp-stdio.test.ts` with the quickstart Scenario 5 handshake rows end-to-end over the line-transport harness
 
 ### Implementation for User Story 4
 
 - [x] T037 [US4] Set `SUPPORTED_PROTOCOL_VERSIONS = ["2024-11-05", "2025-03-26", "2025-06-18"]` and `DEFAULT_PROTOCOL_VERSION = "2025-06-18"` in `src/mcp/jsonrpc.ts` (fallback behavior already conforms) and update `specs/012-ai-agent-tool-interface/contracts/jsonrpc-stdio.md` with the new set (entry `protocol.2025-06-18` pre-seeded in T007)
-- [ ] T038 [P] [US4] Fill the MCP Stability non-goals in `docs/agent-tools.md`: `mcp-sdk-protocol-surface` (streamable HTTP, resources, prompts, sampling, elicitation, roots, subscriptions — 012 R1 trigger stands, plus research R9's streamable-HTTP trigger) and `mcp-tls-remote-exposure` (loopback remains the documented shape; front-door TLS, mirroring research R4) — each with rationale + non-empty revisit trigger (spec FR-011)
-- [ ] T039 [US4] Re-run `UPDATE_SURFACE_SNAPSHOTS=1 npm run test:contract`, commit the regenerated `tests/contract/snapshots/mcp-surface.json` (protocolVersions changed), confirm `surface-freeze-mcp` amendment integrity green
+- [x] T038 [P] [US4] Fill the MCP Stability non-goals in `docs/agent-tools.md`: `mcp-sdk-protocol-surface` (streamable HTTP, resources, prompts, sampling, elicitation, roots, subscriptions — 012 R1 trigger stands, plus research R9's streamable-HTTP trigger) and `mcp-tls-remote-exposure` (loopback remains the documented shape; front-door TLS, mirroring research R4) — each with rationale + non-empty revisit trigger (spec FR-011)
+- [x] T039 [US4] Re-run `UPDATE_SURFACE_SNAPSHOTS=1 npm run test:contract`, commit the regenerated `tests/contract/snapshots/mcp-surface.json` (protocolVersions changed), confirm `surface-freeze-mcp` amendment integrity green
 
 **Checkpoint**: quickstart Scenario 5 green; SC-006 register complete across both docs.
 

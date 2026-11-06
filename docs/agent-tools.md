@@ -253,7 +253,31 @@ formatting, diagnostics) may change without notice.
 before promotion by feature 014 US2/US4, per
 `specs/014-preview-to-stable-hardening/data-model.md` §4):
 
-- (none recorded yet)
+- `mcp-sdk-protocol-surface` — **re-deferred** (012 R1/R2, reaffirmed by
+  014 research R7/R9). Rationale: the hand-rolled JSON-RPC/MCP subset keeps
+  the zero-dependency budget contract at `SPENT 0`; adopting the MCP SDK
+  would spend the one allowance plus its transitive tree and force a
+  frozen-contract amendment, while the SDK-only surface — streamable HTTP
+  transport, resources, prompts, sampling, elicitation, roots,
+  subscriptions — is used by nothing here and expands the frozen
+  inventory for zero benefit. The published surface stays
+  `initialize`/`tools/list`/`tools/call` over stdio and loopback HTTP.
+  Revisit trigger: a future feature needs SDK-only protocol surface
+  (streamable HTTP transport, sampling) — that change carries the budget
+  amendment explicitly — or MCP event-id/streamable-HTTP infrastructure
+  is adopted anyway (which also retires the history surface's
+  `sse-last-event-id-resume` deferral).
+- `mcp-tls-remote-exposure` — **re-deferred** (012 R9, mirroring 014
+  research R4). Rationale: TLS termination is a deployment concern — the
+  loopback bearer-token design is deliberately credential-light and
+  honest about what it can see; the server terminates no TLS of its own,
+  never reads forwarded headers to guess the scheme, and never exposes a
+  public socket by itself. Gating and the 401/403 posture never weaken by
+  transport, so adding in-component TLS would widen the frozen surface
+  (cert lifecycle, SNI, reload semantics) without closing a gap in the
+  documented shape. Revisit trigger: a demanded deployment where the
+  component itself must terminate TLS (no front door available), or a
+  trusted-proxy convention the component could verify honestly.
 
 **Deployment assumptions**: stdio is the default transport; the HTTP transport
 is loopback-only — put any TLS termination in front, the server never exposes a

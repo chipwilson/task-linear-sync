@@ -112,4 +112,9 @@ so entries can never be silently dropped.
   session membership with TTL/capacity expiry folded in; refusal vocabulary unchanged
   (`PLAN_REFERENCE_UNKNOWN`) · 014 R6 long-lived servers · none; expired references refuse
   exactly as unknown ones always did
+- 2026-11-06 · mcp · `protocol.default` / `error.-32602` · a PRESENT non-string
+  `initialize` `protocolVersion` answered the fallback → answered `-32602` invalid
+  params without consuming the handshake (a corrected retry may initialize); a
+  MISSING value keeps the lenient fallback · 014 quickstart Scenario 5 shape fault ·
+  clients sending string versions (supported or not) see unchanged behavior
 

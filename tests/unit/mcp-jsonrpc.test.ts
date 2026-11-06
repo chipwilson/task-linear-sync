@@ -8,9 +8,11 @@ import assert from "node:assert/strict";
 
 import {
   createDispatcher,
+  DEFAULT_PROTOCOL_VERSION,
   parseMessage,
   RPC_ERROR_CODES,
   serializeMessage,
+  SUPPORTED_PROTOCOL_VERSIONS,
   type ToolCallResult,
 } from "../../src/mcp/jsonrpc.js";
 
@@ -134,11 +136,44 @@ test("initialize echoes a supported version; unknown version answers 2025-06-18;
   }
 });
 
-test("initialize with missing/garbage protocolVersion still answers the latest supported version", async () => {
+test("initialize with a MISSING protocolVersion still answers the latest supported version", async () => {
   const { dispatcher } = makeDispatcher();
   const reply = await dispatcher.handleMessage({ jsonrpc: "2.0", id: 1, method: "initialize", params: {} });
   assert.ok(reply && "result" in reply);
   assert.equal((reply as { result: { protocolVersion: string } }).result.protocolVersion, "2025-06-18");
+});
+
+// ── T035 (feature 014, quickstart Scenario 5) — negotiation set + shape fault ──
+
+test("SUPPORTED_PROTOCOL_VERSIONS is exactly the three-item set; DEFAULT is the newest", () => {
+  assert.deepEqual([...SUPPORTED_PROTOCOL_VERSIONS].sort(), ["2024-11-05", "2025-03-26", "2025-06-18"]);
+  assert.equal(DEFAULT_PROTOCOL_VERSION, "2025-06-18");
+  assert.equal(SUPPORTED_PROTOCOL_VERSIONS.at(-1), DEFAULT_PROTOCOL_VERSION);
+});
+
+test("initialize with a NON-STRING protocolVersion ⇒ -32602, and the handshake stays retryable", async () => {
+  for (const bad of [42, true, null, ["2025-03-26"], { v: 1 }] as const) {
+    const { dispatcher } = makeDispatcher();
+    const reply = await dispatcher.handleMessage({
+      jsonrpc: "2.0",
+      id: 1,
+      method: "initialize",
+      params: { protocolVersion: bad as never },
+    });
+    assert.ok(reply && "error" in reply, `protocolVersion ${JSON.stringify(bad)} ⇒ error reply`);
+    const error = (reply as { error: { code: number; message: string } }).error;
+    assert.equal(error.code, RPC_ERROR_CODES.INVALID_PARAMS);
+    assert.equal(error.message, "invalid params");
+    // The shape fault does not consume the handshake: a corrected initialize succeeds.
+    const retry = await dispatcher.handleMessage({
+      jsonrpc: "2.0",
+      id: 2,
+      method: "initialize",
+      params: { protocolVersion: "2025-03-26" },
+    });
+    assert.ok(retry && "result" in retry, "the connection is not left in initializing");
+    assert.equal((retry as { result: { protocolVersion: string } }).result.protocolVersion, "2025-03-26");
+  }
 });
 
 test("second initialize on the same connection ⇒ -32602 (before AND after notifications/initialized)", async () => {
