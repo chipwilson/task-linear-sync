@@ -22,7 +22,7 @@
  *   `stripHookBlock(text, markers)`, plus `harness.readonlyStateDir(on)` for the
  *   unwritable-state-dir refusal fixtures.
  */
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync, chmodSync } from "node:fs";
+import { chmodSync, cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 
@@ -157,6 +157,20 @@ export interface QueueHarnessOptions {
   readonly env?: Record<string, string | undefined>;
   /** When false, no `.git` tree is pre-created (default true). */
   readonly gitDir?: boolean;
+  /** Seed the credential env NAMEs with dummy values in `env` (default true). */
+  readonly credentials?: boolean;
+  /** Seed `queue` config-group members additively (shorthand for `config: { queue: {...} }`). */
+  readonly queue?: Record<string, unknown>;
+  /** Task-file patterns for scaffold enrichment / discovery fixtures. */
+  readonly taskFilePatterns?: string[];
+  /** Framework ids for scaffold resolution (default: built-in order). */
+  readonly frameworkAdapters?: string[];
+  /**
+   * Fixture world copied into `repo/` as the repository content: a bare name under
+   * `tests/fixtures/cli/worlds/` (zero-task, review-report) or under
+   * `tests/fixtures/engine/worlds/`, or any existing directory (apply/plan lanes).
+   */
+  readonly world?: string;
 }
 
 export interface QueueHarness {
@@ -164,9 +178,17 @@ export interface QueueHarness {
   readonly repositoryRoot: string;
   readonly stateDir: string;
   readonly config: ResolvedConfig;
+  /** Repo-root config file the harness wrote (spawned children load the same resolution). */
+  readonly configFilePath: string;
   readonly store: StateStore;
   readonly paths: StateStorePaths;
   readonly clock: FakeClock;
+  /** Stable fake worker id for lock/claim fixtures. */
+  readonly workerId: string;
+  /** Deterministic jitter source (fixed 0.5). */
+  readonly rng: () => number;
+  /** Drop the credential env NAMEs (credential-absent pre-check fixtures). */
+  withoutCredentials(): void;
   /** `sleep(ms)` invocations recorded (protocol timing assertions never wait on wall clock). */
   readonly sleeps: number[];
   readonly sleep: (ms: number) => Promise<void>;
@@ -191,12 +213,33 @@ export interface QueueHarness {
   dispose(): void;
 }
 
+const pkgRoot = new URL("../../", import.meta.url).pathname;
+
+/** Bare names resolve under tests/fixtures/{cli,engine}/worlds/; existing dirs pass through. */
+function resolveWorldDir(name: string): string {
+  if (existsSync(name)) return name;
+  const cli = join(pkgRoot, "tests", "fixtures", "cli", "worlds", name);
+  if (existsSync(cli)) return cli;
+  const engine = join(pkgRoot, "tests", "fixtures", "engine", "worlds", name);
+  if (existsSync(engine)) return engine;
+  throw new Error(`queue harness world '${name}' not found`);
+}
+
 export async function makeQueueHarness(options: QueueHarnessOptions = {}): Promise<QueueHarness> {
   const root = mkdtempSync(join(tmpdir(), "tls-010-h-"));
   const repositoryRoot = join(root, "repo");
   const stateDir = join(root, "state");
   mkdirSync(repositoryRoot, { recursive: true });
-  if (options.gitDir !== false) {
+
+  // Fixture world (optional): `repo/` contents copied in, world.json config layered first.
+  let worldConfig: Record<string, unknown> = {};
+  if (options.world !== undefined) {
+    const dir = resolveWorldDir(options.world);
+    const doc = JSON.parse(readFileSync(join(dir, "world.json"), "utf8")) as { config?: Record<string, unknown> };
+    worldConfig = doc.config ?? {};
+    cpSync(join(dir, "repo"), repositoryRoot, { recursive: true });
+  }
+  if (options.gitDir !== false && !existsSync(join(repositoryRoot, ".git"))) {
     mkdirSync(join(repositoryRoot, ".git", "hooks"), { recursive: true });
     writeFileSync(join(repositoryRoot, ".git", "HEAD"), "ref: refs/heads/main\n", "utf8");
   }
@@ -205,11 +248,23 @@ export async function makeQueueHarness(options: QueueHarnessOptions = {}): Promi
   const env: Record<string, string | undefined> = { ...options.env };
   const notifySinkPath = join(root, "notify-sink.log");
   env.TASK_LINEAR_SYNC_TEST_NOTIFY = notifySinkPath;
+  if (options.credentials !== false && env.LINEAR_ACCESS_TOKEN === undefined) {
+    env.LINEAR_ACCESS_TOKEN = "harness-dummy-token-value"; // NAME-presence pre-check passes
+  }
 
-  const config = loadConfig({
-    overrides: { stateDirectory: stateDir, ...(options.config as ConfigOverrides | undefined) },
-    env: {},
-  });
+  // REAL repo-root config file (spawned children resolve the identical config via it).
+  const configFilePath = join(repositoryRoot, "task-linear-sync.json");
+  const fileDoc: Record<string, unknown> = {
+    ...worldConfig,
+    ...(options.config ?? {}),
+    stateDirectory: stateDir,
+    ...(options.taskFilePatterns !== undefined ? { taskFilePatterns: options.taskFilePatterns } : {}),
+    ...(options.frameworkAdapters !== undefined ? { frameworkAdapters: options.frameworkAdapters } : {}),
+    ...(options.queue !== undefined ? { queue: { ...((options.config?.queue as Record<string, unknown> | undefined) ?? {}), ...options.queue } } : {}),
+  };
+  writeFileSync(configFilePath, JSON.stringify(fileDoc, null, 2) + "\n", "utf8");
+
+  const config = loadConfig({ configFile: configFilePath, overrides: {} as ConfigOverrides, env: {} });
   const clock = new FakeClock(options.start ?? HARNESS_START_ISO);
   const store = createStateStore({ repositoryRoot, config, clock });
   await store.ensure();
@@ -226,10 +281,17 @@ export async function makeQueueHarness(options: QueueHarnessOptions = {}): Promi
     root,
     repositoryRoot,
     stateDir,
+    configFilePath,
     config,
     store,
     paths: store.paths,
     clock,
+    workerId: `harness-${process.pid}-${Math.random().toString(36).slice(2, 10)}`,
+    rng: () => 0.5,
+    withoutCredentials(): void {
+      delete env.LINEAR_ACCESS_TOKEN;
+      delete env.LINEAR_API_KEY;
+    },
     sleeps,
     sleep,
     spawns,
