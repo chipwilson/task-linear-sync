@@ -94,9 +94,13 @@ Executed live in the tree (then restored, `git status` verified):
    condition exists as a single sentence, the mapping table matches the frozen-surface
    ledger, no pinned version ranges in docs, every surface amendment implies the
    mapped version class, and CHANGELOG keeps `Unreleased` above released entries.
-5. Tag gates are pinned by the `release-pipeline` suite (preflight refuses before any
-   stage runs; live tag demos recorded under Scenario 2's sibling note below — tag
-   checks require a clean tree and were exercised post-commit).
+5. Tag gates exercised **live** on the clean tree (local tags created, then deleted;
+   `git status` confirmed untouched after each run — zero stages executed every time,
+   `stages: []` in the verdict JSON):
+   - `--release --tag v9.9.9` (tag absent) → `REFUSED:TAG_MISSING: v9.9.9`
+   - `--release --tag v9.9.9` (tag created on HEAD, version differs) →
+     `REFUSED:TAG_MISMATCH: tag v9.9.9 vs package.json 0.2.0` — names BOTH values
+   - `--release --tag v0.2.0` (tag on `HEAD~1`) → `REFUSED:TAG_NOT_HEAD: v0.2.0 is not HEAD`
 
 ## Scenario 5 — licensable, discoverable, honest artifact (US4)
 
@@ -131,6 +135,15 @@ First real release (maintainer, Trusted Publisher configured on npm) exercises t
 real registry leg once; until then `release.yml` runs are refused-or-would — which
 IS the gate working.
 
+Live rehearsal of exactly that statement, executed on the clean tagged tree
+(`node scripts/release.mjs --release --tag v0.2.0`, temporary local tag, deleted
+afterwards): all eight gate stages **passed** (352 s suite included), then the
+publish stage refused in 1 ms — before any registry request — with
+`REFUSED:PROVENANCE_UNAVAILABLE: attestation capability not detected; publish needs
+Trusted Publishing or the documented --allow-unattested override`; exit 1. Nothing
+was published; the local tag was removed. The registry leg is the only path this
+environment cannot exercise, and the orchestrator refuses it closed.
+
 ## FR-012 zero-dependency posture (T036)
 
 `git diff 5761953 -- package.json` touches: `files` (adds `LICENSE`, `CHANGELOG.md`),
@@ -152,4 +165,25 @@ screening suites after the PEM-assembly change) unaffected.
 
 ## Constitution compliance review (T038)
 
-TBD — recorded against the plan.md gate table at completion.
+As-built verification against the plan.md Constitution Check gate table (the gates re-listed
+with the artifact that satisfies each at completion, not at planning time):
+
+| Gate | As-built evidence |
+|---|---|
+| I. Safety First | Release plane touches no engine/apply path; every refusal publishes nothing — publish-spy asserts across the full mutation matrix and both live demos (0 publish executions); ambiguous outcomes are classified, never auto-retried |
+| II. Durable Identity | N/A held: no identity behavior changed; UUID-shaped values remain scan targets (live UUID probe caught by stage 8 exactly as designed) |
+| III. Intelligent defaults / no org literals | Stage 8 extends the distributed-defaults scan to the ARTIFACT using the verbatim-extracted pattern set; allowances documented in contract §3 and scoped by pins (fictional-org only in prose, RFC-2606 hosts only for emails) |
+| IV. Determinism & Idempotency | `npm ci --no-audit --no-fund` from the lockfile, forced-clean `dist/`, frozen STAGES catalog tested against data-model §2; refused-release re-runs are safe (PUBLISH_REJECTED tells the operator to cut a new version, nothing partial) |
+| V. One Engine, Additive Surfaces | `--version` purely additive; dry-run and release share the ONE `runRelease` path; `action.yml` untouched |
+| VI. Test-First (NON-NEGOTIABLE) | Every FR has an enforcement-map row and executed green: FR-001/002/011 (archive-verification 15), FR-003/006/007/009/010 (release-pipeline 29), FR-004 (version-drift 5 + CLI version pin), FR-005 (secret-scan 8 + ci-defaults-scan 2 + stage-8 real-archive scan-clean), FR-008 (changelog 4), FR-012 (T036 diff), SC-001/005 (e2e + direct dry-run) |
+| Credential handling | No npm secret exists in `release.yml` (OIDC); fallback token read from env name only, placed in child env, never argv/logs; mode-conflict refuses when credentials join a dry-run; token VALUES never echoed (names only) |
+| Technology stack | Artifact posture asserted at every verifier run: ESM + per-export `.d.ts`, `types` first, engines ≥ 20, zero `dependencies`; zero new dependencies of ANY kind added by the feature (T036) |
+| No org-specific literals | Scan over every archive member; docs additions carry placeholder identifiers only (verified — shipped docs pass stage 8 with zero findings) |
+| Merge-blocking validation | `release-dry-run` job on `pull_request` + `main` push in `ci.yml`, same blocking status |
+| Hermetic pipelines | Dry-run asserts credential ABSENCE (green with `NPM_TOKEN` unset, refuses with it set); zero `secrets.` in the job body (grep-tested); publish tests contact only localhost stand-ins |
+| Release gates | The clause is now mechanical (stages 4/7/8/9); live `--release` run reaches the registry leg only after all gates pass and refuses `PROVENANCE_UNAVAILABLE` there without Trusted Publishing — publishing nothing |
+| Documentation duty | `docs/cli.md` (`--version`), `docs/versioning.md`, `docs/release-process.md`, command-surface global-flags row, requirements.md as-built notes, README links — all landed in the same changes as the surfaces they document |
+
+Frozen-surface ledger: **zero amendments** across 004/006/009/012/014 suites — all still green
+in the recorded full-suite run. No silent deviation found; the two placeholder allowances are
+documented in the contract (as-built) rather than quietly added.
