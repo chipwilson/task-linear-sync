@@ -26,8 +26,6 @@ interface SecretScanModule {
   scanText(text: string): Array<{ why: string; hit: string }>;
 }
 const scanModule = (await import(new URL("../../../scripts/lib/secret-scan.mjs", import.meta.url).href)) as unknown as SecretScanModule;
-const BANNED = scanModule.BANNED;
-const isPlaceholder = scanModule.isPlaceholder;
 
 function* walk(dir: string): Generator<string> {
   for (const entry of readdirSync(dir, { withFileTypes: true })) {

@@ -156,9 +156,13 @@ function main() {
     if (cli.stdout !== expectedLine) refuse("CLI_VERSION_MISMATCH", `got '${String(cli.stdout).trim()}' want '${expectedLine.trim()}'`);
 
     // The embedded SERVER_VERSION equals the manifest version (staleness = refusal).
-    const sv = sh(process.execPath, ["--input-type=module", "-e", `const m = await import(${JSON.stringify(`${packed.name}/mcp`)}); process.stdout.write(String(m.SERVER_VERSION));`], { cwd: consumer });
-    if (sv.status !== 0 || sv.stdout.trim() !== installedManifest.version) {
-      refuse("STALE_VERSION_DERIVATION", `SERVER_VERSION '${sv.stdout.trim()}' != manifest '${installedManifest.version}'`);
+    // Checked when the package ships the ./mcp subpath (this package does; a
+    // minimal synthetic fixture package without ./mcp is exempt by construction).
+    if (Object.keys(installedManifest.exports ?? {}).includes("./mcp")) {
+      const sv = sh(process.execPath, ["--input-type=module", "-e", `const m = await import(${JSON.stringify(`${packed.name}/mcp`)}); process.stdout.write(String(m.SERVER_VERSION));`], { cwd: consumer });
+      if (sv.status !== 0 || sv.stdout.trim() !== installedManifest.version) {
+        refuse("STALE_VERSION_DERIVATION", `SERVER_VERSION '${sv.stdout.trim()}' != manifest '${installedManifest.version}'`);
+      }
     }
   } finally {
     if (!process.env.VERIFY_PKG_KEEP) rmSync(work, { recursive: true, force: true });

@@ -38,7 +38,12 @@ Built under `mkdtemp` in the OS temp dir; the repository tree is NOT on the modu
 - BANNED set (unchanged from the repo scans): `lin_api_` token VALUES, PEM material,
   credential-header keys, fictional-org literals standing in for real tenants, email
   addresses, UUID-shaped identifiers, long hex digests. ALLOWED: documented placeholder
-  shapes (single-repeat hex probes, the `ac000000-…` seed, `example.invalid` hosts).
+  shapes (single-repeat hex probes, the `ac000000-…` seed, RFC-2606 `example.*` /
+  `localhost` mail hosts, and FICTIONAL-ORG example tenants inside `.md`/`.txt` prose —
+  the repo's documentation convention for example tenants, `isProseAllowance`, scoped to
+  that one pattern and those extensions; credentials/PEM/UUID/email/hex stay banned in
+  every file kind). The shipped PEM-detector source assembles its marker at runtime so
+  artifact bytes carry no literal.
 - Coverage: EVERY archive member (shipped `dist` sources + maps, `docs/**`, examples,
   `README.md`, `CHANGELOG.md`, `package.json`). Any finding outside allowances →
   `REFUSED:DEFAULTS_SCAN:<count>`; publish unreached (constitution Release gates:

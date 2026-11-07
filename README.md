@@ -254,6 +254,7 @@ conventions can override them).
 - [Agent tools (MCP)](docs/agent-tools.md)
 - [Sync-History web component](docs/history-server.md)
 - [CI enforcement action](docs/ci-enforcement.md)
+- [Release process](docs/release-process.md) · [Versioning policy](docs/versioning.md)
 - [Framework adapters](docs/framework-adapters.md)
 - [Module docs](docs/) (engine, discovery, parsing, matching, routing, tracker)
 - [Active contracts](specs/) · [contract amendments](docs/contract-amendments.md)

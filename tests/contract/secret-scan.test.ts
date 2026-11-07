@@ -19,6 +19,7 @@ interface Finding {
 interface SecretScanModule {
   readonly BANNED: ReadonlyArray<readonly [RegExp, string]>;
   isPlaceholder(why: string, hit: string): boolean;
+  isProseAllowance(file: string, why: string): boolean;
   scanText(text: string): Finding[];
   scanTextHardened(text: string): Finding[];
   scanFileTree(dir: string): Array<{ file: string } & Finding>;
@@ -81,6 +82,43 @@ test("scanText: isPlaceholder table semantics", () => {
   assert.equal(mod.isPlaceholder("UUID-shaped identifier", "ac000000-0000-4000-8000-123456789012"), true);
   assert.equal(mod.isPlaceholder("UUID-shaped identifier", "123e4567-e89b-42d3-a456-426614174000"), false);
   assert.equal(mod.isPlaceholder("email address", "ops@real.example"), false);
+  // RFC-2606 documentation hosts are placeholders; real hosts are not.
+  assert.equal(mod.isPlaceholder("email address", "someone@example.com"), true);
+  assert.equal(mod.isPlaceholder("email address", "docs@example.invalid"), true);
+  assert.equal(mod.isPlaceholder("email address", "someone@example.horse"), false);
+});
+
+test("prose allowance (artifact-verification §3): fictional-org ONLY, prose files ONLY", () => {
+  const fictional = whyOf("fictional-org");
+  assert.equal(mod.isProseAllowance("docs/cli.md", fictional), true);
+  assert.equal(mod.isProseAllowance("README.md", fictional), true);
+  assert.equal(mod.isProseAllowance("notes.txt", fictional), true);
+  // never for any other pattern…
+  for (const needle of ["token VALUE", "PEM", "email", "UUID", "hex-digest", "credential-header"]) {
+    assert.equal(mod.isProseAllowance("docs/cli.md", whyOf(needle)), false, needle);
+  }
+  // …and never outside prose extensions.
+  for (const file of ["dist/defaults.js", "package.json", "config.yaml", "LICENSE"]) {
+    assert.equal(mod.isProseAllowance(file, fictional), false, file);
+  }
+});
+
+test("scanFileTree: prose allowance in action — scoped exactly as documented", () => {
+  const dir = mkdtempSync(join(tmpdir(), "u1-prose-"));
+  try {
+    writeFileSync(join(dir, "guide.md"), "the acme tenant syncs into globex space\n");
+    writeFileSync(join(dir, "defaults.json"), '{"workspace":"acme"}\n');
+    writeFileSync(join(dir, "support.md"), "write ops@corp.example.org for help\n");
+    const findings = mod.scanFileTree(dir);
+    // guide.md: fictional-org ALLOWED (prose). defaults.json: fictional-org CAUGHT.
+    // support.md: email at a real host CAUGHT even in prose (allowance is scoped).
+    assert.deepEqual(
+      findings.map((f) => `${f.file}:${f.why.includes("fictional-org") ? "fictional" : f.why.includes("email") ? "email" : "other"}`),
+      ["defaults.json:fictional", "support.md:email"],
+    );
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
 });
 
 test("scanTextHardened: base64-wrapped payload is decoded and re-scanned (FR-005)", () => {

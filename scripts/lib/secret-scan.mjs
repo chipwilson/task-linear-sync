@@ -42,7 +42,29 @@ export function isPlaceholder(why, hit) {
   if (why.includes("UUID")) {
     return /^ac000000-0000-4000-8000-\d{12}$/.test(hit); // fixture placeholder seed
   }
+  if (why.includes("email")) {
+    // RFC-2606 reserved documentation hosts (contracts/artifact-verification.md §3:
+    // "example.invalid hosts" — the whole example.* family).
+    return /@(?:example\.(?:com|net|org|invalid|test)|localhost)$/i.test(hit);
+  }
   return false;
+}
+
+/**
+ * Prose documents (`.md`/`.txt`) legitimately carry FICTIONAL-ORG example tenants
+ * (`acme`, `globex`, …) — the repo's long-standing documentation convention. The
+ * fictional-org entry in BANNED guards CONFIG/artifact defaults against standing
+ * in for a real tenant; in prose it IS the example, and the artifact ships docs
+ * (FR-001). Allowance is scoped to this one `why` and to prose extensions only —
+ * credentials, PEM, UUIDs, emails, and hex digests stay banned everywhere
+ * (contracts/artifact-verification.md §3 ALLOWED list; secret-scan.test.ts
+ * pins the scoping).
+ * @param {string} file path relative to the scanned root
+ * @param {string} why
+ * @returns {boolean}
+ */
+export function isProseAllowance(file, why) {
+  return /\.(?:md|txt)$/i.test(file) && why.includes("fictional-org");
 }
 
 /**
@@ -100,6 +122,7 @@ export function* walk(dir) {
 export function scanFileTree(dir) {
   const findings = [];
   for (const file of walk(dir)) {
+    const rel = file.slice(dir.length + 1);
     let text;
     try {
       text = readFileSync(file, "utf8");
@@ -107,7 +130,8 @@ export function scanFileTree(dir) {
       continue; // binary/unreadable: nothing textual to find
     }
     for (const f of scanTextHardened(text)) {
-      findings.push({ file: file.slice(dir.length + 1), ...f });
+      if (isProseAllowance(rel, f.why)) continue;
+      findings.push({ file: rel, ...f });
     }
   }
   return findings;

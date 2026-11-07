@@ -56,7 +56,14 @@ function sh(cmd, args, opts = {}) {
 function runOrThrow(label, cmd, args, opts = {}) {
   const r = sh(cmd, args, { ...opts, capture: true });
   if (r.status !== 0) {
-    throw new Refuse(label, `exit ${r.status}: ${String(r.stderr ?? r.stdout ?? "").split("\n").slice(0, 3).join(" | ")}`);
+    // Tools disagree about streams (eslint → stdout, npm errors → stderr):
+    // show the first non-empty lines of both so CI logs carry the real cause.
+    const detail = [String(r.stdout ?? ""), String(r.stderr ?? "")]
+      .flatMap((s) => s.split("\n"))
+      .filter((l) => l.trim() !== "")
+      .slice(0, 4)
+      .join(" | ");
+    throw new Refuse(label, `exit ${r.status}: ${detail}`);
   }
   return r;
 }
@@ -105,8 +112,7 @@ function manifest() {
 export function preflight(tag, exec = sh) {
   const dirty = exec("git", ["status", "--porcelain"], { capture: true });
   if (dirty.status !== 0) throw new Refuse("GIT_UNAVAILABLE", "git status failed");
-  if (String(dirty.stdout).trim() !== "") throw new Refuse("DIRTY_TREE", "commit or stash everything before releasing");
-  if (dirty.stdout === undefined) return; // stubbed worlds without git detail
+  if (String(dirty.stdout ?? "").trim() !== "") throw new Refuse("DIRTY_TREE", "commit or stash everything before releasing");
   const tagCheck = exec("git", ["rev-parse", "--verify", `refs/tags/${tag}`], { capture: true });
   if (tagCheck.status !== 0) throw new Refuse("TAG_MISSING", tag);
   const tagCommit = String(exec("git", ["rev-list", "-n", "1", tag], { capture: true }).stdout).trim();
@@ -133,12 +139,19 @@ export function defaultExecutors(ctx, opts) {
       }
     },
     lint: () => npm(["run", "lint"]),
-    typecheck: () => npm(["run", "typecheck"]),
+    // src self-imports (task-linear-sync/domain) resolve via the exports map to
+    // BUILT declarations, so typecheck needs dist/ to exist on a fresh clone
+    // (same order as the existing CI job: build before typecheck). The
+    // authoritative clean rebuild is the next stage.
+    typecheck: () => {
+      if (!existsSync(join(repoRoot, "dist", "domain", "index.d.ts"))) npm(["run", "build"]);
+      npm(["run", "typecheck"]);
+    },
     "build-clean": () => {
       rmSync(join(repoRoot, "dist"), { recursive: true, force: true }); // no stale/partial cache ships
       npm(["run", "build"]);
     },
-    "test-full": () => npm(["test"]),
+    "test-full": () => npm(["test"], { env: { ...process.env, TLS_RELEASE_NESTED: "1" } }), // guard: the e2e dry-run test self-skips when nested (no recursion)
     pack: () => {
       ctx.workdir = mkdtempSync(join(tmpdir(), "release-pack-"));
       const r = sh("npm", ["pack", "--json", "--pack-destination", ctx.workdir], { capture: true });
@@ -150,13 +163,13 @@ export function defaultExecutors(ctx, opts) {
         throw new Refuse("STAGE_FAILED_DETAIL", "npm pack --json unparseable");
       }
       if (!Array.isArray(entries) || entries.length !== 1) throw new Refuse("STAGE_FAILED_DETAIL", `expected exactly one tarball, got ${Array.isArray(entries) ? entries.length : "?"}`);
-      ctx.tarball = join(repoRoot, entries[0].filename);
+      ctx.tarball = join(ctx.workdir, entries[0].filename); // npm wrote it to --pack-destination, not repoRoot
       ctx.packFiles = entries[0].files ?? null;
       ctx.npmShasum = entries[0].shasum ?? null;
       if (!existsSync(ctx.tarball)) throw new Refuse("STAGE_FAILED_DETAIL", `tarball missing: ${ctx.tarball}`);
     },
     "archive-verify": () => {
-      const r = sh(process.execPath, [join(repoRoot, "scripts", "verify-package.mjs"), ctx.tarball, ...(ctx.expectedVersion ? [`--expect-changelog ${ctx.expectedVersion}`] : [])], { capture: true });
+      const r = sh(process.execPath, [join(repoRoot, "scripts", "verify-package.mjs"), ctx.tarball, ...(ctx.expectedVersion ? ["--expect-changelog", ctx.expectedVersion] : [])], { capture: true });
       if (r.status !== 0) {
         const first = String(r.stdout || r.stderr).split("\n").find((l) => l.startsWith("REFUSED:")) ?? "verify-package failed";
         throw new Refuse(first.replace(/^REFUSED:/, "").split(":")[0].trim(), first);
@@ -182,10 +195,12 @@ export function defaultExecutors(ctx, opts) {
         (process.env.CI !== undefined || process.env.GITHUB_ACTIONS !== undefined) &&
         (opts.trustedPublishing === true || process.env.GITHUB_ACTIONS !== undefined); // Actions runners can mint OIDC tokens; npm auto-detects trusted publishing when no token exists
       if (!provenanceCapable && !opts.allowUnattested) throw new Refuse("PROVENANCE_UNAVAILABLE", "attestation capability not detected; publish needs Trusted Publishing or the documented --allow-unattested override");
-      if (!provenanceCapable && opts.allowUnattested) opts.log("WARNING: publishing WITHOUT attestation under --allow-unattested (documented override — record the reason)");
-      const args = ["publish", ...(provenanceCapable ? ["--provenance"] : []), "--access", "public", "--tag", "latest"];
+      if (!provenanceCapable && opts.allowUnattested) (opts.log ?? (() => {}))("WARNING: publishing WITHOUT attestation under --allow-unattested (documented override — record the reason)");
+      // Publish THE VERIFIED TARBALL (stage 7/8 artifact), never whatever cwd
+      // happens to resolve to — what archive-verify approved is what ships.
+      const args = ["publish", ctx.tarball, ...(provenanceCapable ? ["--provenance"] : []), "--access", "public", "--tag", "latest"];
       const publishEnv = { ...process.env };
-      if (process.env.NPM_TOKEN !== undefined) {
+      if (process.env.NPM_TOKEN !== undefined && process.env.NPM_TOKEN !== "") {
         // fallback store path (research R2): token reaches npm via the environment
         // only — never argv (visible in ps) and never a log line (value never echoed).
         publishEnv["NPM_CONFIG_//registry.npmjs.org/:_authToken"] = process.env.NPM_TOKEN;
@@ -203,7 +218,7 @@ export function defaultExecutors(ctx, opts) {
 /**
  * Run the stage machine. Returns the verdict object; NEVER throws for
  * expected failures (refusals/stage failures are verdicts).
- * @param {{argv: string[], env?: Record<string,string|undefined>, executors?: Record<string,(ctx: object)=>void|Promise<void>>, log?: (line: string)=>void, preflightImpl?: (tag: string)=>void, repoVersion?: string}} io
+ * @param {{argv: string[], env?: Record<string,string|undefined>, executors?: Record<string,(ctx: object)=>void|Promise<void>>, log?: (line: string)=>void, preflightImpl?: (tag: string)=>void, repoVersion?: string, ctx?: object}} io
  */
 export function runRelease(io) {
   const log = io.log ?? ((line) => process.stdout.write(line + "\n"));
@@ -228,9 +243,12 @@ export function runRelease(io) {
     for (const e of parsed.usageErrors) log(`usage-error: ${e}`);
     return verdictOf("USAGE_ERROR");
   }
-  if (parsed.mode === "dry-run" && CREDENTIAL_ENV_NAMES.some((n) => env[n] !== undefined && env[n] !== "")) {
-    log("REFUSED:MODE_CONFLICT — a publish credential is set in a dry-run environment; dry-run must be credential-free (SC-003)");
-    return verdictOf("REFUSED", null, "MODE_CONFLICT");
+  if (parsed.mode === "dry-run") {
+    const present = CREDENTIAL_ENV_NAMES.filter((n) => env[n] !== undefined && env[n] !== "");
+    if (present.length > 0) {
+      log(`REFUSED:MODE_CONFLICT — publish credential(s) ${present.join(", ")} present in a dry-run environment; dry-run must be credential-free (SC-003)`);
+      return verdictOf("REFUSED", null, "MODE_CONFLICT");
+    }
   }
   if (parsed.mode === "release") {
     try {
@@ -244,7 +262,10 @@ export function runRelease(io) {
     }
   }
 
-  const ctx = { expectedVersion: parsed.mode === "release" ? String(parsed.tag).replace(/^v/, "") : io.repoVersion ?? manifest().version };
+  const ctx = io.ctx ?? {};
+  if (ctx.expectedVersion === undefined) {
+    ctx.expectedVersion = parsed.mode === "release" ? String(parsed.tag).replace(/^v/, "") : io.repoVersion ?? manifest().version;
+  }
   const executors = io.executors ?? defaultExecutors(ctx, { ...parsed, log });
 
   for (const name of STAGES) {

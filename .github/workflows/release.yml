@@ -1,0 +1,56 @@
+name: Release
+
+# Feature 015 — the gated publish (contracts/release-pipeline.md §4). Maintainer-
+# initiated ONLY; every stage the pull request rehearsed runs again, and only a
+# fully verified archive reaches `npm publish`. Fail closed: no attestation
+# capability without an explicit, documented --allow-unattested override
+# (docs/release-process.md); nothing partial is ever published.
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag, v<semver> (must equal package.json.version)"
+        required: true
+        type: string
+      allow_unattested:
+        description: "Operator override: publish WITHOUT attestation (documented; records a warning)"
+        required: false
+        type: boolean
+        default: false
+
+# OIDC mints the provenance attestation / Trusted Publishing identity; no npm
+# secret is required on the primary path (npm Trusted Publishing).
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  release:
+    name: Gated publish
+    runs-on: ubuntu-latest
+    environment: release # maintainer-gated approval
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # preflight resolves HEAD ↔ tag
+      - name: Fetch tags
+        run: git fetch --force --tags
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20.x"
+          cache: npm
+      - run: npm ci
+      - name: Release
+        env:
+          TAG: ${{ github.event.inputs.tag }}
+          ALLOW_UNATTESTED: ${{ github.event.inputs.allow_unattested }}
+          # Fallback store path ONLY (research R2): masked, never echoed, and
+          # unset when Trusted Publishing is configured — then the orchestrator
+          # takes the OIDC path and no secret value exists anywhere.
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          args=(--release --tag "$TAG")
+          if [ "$ALLOW_UNATTESTED" = "true" ]; then args+=(--allow-unattested); fi
+          node scripts/release.mjs "${args[@]}"
