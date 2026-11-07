@@ -89,9 +89,12 @@
   "files": [
     "dist",
     "README.md",
-    "docs"
+    "docs",
+    "LICENSE",
+    "CHANGELOG.md"
   ],
   "scripts": {
+    "prebuild": "node scripts/gen-version.mjs",
     "build": "tsc -p tsconfig.json",
     "compile:tests": "tsc -p tsconfig.test.json",
     "typecheck": "tsc -p tsconfig.test.json --noEmit",

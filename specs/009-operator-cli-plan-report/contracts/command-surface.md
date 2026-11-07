@@ -27,6 +27,13 @@ Flag rules (data-model §1): unknown flags fail parsing naming the flag; `--plan
 **required** for `bootstrap`/`sync` (engine-gates rule 3, research R9) — missing ⇒ exit 2
 naming `--plan`; `--confirm` requires a value; positional arity is per the table.
 
+> **Amendment (feature 015, additive)**: a global `--version` boolean flag is accepted
+> alongside `--config` for every command. `task-linear-sync --version` prints
+> `task-linear-sync <package.json.version>` (derived via `src/version.generated.ts`, FR-002)
+> and exits 0 with zero config/engine/network side effects; alongside a command it prints
+> first, then the command proceeds. The twelve commands above, their syntaxes, and exit
+> codes are unchanged; this surface was not frozen by the 002/014 regime.
+
 ## 2. FR-002 — apply-flag rejection on `plan`/`check` (normative)
 
 For `plan` and `check`, if any of `--apply`, `--confirm`, `--accept-low-confidence` is

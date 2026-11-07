@@ -19,6 +19,9 @@ task-linear-sync <command> [repo] [flags]
 - `[repo]` — repository root (default: current directory). For `rollback`, when a second
   positional is present the first positional is the repository root.
 - `--config <path>` — configuration file (default: `<repo>/<toolId>.json`).
+- `--version` — print `task-linear-sync <version>` (the package version, the one
+  version source) and exit 0; given alone it is the only action (no config load, no
+  engine), and alongside a command it prints first and the command then proceeds.
 - Unknown flags, unknown commands, and arity violations fail with exit 2 naming the
   offending token. `--help` prints the synopsis.
 

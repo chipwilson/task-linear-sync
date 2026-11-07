@@ -18,6 +18,7 @@ import { createDefaultSecurityScreener, createSyncEngine, envVarKeyProvider } fr
 import { createStateStore, systemClock } from "../state/index.js";
 import type { Clock, StateStore } from "../state/index.js";
 import { createLinearPort } from "../tracker/index.js";
+import { PACKAGE_VERSION } from "../version.generated.js";
 import type { EngineDependencies, LinearPort, SecurityScreener } from "../ports/index.js";
 import type { McpSettings } from "./config.js";
 import { resolveMcpConfig } from "./config.js";
@@ -37,10 +38,12 @@ import { validateToolArguments } from "./tools.js";
 
 /**
  * serverInfo.version (jsonrpc-stdio.md §2.1: "version from the package version").
- * Kept as a constant because `src/mcp` reads no files (component-api §3.1); the
- * packaging contract test pins it against the manifest.
+ * DERIVED (feature 015 R4/FR-002): `package.json.version` is the single version
+ * source; the generated module is its in-tree projection. Still a constant, so
+ * `src/mcp` reads no files at runtime (component-api §3.1); the derivation runs
+ * at build time via `npm run prebuild`, and version-drift.test.ts refuses drift.
  */
-export const SERVER_VERSION = "0.2.0";
+export const SERVER_VERSION = PACKAGE_VERSION;
 
 /** Everything injectable — hermetic (component-api §1). */
 export interface AgentToolServerDeps {

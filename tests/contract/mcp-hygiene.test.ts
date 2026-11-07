@@ -46,6 +46,10 @@ function stripComments(text: string): string {
 
 const ALLOWED_BUILTINS = new Set(["node:process", "node:http", "node:crypto"]);
 const BARREL = /^\.\.\/(config|domain|gates|ports|state|engine|tracker|cli|queue)\/index\.js$/;
+// Feature 015 R4 amendment (additive; documented in contracts/versioning-policy.md §1):
+// the GENERATED version module is a compile-time constant with zero I/O — importing it
+// upholds this rule's purpose ("src/mcp reads no files at runtime").
+const GENERATED_VERSION = "../version.generated.js";
 const IN_GROUP = /^\.\//;
 
 test("hygiene: src/mcp imports stay inside the sanctioned set", () => {
@@ -53,7 +57,7 @@ test("hygiene: src/mcp imports stay inside the sanctioned set", () => {
     const code = stripComments(readFileSync(file, "utf8"));
     const specifiers = [...code.matchAll(/(?:from|import)\s*["']([^"']+)["']/g)].map((m) => m[1]!);
     for (const specifier of specifiers) {
-      const ok = ALLOWED_BUILTINS.has(specifier) || BARREL.test(specifier) || IN_GROUP.test(specifier);
+      const ok = ALLOWED_BUILTINS.has(specifier) || BARREL.test(specifier) || IN_GROUP.test(specifier) || specifier === GENERATED_VERSION;
       assert.ok(ok, `${file}: import '${specifier}' is outside the allowlist`);
       assert.ok(!specifier.startsWith("node:fs"), `${file}: node:fs is banned (FR-003: zero filesystem)`);
     }

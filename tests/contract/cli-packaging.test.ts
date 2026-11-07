@@ -8,8 +8,9 @@
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { existsSync, readdirSync, readFileSync } from "node:fs";
-import { execFileSync } from "node:child_process";
+import { existsSync, readdirSync, readFileSync, mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { execFileSync, spawnSync } from "node:child_process";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -17,6 +18,7 @@ const pkgRoot = fileURLToPath(new URL("../../../", import.meta.url));
 const pkg = JSON.parse(readFileSync(new URL(`file://${pkgRoot}package.json`), "utf8")) as {
   bin: Record<string, string>;
   exports: Record<string, Record<string, string>>;
+  version: string;
 };
 
 test("cli-packaging — bin points at dist/cli/main.js: present and shebanged", () => {
@@ -69,4 +71,35 @@ test("cli-packaging — the compiled bin runs: --help exits 0 printing the synop
   assert.match(stdout, /usage:/i);
   assert.match(stdout, /check/);
   assert.match(stdout, /rollback/);
+});
+
+// 015 T010/T029 — additive global --version flag (docs/cli.md global grammar).
+test("cli-packaging — --version alone prints exactly 'task-linear-sync <version>' and exits 0", () => {
+  const stdout = execFileSync(process.execPath, [join(pkgRoot, "dist", "cli", "main.js"), "--version"], {
+    encoding: "utf8",
+    cwd: pkgRoot,
+    timeout: 30_000,
+    env: { ...process.env }, // no config lookup performed at all: zero side effects
+  });
+  assert.equal(stdout, `task-linear-sync ${pkg.version}\n`, "version line equals the manifest version (FR-002)");
+});
+
+test("cli-packaging — --version alongside a command prints first, then the command proceeds", () => {
+  const work = mkdtempSync(join(tmpdir(), "u1-cli-ver-"));
+  try {
+    // Bare temp repo: the COMMAND pipeline runs and reaches the config stage (exit 3,
+    // config missing) AFTER the version line — proving the flag never reaches the
+    // parser as a command token and the command still proceeds.
+    const r = spawnSync(process.execPath, [join(pkgRoot, "dist", "cli", "main.js"), "--version", "last-run"], {
+      encoding: "utf8",
+      cwd: work,
+      timeout: 30_000,
+    });
+    const lines = String(r.stdout).split("\n");
+    assert.equal(lines[0], `task-linear-sync ${pkg.version}`);
+    assert.equal(r.status, 3, "the command ran and failed later (config stage), not at parsing");
+    assert.match(String(r.stderr), /configuration/);
+  } finally {
+    rmSync(work, { recursive: true, force: true });
+  }
 });

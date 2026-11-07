@@ -131,7 +131,8 @@ reads one response per line. **stdout is protocol-only** — logs, the bound
 port announcement, and anything else the server emits go to **stderr**, so
 a client parsing stdout line-by-line sees only JSON-RPC. A client follows
 the MCP handshake: `initialize` (the response announces
-`task-linear-sync-mcp` version `0.2.0` with `capabilities: { tools: {} }`,
+`task-linear-sync-mcp` at the release version — the same value the CLI prints —
+with `capabilities: { tools: {} }`,
 protocol version `2024-11-05` or `2025-03-26`), then
 `notifications/initialized`, then `tools/list` and `tools/call`. Calling a
 method before the handshake completes answers `-32002` (server not
