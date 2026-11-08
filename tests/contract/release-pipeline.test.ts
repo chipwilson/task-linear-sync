@@ -511,6 +511,17 @@ test("release.yml: workflow_dispatch-only, permissions exactly contents:read + i
   assert.match(ry, /fetch-depth: 0/);
   assert.match(ry, /allow_unattested:/);
   assert.match(ry, /tag:/);
+  // Publisher runner must carry npm CLI >= 11.5.1 (Trusted Publishing); Node
+  // 22.14+ ships it, so the release leg cannot ride the 20.x engines floor.
+  assert.match(ry, /node-version: "(?:2[2-9]|[3-9][0-9])\.x"/, "runner npm supports OIDC publishing");
+  // npm verifies repository.url against the GitHub repo on OIDC publishes.
+  const pkg = (JSON.parse(readFileSync(join(pkgRoot, "package.json"), "utf8")) as {
+    repository?: { url?: string };
+  }).repository;
+  assert.ok(
+    pkg && /github\.com\/[^/]+\/task-linear-sync(?:\.git)?$/.test(pkg.url ?? ""),
+    "package.json repository.url matches the GitHub repository",
+  );
 });
 
 // ---------------------------------------------------------------------------

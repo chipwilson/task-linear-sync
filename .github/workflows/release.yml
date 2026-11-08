@@ -39,8 +39,11 @@ jobs:
         run: git fetch --force --tags
       - uses: actions/setup-node@v4
         with:
-          node-version: "20.x"
-          cache: npm
+          # npm Trusted Publishing needs npm CLI >= 11.5.1, which ships with
+          # Node 22.14+; the 20.x engines floor is what CONSUMERS get (CI
+          # rehearses that leg), not what the publisher runner needs.
+          # No npm cache on release builds (npm's own publishing guidance).
+          node-version: "24.x"
       - run: npm ci
       - name: Release
         env:

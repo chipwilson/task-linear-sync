@@ -61,6 +61,37 @@ sum of the printed `ms` values plus setup. If the sum trends above budget, split
 `test-full` tiers or parallelize before touching the gates — never by skipping
 a stage.
 
+## One-time setup (first release only)
+
+The registry leg needs a trust relationship established before the first
+workflow-dispatched publish; none of it is a repository change:
+
+1. **GitHub environment**: create an environment named exactly `release` under
+   Settings → Environments. The workflow references it; an undefined environment
+   fails the run. Adding required reviewers there gives a human approval gate on
+   every publish (recommended; the workflow assumes nothing beyond existence).
+2. **The package must exist before Trusted Publishing can be configured** —
+   npm configures trusted publishers on an existing package, and the name
+   `task-linear-sync` is unregistered today. So the FIRST version publishes via
+   the documented `NPM_TOKEN` fallback: set that repository secret (npm
+   automation or granular token with publish rights), dispatch the release, then
+   delete the secret. Subsequent releases take the secret-less OIDC path.
+3. **npm Trusted Publisher**: on npmjs.com → the package → Settings → Trusted
+   publisher → GitHub Actions, configure: owner chipwilson, repository
+   task-linear-sync, workflow filename release.yml, environment name release,
+   and enable `npm publish` in the allowed actions (configurations created since
+   September 2026 default to stage-only publishing otherwise). A new trusted
+   publisher expires unless its first successful publish lands within 2 days —
+   configure it immediately before that first OIDC release.
+4. **Hardening after migration** (recommended by npm): set the package to
+   require two-factor authentication and disallow token publishing, and confirm
+   the source repository stays public — provenance attestations are not minted
+   from private repositories.
+
+The manifest's repository.url must exactly match the GitHub repository (npm
+verifies it for OIDC publishes), which is why it is pinned by the release
+workflow-shape test.
+
 ## Publishing steps (maintainer)
 
 1. Land the version bump: edit **only** `package.json.version` — the generated
