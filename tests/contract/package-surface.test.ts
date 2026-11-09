@@ -60,3 +60,24 @@ test("all seven export subpaths actually resolve at runtime (self-referencing im
     assert.ok(Object.keys(mod).length >= 0, `${spec} resolved`);
   }
 });
+
+// T034 [015 US4] — the published-file allow-list is the ONE exclusion config
+// (FR-001) and the publish posture is documented, not sprinkled into manifest
+// behavior fields.
+test("package files allow-list is exactly the published set (FR-001)", () => {
+  const manifest = JSON.parse(readFileSync(new URL(`file://${pkgRoot}package.json`), "utf8")) as {
+    files?: string[];
+    publishConfig?: unknown;
+  };
+  assert.deepEqual(manifest.files, ["dist", "README.md", "docs", "LICENSE", "CHANGELOG.md"]);
+  // No registry-behavior fields beyond engines/exports/bin/license (already
+  // asserted elsewhere): access/provenance policy lives in the docs instead.
+  assert.equal(manifest.publishConfig, undefined, "publish posture is documented in docs/release-process.md, not duplicated in publishConfig");
+});
+
+test("publish posture (access/provenance) is documented in docs/release-process.md", () => {
+  const doc = readFileSync(new URL(`file://${pkgRoot}docs/release-process.md`), "utf8");
+  assert.match(doc, /--access public/, "the publish command shape with public access is documented");
+  assert.match(doc, /provenance/i, "attestation/provenance policy is documented");
+  assert.match(doc, /--allow-unattested/, "the operator override is documented, never silent");
+});

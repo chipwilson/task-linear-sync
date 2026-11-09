@@ -32,3 +32,21 @@ jobs:
       # leg (20.x) runs the full suite without coverage instrumentation (its runner cannot
       # gate thresholds); the gate is enforced on the modern-runner leg.
       - run: npm test
+
+  # Feature 015 (FR-009/US2, contracts/release-pipeline.md §4): the release gate
+  # rehearses on EVERY pull request, credential-free — zero secrets references
+  # in this job (workflow-shape contract test enforces). Documented wall-clock
+  # budget ≤ 12 min (SC-005, docs/release-process.md); timeout-minutes is the
+  # backstop. The orchestrator itself refuses if any publish credential exists.
+  release-dry-run:
+    name: Release gate rehearsal (publishes nothing)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20.x"
+          cache: npm
+      - run: npm ci
+      - run: node scripts/release.mjs --dry-run

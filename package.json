@@ -1,9 +1,13 @@
 {
   "name": "task-linear-sync",
   "version": "0.2.0",
-  "description": "Core domain contracts, configuration model, and run-state lifecycle for task-linear-sync (Wave-1 foundation). Zero runtime dependencies.",
+  "description": "Core domain contracts, configuration model, and run-state lifecycle for task-linear-sync (Wave-1 foundation). Zero runtime dependencies. Release and publishing policy (access, provenance, overrides): docs/release-process.md.",
   "type": "module",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/chipwilson/task-linear-sync.git"
+  },
   "engines": {
     "node": ">=20.0.0"
   },
@@ -89,9 +93,12 @@
   "files": [
     "dist",
     "README.md",
-    "docs"
+    "docs",
+    "LICENSE",
+    "CHANGELOG.md"
   ],
   "scripts": {
+    "prebuild": "node scripts/gen-version.mjs",
     "build": "tsc -p tsconfig.json",
     "compile:tests": "tsc -p tsconfig.test.json",
     "typecheck": "tsc -p tsconfig.test.json --noEmit",

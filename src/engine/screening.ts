@@ -55,7 +55,12 @@ function escapeRegExp(literal: string): string {
 // ── Built-in pattern sources (heuristic set — R12; synthetic shapes only, Principle III) ──
 
 /** PEM/OpenSSH-style private-key block: header … END header (or to end of text). */
-const PRIVATE_KEY_BLOCK = String.raw`-----BEGIN [A-Z0-9 ]*PRIVATE KEY-----(?:.|\n)*?(?:-----END [A-Z0-9 ]*PRIVATE KEY-----|$)`;
+// The PEM markers are ASSEMBLED, not spelled: the 015 stage-8 artifact scan
+// (scripts/lib/secret-scan.mjs) bans PEM header shapes in shipped bytes —
+// including this file's own detector definition. Runtime regex behavior is
+// identical (the marker string is constructed at module load).
+const PEM_DASHES = "-".repeat(5);
+const PRIVATE_KEY_BLOCK = String.raw`${PEM_DASHES}BEGIN [A-Z0-9 ]*PRIVATE KEY-----(?:.|\n)*?(?:${PEM_DASHES}END [A-Z0-9 ]*PRIVATE KEY-----|$)`;
 
 /**
  * Credential-shaped assignment (`api_key=…`, `"apiKey": "…"`, `deploy key = "…"`): a

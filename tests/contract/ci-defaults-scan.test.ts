@@ -5,6 +5,11 @@
  * literals, token values, PEM/base64 secrets, emails, or non-placeholder
  * UUIDs/hex digests. Placeholder shapes (single-repeat hex digests, the
  * documented `ac000000-…` UUID seed) are explicitly allowed and documented.
+ *
+ * 015 T006: the banned-shape inventory now lives in `scripts/lib/secret-scan.mjs`
+ * (shared with the release pipeline's stage-8 scan) — a behavior-preserving
+ * extraction; this suite consumes it via runtime dynamic import (repo-root-
+ * relative, so the compiled `build/tests/contract` layout resolves it).
  */
 import assert from "node:assert/strict";
 import { existsSync, readdirSync, readFileSync } from "node:fs";
@@ -14,33 +19,20 @@ import { fileURLToPath } from "node:url";
 
 const pkgRoot = fileURLToPath(new URL("../../../", import.meta.url));
 
+/** Structural type of scripts/lib/secret-scan.mjs (runtime-imported, not typechecked by tsc). */
+interface SecretScanModule {
+  readonly BANNED: ReadonlyArray<readonly [RegExp, string]>;
+  isPlaceholder(why: string, hit: string): boolean;
+  scanText(text: string): Array<{ why: string; hit: string }>;
+}
+const scanModule = (await import(new URL("../../../scripts/lib/secret-scan.mjs", import.meta.url).href)) as unknown as SecretScanModule;
+
 function* walk(dir: string): Generator<string> {
   for (const entry of readdirSync(dir, { withFileTypes: true })) {
     const p = join(dir, entry.name);
     if (entry.isDirectory()) yield* walk(p);
     else yield p;
   }
-}
-
-const BANNED: ReadonlyArray<readonly [RegExp, string]> = [
-  [/lin_api_[A-Za-z0-9]{8,}/, "lin_api_-shaped token VALUE"],
-  [/-----BEGIN/, "PEM material"],
-  [/(proxy-authorization|x-api-key)\s*["']?\s*[:=]/i, "credential-header key"],
-  [/\b(contoso|globex|initech|umbrella|hooli|vandelay|acme)\b/i, "fictional-org literal standing in for a real tenant"],
-  [/[A-Za-z0-9._%+-]+@[A-Za-z0-9-]+\.[A-Za-z]{2,}/, "email address"],
-  [/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}(?![0-9a-f-])/, "UUID-shaped identifier"],
-  [/\b[0-9a-f]{32,}\b(?![0-9a-f])/, "hex-digest-shaped secret"],
-];
-
-/** Documented placeholder shapes (fixture README / docs). */
-function isPlaceholder(why: string, hit: string): boolean {
-  if (why.includes("hex-digest")) {
-    return /^([0-9a-f])\1{31,}$/.test(hit); // single-repeat hex = shape probe
-  }
-  if (why.includes("UUID")) {
-    return /^ac000000-0000-4000-8000-\d{12}$/.test(hit); // fixture placeholder seed
-  }
-  return false;
 }
 
 function leaves(): Array<{ label: string; text: string }> {
@@ -66,11 +58,8 @@ function leaves(): Array<{ label: string; text: string }> {
 
 test("defaults-scan: action surface, wrapper sources, docs, and fixtures are identity-free", () => {
   for (const leaf of leaves()) {
-    for (const [pattern, why] of BANNED) {
-      for (const m of leaf.text.matchAll(new RegExp(pattern.source, "g"))) {
-        if (isPlaceholder(why, m[0])) continue;
-        assert.fail(`${leaf.label}: ${why} found: ${m[0].slice(0, 24)}`);
-      }
+    for (const finding of scanModule.scanText(leaf.text)) {
+      assert.fail(`${leaf.label}: ${finding.why} found: ${finding.hit.slice(0, 24)}`);
     }
   }
 });

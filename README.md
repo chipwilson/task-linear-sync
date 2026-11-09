@@ -13,12 +13,29 @@ Works with any Spec-Driven Development framework that keeps work in
 for `spec-kitty` and `spec-superpower`, and filename patterns you can widen
 for anything else (see [SDD frameworks](#using-it-with-your-sdd-framework)).
 
-This repository hosts the tool; you consume it in **your** repository through
-its CLI, git hooks, and MCP server. The engine talks to Linear's GraphQL API
-through one injectable port — no SDK, which is why the tool ships with **zero
-runtime dependencies** — and reads its API token from a configurable
-environment variable (`LINEAR_ACCESS_TOKEN` by default), never from a file and
-never echoing it into any output.
+It ships as the public npm package **`task-linear-sync`**, and you consume it in
+**your** repository through its CLI, git hooks, and MCP server. The engine talks
+to Linear's GraphQL API through one injectable port — no SDK, which is why the
+tool ships with **zero runtime dependencies** — and reads its API token from a
+configurable environment variable (`LINEAR_ACCESS_TOKEN` by default), never from
+a file and never echoing it into any output.
+
+## Status
+
+[![CI](https://github.com/chipwilson/task-linear-sync/actions/workflows/ci.yml/badge.svg)](https://github.com/chipwilson/task-linear-sync/actions/workflows/ci.yml)
+
+- **Available on npm**: install [`task-linear-sync`](https://www.npmjs.com/package/task-linear-sync)
+  — no clone, no build step required to use it.
+- **Install it as a development dependency** (`npm install --save-dev`): every
+  surface — CLI, git hooks, worker, MCP server — runs at development time
+  against your repository. Your shipped code never imports it, so it has no
+  business in a production `dependencies` block (and none of its own would
+  follow it there: zero runtime dependencies).
+- **Version posture**: the package is in its 0.x line — under the
+  [0.x posture](docs/versioning.md) breaking changes may ride minor bumps until
+  the documented 1.0.0 condition is met. Surface-level stability guarantees
+  (below) hold throughout.
+- **Requires** Node 20 or newer wherever the tool runs; nothing else to install.
 
 > **Consumers, start here.** Install the CLI, install its git hooks, and read
 > the SDD-framework guide below — no library code required.
@@ -27,7 +44,7 @@ never echoing it into any output.
 
 ```bash
 # in YOUR repository — the sync runs right here, no clone needed
-npm install --save-dev task-linear-sync
+npm install --save-dev task-linear-sync    # dev dependency on purpose (see Status)
 
 # 0. one Linear API token in the environment (read-only use included —
 #    planning reads issue state); the value is never logged or printed
@@ -49,6 +66,10 @@ confirmation key (default: `SYNC`, change it in the configuration file).
 An unreviewed plan id or wrong key is refused (exit 4) — there is no force
 flag. That completes the happy path: commit your `specs/` tree, and the hooks
 below keep Linear current from there on.
+
+Because the package is a dev dependency, everything runs through `npx` (or your
+package.json `scripts`) — `npx task-linear-sync --version` prints the installed
+version if you want to confirm the install.
 
 ## Installing the git hooks
 
@@ -254,6 +275,7 @@ conventions can override them).
 - [Agent tools (MCP)](docs/agent-tools.md)
 - [Sync-History web component](docs/history-server.md)
 - [CI enforcement action](docs/ci-enforcement.md)
+- [Release process](docs/release-process.md) · [Versioning policy](docs/versioning.md)
 - [Framework adapters](docs/framework-adapters.md)
 - [Module docs](docs/) (engine, discovery, parsing, matching, routing, tracker)
 - [Active contracts](specs/) · [contract amendments](docs/contract-amendments.md)
@@ -262,14 +284,17 @@ conventions can override them).
 
 Every library entry point — `task-linear-sync`, `task-linear-sync/engine`,
 `task-linear-sync/history-server`, `task-linear-sync/mcp`,
-`task-linear-sync/ci` and the rest of the export map — is **Stable** under
-semantic-versioning rules. The CLI's command names, flags, exit codes and
-machine-readable output (`--json`) are **Stable**; its human-facing prose,
-colours and layout are **Unstable**. Breaking changes require a major release
-plus an entry in
-[docs/contract-amendments.md](docs/contract-amendments.md) and a deprecation
-cycle. The sync-history web page and the MCP tool contract carry their own
-`## Stability` sections in their guides, each pinned by its contract list.
+`task-linear-sync/ci` and the rest of the export map — is **Stable**: machine-
+checked by the frozen-surface snapshots and contract suites in this repository.
+The CLI's command names, flags, exit codes and machine-readable output
+(`--json`) are **Stable**; its human-facing prose, colours and layout are
+**Unstable**. Package versioning follows the [0.x posture](docs/versioning.md)
+until the 1.0.0 condition is met: breaking changes may ride minor bumps, but
+each one still arrives with an entry in
+[docs/contract-amendments.md](docs/contract-amendments.md); from 1.0.0 they
+require a major release plus a deprecation cycle. The sync-history web page and
+the MCP tool contract carry their own `## Stability` sections in their guides,
+each pinned by its contract list.
 
 ## Running the project from source
 
@@ -279,5 +304,6 @@ Only needed if you're hacking on the tool itself:
 npm ci
 npm test              # unit + contract + integration + e2e + performance tiers
 npm run build && node dist/cli/main.js --help
+node scripts/release.mjs --dry-run   # rehearse the full release gate (publishes nothing)
 ```
 

@@ -10,6 +10,7 @@ import type { ResolvedConfig } from "../config/schema.js";
 import type { EngineDependencies, SecurityScreener, SyncEngine } from "../ports/engine.js";
 import type { LinearPort } from "../ports/linear-port.js";
 import type { StateStore } from "../state/paths.js";
+import { PACKAGE_VERSION } from "../version.generated.js";
 import { commandSpec } from "./commands.js";
 import type { CommandName, CliInvocation } from "./argv.js";
 import { parseInvocation } from "./argv.js";
@@ -129,7 +130,18 @@ export async function runCli(argv: readonly string[], context: CliContext): Prom
     return { exitCode: ExitCode.SUCCESS };
   }
 
-  const parsed = parseInvocation(argv);
+  // 015 T010 — global --version: print the derived package version (FR-002).
+  // Alone: the only effect (zero config/engine/network). Alongside a command:
+  // prints, strips the flag, and the command proceeds (the flag is accepted at
+  // any position, so it must never reach the command-first parser).
+  let effectiveArgv = argv;
+  if (argv.includes("--version")) {
+    context.stdout(`task-linear-sync ${PACKAGE_VERSION}`);
+    if (argv.length === 1) return { exitCode: ExitCode.SUCCESS };
+    effectiveArgv = argv.filter((token) => token !== "--version");
+  }
+
+  const parsed = parseInvocation(effectiveArgv);
   if (!parsed.ok) {
     context.stderr(`error: ${oneLine(parsed.failure.message)}`);
     return { exitCode: ExitCode.USAGE_ERROR };

@@ -46,6 +46,13 @@ export type CommandName = (typeof COMMAND_NAMES)[number];
 /** Global option accepted by every command (contracts/command-surface.md §1). */
 const CONFIG_FLAG: FlagSpec = { kind: "value" };
 
+/**
+ * 015 T010 (additive, documented): global `--version` — prints the package
+ * version and exits 0 when given alone; accepted alongside a command.
+ * NOT part of the 002/014 frozen surface; recorded in command-surface §2.
+ */
+const VERSION_FLAG: FlagSpec = { kind: "boolean" };
+
 /** The apply vocabulary shared by `bootstrap`/`sync` (research R9 — gate trio + plan). */
 const APPLY_FLAGS: Readonly<Record<string, FlagSpec>> = {
   plan: { kind: "value" },
@@ -64,7 +71,7 @@ function spec(
   flags: Readonly<Record<string, FlagSpec>> = {},
   extra: Pick<CommandSpec, "rejectsApplyFlags"> = {},
 ): CommandSpec {
-  return { name, summary, positional, flags: { config: CONFIG_FLAG, ...flags }, ...extra };
+  return { name, summary, positional, flags: { config: CONFIG_FLAG, version: VERSION_FLAG, ...flags }, ...extra };
 }
 
 export const COMMAND_REGISTRY: Readonly<Record<CommandName, CommandSpec>> = {
@@ -162,7 +169,7 @@ export function helpLines(): string[] {
   }
   lines.push(
     "",
-    "global flags: --config <path> (default <repo>/task-linear-sync.json)",
+    "global flags: --config <path> (default <repo>/task-linear-sync.json) · --version (print the version, exit 0)",
     "exit codes:   0 success · 1 unexpected · 2 usage · 3 configuration · 4 gate-refused",
     "              5 run-aborted · 6 lock-held · 7 surface-unavailable · 8 check-findings",
   );
