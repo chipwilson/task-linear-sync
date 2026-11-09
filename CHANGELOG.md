@@ -7,7 +7,17 @@ this preview — lives in [docs/versioning.md](docs/versioning.md).
 
 ## [Unreleased]
 
-_No unreleased changes beyond the 0.2.0 as-built state._
+- Docs: framework support consolidated on the code's actual built-in set
+  (`kiro`, `spec-kit`, `open-spec`, `bmad`, `generic`). The README previously
+  advertised adapters for `spec-kitty` and `spec-superpower`, which never
+  existed in the code; it now documents per-framework discovery behavior for
+  every built-in adapter, the real selection precedence, the custom-adapter
+  lane (discovery-only — the sync surface admits the five built-in
+  identities), and truthful config keys (`taskFilePatterns` /
+  `specsBaseDirectories` replace the invented `tasks.filename_patterns`).
+  `specs/requirements.md` Purpose and the `Supported_Framework` glossary
+  align with the same boundary; a new contract suite pins README ⇄
+  requirements ⇄ adapter-registry agreement so the three cannot drift.
 
 ## [0.2.0] - 2026-11-06
 

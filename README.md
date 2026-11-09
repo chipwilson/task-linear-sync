@@ -9,9 +9,10 @@ when task headings are reworded, and task-file *sections* map 1:1 to Linear
 milestones.
 
 Works with any Spec-Driven Development framework that keeps work in
-`tasks.md`-style checklists — GitHub Spec Kit out of the box, with adapters
-for `spec-kitty` and `spec-superpower`, and filename patterns you can widen
-for anything else (see [SDD frameworks](#using-it-with-your-sdd-framework)).
+`tasks.md`-style checklists — five built-in adapters (GitHub Spec Kit, AWS
+Kiro, OpenSpec, BMAD, and a configurable generic lane), plus custom adapters
+and widenable file patterns for anything else (per-framework behavior:
+[SDD frameworks](#using-it-with-your-sdd-framework)).
 
 It ships as the public npm package **`task-linear-sync`**, and you consume it in
 **your** repository through its CLI, git hooks, and MCP server. The engine talks
@@ -153,12 +154,34 @@ auth tiers, caching, SSE vs polling, deployment patterns:
 
 ## Using it with your SDD framework
 
-The tool discovers task files by walking the repository — framework layout is
-not hardcoded — so any Spec-Driven Development framework works once the layout
-is configured. The shipped defaults already cover GitHub Spec Kit; adapters
-for `spec-kitty` and `spec-superpower` are built in.
+Framework layout is never hardcoded: discovery walks the repository, and each
+built-in adapter carries its framework's conventions — detection markers, base
+directories, feature-name rule, sibling documents. Five built-in adapters ship,
+all enabled by default through the `frameworkAdapters` config key:
 
-### GitHub Spec Kit
+| Adapter id | Framework | Detected by | Base directories | Feature name from |
+|---|---|---|---|---|
+| `kiro` | AWS Kiro | path beneath `.kiro/` | `.kiro/specs/` | feature dir under `.kiro/specs/` |
+| `spec-kit` | GitHub Spec Kit | beneath `specs/`/`spec/` **and** a sibling `spec.md`/`plan.md` | `specs/`, `spec/` | feature dir under a base |
+| `open-spec` | OpenSpec | path contains `openspec/`/`open-spec/` **or** sibling `openspec.json`/`proposal.md` | `openspec/`, `open-spec/` | segment after `openspec/`, `changes/`, or `specs/` |
+| `bmad` | BMAD | path contains `bmad/`/`bmad-method/` **or** sibling `prd.md`/`architecture.md` | `bmad/`, `bmad-method/`, `docs/` | parent dir, else task-file basename |
+| `generic` | any Markdown layout | fallback — never claims a file by marker | configured base dirs | parent dir under a base |
+
+When several adapters match one file, selection ranks the longest matching
+path pattern first, then the fixed precedence `kiro` → `open-spec` → `spec-kit` → `bmad` → `generic`,
+then alphabetical tie-break; a file no adapter claims falls back to `generic`.
+Task-file names (default `tasks.md`, `TASKS.md`), base directories, and every
+per-adapter convention are configuration keys — widen `taskFilePatterns` /
+`specsBaseDirectories` in your config file instead of forking the tool. Full
+adapter contract: [docs/framework-adapters.md](docs/framework-adapters.md).
+
+### GitHub Spec Kit (`spec-kit`)
+
+Detection is deliberately conjunctive: a file beneath `specs/` (or `spec/`) is
+`spec-kit` only when a sibling `spec.md` or `plan.md` marks the feature — a
+stray `specs/` file without those markers resolves to `generic`. Feature names
+come from the feature directory, and `spec.md`, `plan.md`, and
+`requirements.md` siblings are attached when present.
 
 Tasks land at `specs/<feature>/tasks.md` and use T001-style ids — this is the
 out-of-the-box convention, no configuration needed. Spec Kit runs
@@ -178,22 +201,58 @@ written, which is exactly where the sync belongs:
    idempotency guards mean regenerated files re-match existing issues instead
    of duplicating them.
 
-### spec-kitty
+### AWS Kiro (`kiro`)
 
-Default layout `specs/<slug>/tasks.md`; the built-in adapter reads its
-`[DEP:…]` dependency syntax natively. Set `tasks.filename_patterns` if your
-feature folders use a different task filename.
+Anything beneath `.kiro/` is Kiro territory: task files at
+`.kiro/specs/<feature>/tasks.md`, the feature directory is the feature name,
+and `requirements.md` / `design.md` are the sibling documents. `kiro` is also
+the default framework of `install-agent-hook`: it scaffolds a `kiro-json`
+agent hook into `.kiro/hooks/` that enqueues a sync when spec files are
+saved. No configuration needed if you keep Kiro's default layout.
 
-### spec-superpower
+### OpenSpec (`open-spec`)
 
-Default layout `.specs/<feature>/tasks.md`; task ids look like
-`US1-T001`, and `[Dep:…]` syntax is recognized natively.
+Detection is disjunctive — a path containing `openspec/` or `open-spec/`, or
+a task file sitting next to an `openspec.json` or `proposal.md`. Feature
+names come from the meaningful segment after `openspec/`, `changes/`, or
+`specs/`, so both `openspec/changes/<change>/tasks.md` and
+`openspec/specs/<capability>/tasks.md` resolve sensibly; sibling documents
+are `spec.md`, `proposal.md`, and `tasks.md`.
 
-### Spec Driven Development (SDD) tool
+### BMAD (`bmad`)
 
-Its `spec.json` workflow has no fixed task-file layout, so point discovery at
-whatever task files it produces: add their names to
-`tasks.filename_patterns` in the configuration file.
+Task files under `bmad/` or `bmad-method/` — or any task file beside a
+`prd.md` / `architecture.md` — resolve to `bmad`; the feature name is the
+parent directory, falling back to the task file's own basename for
+story-style files with no feature dir. `docs/` is deliberately only a base
+directory, not a BMAD marker: a `docs/**` task file without BMAD siblings is
+`generic`, never silently `bmad`. Sibling documents cover the BMAD set:
+`requirements.md`, `design.md`, `architecture.md`, `prd.md`, and `spec.md`.
+
+### Generic Markdown (`generic`)
+
+Any repository with task-shaped Markdown — a homegrown `tasks.md`
+convention, an SDD tool with no fixed layout (add its task-file names to
+`taskFilePatterns`), or a repo that just wants one rule for everything.
+`generic` never claims a file by marker: it is the fallback when no adapter
+matches, and an explicit choice (`frameworkAdapters`, or a selection
+override) when you want it everywhere. The heading grammar is the broad
+built-in one (`T001`, `TASK-1`, `Task 1.2`, …), no framework title prefixes
+are stripped, and no framework-specific exclusions apply. Its agent-hook
+scaffold (`install-agent-hook --framework generic`) lands in
+`.task-linear-sync/hooks/`.
+
+### Your own framework (`customAdapters`)
+
+For a layout none of the five models, register a custom adapter through the
+`task-linear-sync/discovery` API (`CustomAdapterDescriptor`: your id,
+path/base-directory patterns, task-file names, heading grammar — an
+incomplete descriptor is refused by naming every missing part before any
+I/O, and a custom id shadows a built-in only with an explicit opt-in).
+Scope note: custom adapters extend **discovery**; the five built-in
+frameworks are the only syncable identities, so a custom id never reaches
+`plan`/`apply`/`rollback` — the engine refuses it with a named error instead
+of mislabeling your tasks.
 
 <details>
 <summary>Per-repository configuration example (optional — click to expand)</summary>
@@ -201,11 +260,21 @@ whatever task files it produces: add their names to
 ```jsonc
 // task-linear-sync.json (repo root) — precedence: CLI flag > environment
 // variable > this file > defaults (a file value never overrides an explicit
-// flag, so CI stays predictable).
+// flag, so CI stays predictable). Keys are camelCase schema fields; every
+// one is optional — these are the ones teams actually touch.
 {
-  "project": { "id": "<linear-project-id>" },
-  "tasks": { "filename_patterns": ["tasks.md", "TASKS.md"] },
-  "matching": { "auto_link_confidence": "high" }
+  "taskFilePatterns": ["tasks.md", "TASKS.md"],
+  "specsBaseDirectories": ["specs/", ".kiro/specs/", "openspec/", "bmad/"],
+  "frameworkAdapters": ["kiro", "spec-kit", "open-spec", "bmad", "generic"],
+  "teams": {
+    "acme": {
+      "projects": ["proj-alpha"],
+      "workflowStates": { "backlog": "Backlog", "done": "Done", "completedTypes": ["completed"], "ignoredTypes": ["canceled", "duplicate"] }
+    }
+  },
+  "defaultTeamKey": "acme",
+  "defaultProject": "proj-alpha",
+  "confirmationKey": "SYNC"
 }
 ```
 
