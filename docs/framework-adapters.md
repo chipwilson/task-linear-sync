@@ -16,6 +16,7 @@ Everything below is the 003 realization of 001 R7.2/R7.5; the normative contract
 | `spec-kit` | `specs/`, `spec/` | path beneath a base **AND** sibling `spec.md`/`plan.md` (conjunctive) | immediate parent dir beneath a base | `spec.md`, `plan.md`, `requirements.md` | — |
 | `open-spec` | `openspec/`, `open-spec/` | path contains `openspec/`/`open-spec/` **OR** sibling `openspec.json`/`proposal.md` | segment after `openspec/`, `changes/`, or `specs/` | `spec.md`, `proposal.md`, `tasks.md` | — |
 | `bmad` | `bmad/`, `bmad-method/`, `docs/` | path contains `bmad/`/`bmad-method/` **OR** sibling `prd.md`/`architecture.md` | parent dir, or task-file basename when no feature dir | `requirements.md`, `design.md`, `architecture.md`, `prd.md`, `spec.md` | — |
+| `spec-superpower` | `docs/superpowers/plans/` | path beneath the plans root (path-only — no sibling markers; the dated-filename convention lives in `taskFilePatterns`) | date-stripped task-file basename (`2026-11-09-auth.md` → `auth`) | none | — |
 | `spec-kitty` | `kitty-specs/` | path beneath `kitty-specs/` (no sibling requirement) | immediate parent dir beneath `kitty-specs/` (the mission) | from config `siblingDocuments` (`spec.md`, `plan.md`, `research.md`) | — |
 | `generic` | from config `specsBaseDirectories` | none — detection matches nothing | parent dir beneath a configured base, else absent | from config `siblingDocuments` | `.task-linear-sync/hooks/` · `command-json` |
 
@@ -41,9 +42,16 @@ Notes:
   of 017 amendment 2) are regex-source strings consumed downstream (004/005). Only
   `spec-kitty` declares the two new members; the rest inherit the built-in defaults.
   003 never parses task content.
-- `builtInAdapters` (`task-linear-sync/discovery`) is the frozen six-key record
-  (`kiro`, `spec-kit`, `open-spec`, `bmad`, `spec-kitty`, `generic`) of immutable
+- `builtInAdapters` (`task-linear-sync/discovery`) is the frozen seven-key record
+  (`kiro`, `spec-kit`, `open-spec`, `bmad`, `spec-superpower`, `spec-kitty`, `generic`) of immutable
   `FrameworkAdapter` values.
+- The `spec-superpower` row (feature 018) claims only date-prefixed plan files
+  (`taskFilePatterns: ["[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]-*.md"]`) beneath the
+  plans root at any depth; its 004-facing grammar is `^\s{0,3}#{2,4}\s+(?<id>Task\s+[0-9]+)\s*:\s*(?<title>.+)$`
+  with every `- [ ] **Step N: …**` checkbox line matching the rollup pattern (mirrored
+  body content, never a task), and `identityFileScope: true` composes the task-file
+  basename into the seed input so same-name plans on different dates stay collision-free
+  (amendment A-018-2).
 
 ## Detection precedence and ranking
 
@@ -54,12 +62,16 @@ enabled adapter whose `detect` returns a match becomes a candidate; the winner i
    material, which makes `.kiro/specs/` (12 chars) beat `specs/` (6) — the Kiro layout is
    robust against spec-kit's substring. A siblings-only match contributes `""` (rank 0).
 2. **Precedence index** — the fixed default list `["kiro", "open-spec", "spec-kit", "bmad",
-   "spec-kitty", "generic"]`, overridable via `overrides.precedence`. Path claims are
-   segment-anchored, so `kitty-specs/` is not beneath `specs/`: the `spec-kit` and
-   `spec-kitty` match sets are disjoint and precedence never has to arbitrate between them.
+   "spec-superpower", "spec-kitty", "generic"]`, overridable via `overrides.precedence`.
+   Path claims are segment-anchored, so `kitty-specs/` is not beneath `specs/`: the
+   `spec-kit` and `spec-kitty` match sets are disjoint and precedence never has to
+   arbitrate between them.
 3. **Alphabetical** adapter id as the final tie-break.
 
-Zero matches fall back to `generic` (`detection.via: "fallback"`). An explicit
+Zero matches fall back to `generic` (`detection.via: "fallback"`) **only** while the file's
+basename still matches the enabled `generic` adapter's effective `taskFilePatterns`;
+otherwise the file is unclaimed, `selectAdapter` returns `null`, and discovery omits it
+without a diagnostic (018 amendment A-018-1). An explicit
 `overrides.selection` (fixed id or predicate) short-circuits detection entirely
 (`via: "explicit"`); an id outside the enabled pool raises `SelectionOverrideError`. The
 full result set of matched adapter ids is recorded, sorted alphabetically, on every
@@ -93,7 +105,7 @@ import { builtInDefaults } from "task-linear-sync/config";
 import { createAdapterRegistry, discoverTaskFiles } from "task-linear-sync/discovery";
 
 const descriptor = {
-  id: "acme-flow", // any non-empty id outside the six built-in literals
+  id: "acme-flow", // any non-empty id outside the seven built-in literals
   taskFilePatterns: ["todo-*.md"],
   baseDirectories: ["flows/"],
   headingGrammar: "^#{2,4}\\s+(?<id>F\\d+)[.:]?\\s+(?<title>.+)$",

@@ -26,6 +26,7 @@ export interface TaskFileAdapter {
   readonly rollupPattern?: string;
   readonly checklistIdPattern?: string; // 017 amendment 2 — leading local-ID span on CHECKLIST lines (named group: id)
   readonly titleTagPattern?: string;    // 017 amendment 2 — capability tags dropped from DERIVED titles only
+  readonly identityFileScope?: boolean;  // 018 A-018-2: seed-input composition (see rule 2)
 }
 ```
 
@@ -45,6 +46,12 @@ export interface TaskFileAdapter {
    tags, consumed by derived-title cleaning only). Both are optional; absent, extraction
    keeps the module-local `LOCAL_ID_SPAN_RE` and titles keep their tags, so every pre-017
    adapter parses byte-identically.
+   **Amendment A-018-2** (logged in `docs/contract-amendments.md`, feature 018) whitelists
+   one further member: `identityFileScope?: boolean`. When `true` and the task has a local
+   id, the `parseTaskFile` seed call site composes the local-id SEED INPUT as
+   `` `${basename(filePath)}\u0000${localTaskId}` ``; `taskStableSeed` and its frozen layout
+   are unchanged, `Task.localTaskId` stays the bare id, and adapters omitting the member
+   (or setting it false) keep byte-identical seed inputs.
 3. **Override precedence** (research R2): per convention,
    `adapter.<member> ?? config.<grammar key>` — the merged `ResolvedConfig` already
    carries built-in defaults, so the parser needs no third fallback. The two 017 members are

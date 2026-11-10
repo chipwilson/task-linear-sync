@@ -49,6 +49,44 @@ breaks the build — amendments are visible by construction (feature 002 SC-004
 - `tests/contract/defaults-scan.test.ts` — shipped defaults stay free of real
   organization identifiers.
 
+## Log — 002 frozen surface
+
+Amendments to the 002 frozen contracts, same entry format as the per-surface logs below
+(`YYYY-MM-DD · surface · element-id · before → after · rationale · migration`), recorded in
+the same change as the contract doc + module + snapshot trio (three-artifact rule).
+
+- 2026-11-10 · domain · `type.FrameworkId` · `"bmad" | "spec-kit" | "open-spec" | "kiro" |
+  "generic"` → `"bmad" | "spec-kit" | "open-spec" | "kiro" | "spec-superpower" | "generic"` ·
+  A-018-0 (feature 018): `spec-superpower` ships as a built-in, default-enabled identity
+  (FR-001); the widening was pre-authorized as an amendment candidate in
+  `src/discovery/types.ts`. Mirrored in lockstep within this entry: `src/domain/task.ts`,
+  `specs/002-core-domain-contracts/contracts/task-model.md`, the `plan-report.schema.json`
+  `framework` enum, `specs/002-core-domain-contracts/data-model.md` §1, and the regenerated
+  `tests/contract/snapshots/frozen-surface.json` · no migration: the member is additive,
+  existing records and seeds are unchanged
+
+- 2026-11-10 · discovery (003 contract) · `selectAdapter` zero-match rule +
+  `DEFAULT_PRECEDENCE` · zero matches → unconditional `generic` fallback; precedence
+  `kiro → open-spec → spec-kit → bmad → generic` → zero matches → `generic` ONLY when the
+  basename still matches generic's effective `taskFilePatterns`, else unclaimed (`null`,
+  omitted from `DiscoveryResult.files`, no diagnostic); precedence `kiro → open-spec →
+  spec-kit → bmad → spec-superpower → generic` · A-018-1 (feature 018): a date-named plan
+  outside the configured plans root must never enter the sync through the catch-all
+  (spec-superpower-adapter.md Rule 2, US1-AC4); amends
+  `specs/003-task-discovery-framework-adapters/contracts/framework-adapter.md` and
+  `docs/framework-adapters.md` in the same change · migration: pre-existing candidates are
+  unaffected (every built-in row's patterns include `tasks.md`/`TASKS.md`); only files that
+  matched NO enabled rule while their basename also missed generic's patterns — previously
+  claimed noise — change behavior
+
+- 2026-11-10 · parsing (004 contract) · `TaskFileAdapter.identityFileScope` · absent →
+  optional whitelisted member consumed at the `parseTaskFile` seed call site · A-018-2
+  (feature 018): plans sharing a derived feature name need file-scoped seed inputs to keep
+  pairwise-distinct `Stable_UUID`s (FR-010); amends
+  `specs/004-task-parsing-line-rendering/contracts/adapter-consumption.md` rule 2 —
+  `taskStableSeed` and its frozen layout are unchanged · no migration: adapters omitting the
+  member (all current ones) keep byte-identical seed inputs
+
 ## Surface contract freezes (011/012) — feature 014
 
 The history server (011) and the MCP server (012) carry the same freeze regime as the 002
@@ -120,12 +158,13 @@ so entries can never be silently dropped.
 
 ## Feature 017 amendments — the `spec-kitty` identity
 
-Adding a sixth built-in framework identity touches three frozen contracts at once.
-Each entry names the amended element, the before → after change, the artifacts moved
+Adding the `spec-kitty` built-in framework identity (the seventh, after 018 landed
+`spec-superpower` first) touches three frozen contracts at once. Each entry names the
+amended element, the before → after change, the artifacts moved
 together in the same change, and the gate that pins it.
 
-- 2026-11-10 · domain · `FrameworkId` / `BUILT_IN_FRAMEWORK_IDS` · five literals → six,
-  with `spec-kitty` inserted immediately before `generic` · 017 C1.1 (a Spec Kitty mission
+- 2026-11-10 · domain · `FrameworkId` / `BUILT_IN_FRAMEWORK_IDS` · six literals (after
+  018 A-018-0) → seven, with `spec-kitty` inserted immediately before `generic` · 017 C1.1 (a Spec Kitty mission
   must be syncable end to end, and the engine refuses any identity outside the frozen
   union) · artifacts: `specs/002-core-domain-contracts/contracts/task-model.md`,
   `src/domain/task.ts`, `tests/contract/snapshots/frozen-surface.json` (regenerated with
@@ -145,7 +184,8 @@ together in the same change, and the gate that pins it.
   `CustomAdapterDescriptor`, and introduce **no** new `ResolvedConfig` key, C5.1) · gate:
   `tests/unit/parsing-conventions-017.test.ts` · migration: none — both members are absent on
   every other built-in, where resolution falls back to the existing `LOCAL_ID_SPAN_RE` and
-  tag-free title cleaning, so the five prior identities parse byte-identically (C5.3)
+  tag-free title cleaning, so every other identity (018's `spec-superpower` included) parses
+  byte-identically (C5.3)
 - 2026-11-10 · discovery · `frameworkSpecificExclusions` entry grammar · a prefix-or-basename
   entry → an entry whose whole segment is `*` now compiles to exactly one path segment
   (`kitty-specs/*/tasks/` matches `kitty-specs/<mission>/tasks`), root-relative, and a

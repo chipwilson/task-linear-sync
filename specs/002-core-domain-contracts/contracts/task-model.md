@@ -7,11 +7,13 @@ rules: [../data-model.md](../data-model.md) § 1–8.
 ```ts
 /**
  * Canonical framework identifiers (001 Glossary: Supported_Framework).
- * Amended 2026-11-10 by feature 017 (docs/contract-amendments.md, entry 1): `"spec-kitty"`
- * inserted immediately before `"generic"`; every prior value keeps its meaning, its state
+ * Amended 2026-11-10 by feature 018 (docs/contract-amendments.md, A-018-0): `"spec-superpower"`
+ * inserted immediately before `"generic"`. Amended 2026-11-10 by feature 017
+ * (docs/contract-amendments.md, entry 1): `"spec-kitty"` inserted immediately before
+ * `"generic"`, after `"spec-superpower"`; every prior value keeps its meaning, its state
  * payloads, and its `Stable_UUID` seeds.
  */
-export type FrameworkId = "bmad" | "spec-kit" | "open-spec" | "kiro" | "spec-kitty" | "generic";
+export type FrameworkId = "bmad" | "spec-kit" | "open-spec" | "kiro" | "spec-superpower" | "spec-kitty" | "generic";
 
 export type TaskKind = "heading" | "checklist";
 

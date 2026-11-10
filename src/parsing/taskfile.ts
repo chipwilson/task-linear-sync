@@ -60,10 +60,17 @@ export function parseTaskFile(
 
   // Stable_UUID: the seed comes ONLY from the frozen taskStableSeed (002 R11); the
   // ordinal is the 0-based position in ascending-line (tasks) order (parsing-api rule 11).
+  // 018 A-018-2: an `identityFileScope` adapter composes the file basename into the local-id
+  // SEED INPUT only — `taskStableSeed`, its frozen layout, and every other adapter's seeds
+  // stay byte-identical; `Task.localTaskId` below stays the bare id.
+  const seedLocalTaskId = (localTaskId: string | undefined): string | undefined =>
+    localTaskId !== undefined && adapter.identityFileScope === true
+      ? `${filePath.slice(filePath.lastIndexOf("/") + 1)}\u0000${localTaskId}`
+      : localTaskId;
   const uuids = drafts.map((draft, ordinal) =>
     deriveStableUuid(
       taskStableSeed(
-        { frameworkId: adapter.id, featureName, localTaskId: draft.localTaskId },
+        { frameworkId: adapter.id, featureName, localTaskId: seedLocalTaskId(draft.localTaskId) },
         { ordinal, filePath },
       ),
       config.toolId,

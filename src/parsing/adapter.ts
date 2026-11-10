@@ -44,4 +44,12 @@ export interface TaskFileAdapter {
    * never by extraction, file rendering, or task storage). Absent ⇒ no stripping.
    */
   readonly titleTagPattern?: string;
+  /**
+   * 018 amendment A-018-2 (whitelisted member, 004 adapter-consumption contract): when true,
+   * the seed input for a task with a local id is composed as
+   * `` `${basename(filePath)}\u0000${localTaskId}` `` at the `parseTaskFile` seed call site —
+   * `taskStableSeed` itself and its frozen layout are unchanged; `Task.localTaskId` stays the
+   * bare id; adapters omitting this member keep byte-identical seed inputs (SC-005).
+   */
+  readonly identityFileScope?: boolean;
 }

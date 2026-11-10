@@ -19,86 +19,86 @@ function ctx(repoRelativePosixPath: string, siblingFileNames: readonly string[])
   return { repoRelativePosixPath, siblingFileNames, specsBaseDirectories: builtInDefaults.specsBaseDirectories };
 }
 
-function select(filePath: string, siblingFileNames: readonly string[], reg: AdapterRegistry = registry): DetectionRecord {
+function select(filePath: string, siblingFileNames: readonly string[], reg: AdapterRegistry = registry): DetectionRecord | null {
   return selectAdapter(filePath, ctx(filePath, siblingFileNames), reg);
 }
 
 test("discovery selection: kiro wins beneath .kiro/specs/ — the 12-char `.kiro/specs/` pattern beats spec-kit's 6-char `specs/` substring", () => {
   const record = select(".kiro/specs/auth/tasks.md", ["design.md", "requirements.md", "tasks.md"]);
-  assert.equal(record.adapterId, "kiro");
-  assert.equal(record.frameworkId, "kiro");
-  assert.equal(record.matchedPattern, ".kiro/specs/");
-  assert.equal(record.matchedPattern.length, 12, "rank material: `.kiro/specs/` (12) beats `specs/` (6) — research R8");
-  assert.equal(record.via, "path");
-  assert.deepEqual(record.candidates, ["kiro"], "spec-kit is NOT a candidate: its rule is conjunctive and spec.md/plan.md are absent");
+  assert.equal(record!.adapterId, "kiro");
+  assert.equal(record!.frameworkId, "kiro");
+  assert.equal(record!.matchedPattern, ".kiro/specs/");
+  assert.equal(record!.matchedPattern.length, 12, "rank material: `.kiro/specs/` (12) beats `specs/` (6) — research R8");
+  assert.equal(record!.via, "path");
+  assert.deepEqual(record!.candidates, ["kiro"], "spec-kit is NOT a candidate: its rule is conjunctive and spec.md/plan.md are absent");
 });
 
 test("discovery selection: spec-kit is CONJUNCTIVE — beneath specs/ AND with a spec.md/plan.md sibling", () => {
   const record = select("specs/pay/tasks.md", ["spec.md", "plan.md", "tasks.md"]);
-  assert.equal(record.adapterId, "spec-kit");
-  assert.equal(record.via, "path+siblings");
-  assert.equal(record.matchedPattern, "specs/");
-  assert.deepEqual(record.candidates, ["spec-kit"]);
+  assert.equal(record!.adapterId, "spec-kit");
+  assert.equal(record!.via, "path+siblings");
+  assert.equal(record!.matchedPattern, "specs/");
+  assert.deepEqual(record!.candidates, ["spec-kit"]);
 });
 
 test("discovery selection: a specs/ file WITHOUT spec.md/plan.md siblings falls through to the generic fallback", () => {
   const record = select("specs/no-sibs/tasks.md", ["tasks.md"]);
-  assert.equal(record.adapterId, "generic");
-  assert.equal(record.frameworkId, "generic");
-  assert.equal(record.via, "fallback");
-  assert.equal(record.matchedPattern, "");
-  assert.deepEqual(record.candidates, [], "zero matches — US2 AC1 generic fallback");
+  assert.equal(record!.adapterId, "generic");
+  assert.equal(record!.frameworkId, "generic");
+  assert.equal(record!.via, "fallback");
+  assert.equal(record!.matchedPattern, "");
+  assert.deepEqual(record!.candidates, [], "zero matches — US2 AC1 generic fallback");
 });
 
 test("discovery selection: open-spec wins by pathContains marker on openspec/ paths", () => {
   const record = select("openspec/cart/tasks.md", ["proposal.md", "tasks.md"]);
-  assert.equal(record.adapterId, "open-spec");
-  assert.equal(record.via, "path+siblings");
-  assert.equal(record.matchedPattern, "openspec/");
+  assert.equal(record!.adapterId, "open-spec");
+  assert.equal(record!.via, "path+siblings");
+  assert.equal(record!.matchedPattern, "openspec/");
 });
 
 test("discovery selection: sibling-only markers — open-spec via openspec.json/proposal.md with via 'siblings' and rank-key 0", () => {
   const record = select("notes/tasks.md", ["openspec.json", "tasks.md"]);
-  assert.equal(record.adapterId, "open-spec");
-  assert.equal(record.via, "siblings");
-  assert.equal(record.matchedPattern, "", "a siblings-only match contributes \"\" (rank key 0) — research R8");
+  assert.equal(record!.adapterId, "open-spec");
+  assert.equal(record!.via, "siblings");
+  assert.equal(record!.matchedPattern, "", "a siblings-only match contributes \"\" (rank key 0) — research R8");
 });
 
 test("discovery selection: sibling-only markers — bmad via prd.md/architecture.md", () => {
   const record = select("notes/tasks.md", ["prd.md", "tasks.md"]);
-  assert.equal(record.adapterId, "bmad");
-  assert.equal(record.via, "siblings");
-  assert.equal(record.matchedPattern, "");
+  assert.equal(record!.adapterId, "bmad");
+  assert.equal(record!.via, "siblings");
+  assert.equal(record!.matchedPattern, "");
 });
 
 test("discovery selection: equal-length ties resolve by precedence index (open-spec before bmad by the fixed list)", () => {
   const record = select("notes/tasks.md", ["openspec.json", "prd.md", "tasks.md"]);
-  assert.deepEqual(record.candidates, ["bmad", "open-spec"], "candidates sorted alphabetically");
-  assert.equal(record.adapterId, "open-spec", "precedence [kiro, open-spec, spec-kit, bmad, spec-kitty, generic]: open-spec index 1 < bmad index 3");
+  assert.deepEqual(record!.candidates, ["bmad", "open-spec"], "candidates sorted alphabetically");
+  assert.equal(record!.adapterId, "open-spec", "precedence [kiro, open-spec, spec-kit, bmad, spec-superpower, spec-kitty, generic]: open-spec index 1 < bmad index 3");
 });
 
-test("discovery selection: DEFAULT_PRECEDENCE pins the six built-in ids — spec-kitty inserted before the generic fallback (017 R1)", () => {
-  assert.deepEqual(registry.precedence, ["kiro", "open-spec", "spec-kit", "bmad", "spec-kitty", "generic"]);
+test("discovery selection: DEFAULT_PRECEDENCE pins the seven built-in ids — spec-superpower and spec-kitty inserted before the generic fallback (018/017 R1)", () => {
+  assert.deepEqual(registry.precedence, ["kiro", "open-spec", "spec-kit", "bmad", "spec-superpower", "spec-kitty", "generic"]);
 });
 
 test("discovery selection: equal-length AND equal-unknown-precedence ties fall to the alphabetical adapter id", () => {
   const reg = createAdapterRegistry(builtInDefaults, { precedence: ["kiro", "spec-kit", "generic"] });
   const record = select("notes/tasks.md", ["openspec.json", "prd.md", "tasks.md"], reg);
-  assert.equal(record.adapterId, "bmad", "both rank beyond the precedence list — alphabetical: bmad < open-spec");
+  assert.equal(record!.adapterId, "bmad", "both rank beyond the precedence list — alphabetical: bmad < open-spec");
 });
 
 test("discovery selection: overrides.precedence reorders the tie — bmad first now wins it", () => {
   const reg = createAdapterRegistry(builtInDefaults, { precedence: ["bmad", "open-spec", "kiro", "spec-kit", "generic"] });
   const record = select("notes/tasks.md", ["openspec.json", "prd.md", "tasks.md"], reg);
-  assert.equal(record.adapterId, "bmad");
+  assert.equal(record!.adapterId, "bmad");
 });
 
 test("discovery selection: explicit fixed selection short-circuits detection with via 'explicit'", () => {
   const reg = createAdapterRegistry(builtInDefaults, { selection: "kiro" });
   const record = select("specs/pay/tasks.md", ["spec.md", "plan.md", "tasks.md"], reg);
-  assert.equal(record.adapterId, "kiro");
-  assert.equal(record.frameworkId, "kiro");
-  assert.equal(record.via, "explicit");
+  assert.equal(record!.adapterId, "kiro");
+  assert.equal(record!.frameworkId, "kiro");
+  assert.equal(record!.via, "explicit");
 });
 
 test("discovery selection: explicit predicate selection — returns an id to force it, undefined to defer to marker selection", () => {
@@ -106,10 +106,10 @@ test("discovery selection: explicit predicate selection — returns an id to for
     selection: (filePath: string) => (filePath.startsWith("openspec/") ? "open-spec" : undefined),
   });
   const forced = select("specs/pay/tasks.md".replace("specs/pay", "openspec/pay"), ["spec.md"], reg);
-  assert.equal(forced.adapterId, "open-spec");
-  assert.equal(forced.via, "explicit");
+  assert.equal(forced!.adapterId, "open-spec");
+  assert.equal(forced!.via, "explicit");
   const deferred = select("specs/pay/tasks.md", ["spec.md", "plan.md"], reg);
-  assert.equal(deferred.adapterId, "spec-kit", "predicate returned undefined — markers decide");
+  assert.equal(deferred!.adapterId, "spec-kit", "predicate returned undefined — markers decide");
 });
 
 test("discovery selection: an explicit fixed id outside the enabled pool raises the typed SelectionOverrideError", () => {
@@ -129,4 +129,41 @@ test("discovery selection: pure and deterministic — identical inputs yield byt
   const a = select(".kiro/specs/auth/tasks.md", ["design.md", "requirements.md", "tasks.md"]);
   const b = select(".kiro/specs/auth/tasks.md", ["design.md", "requirements.md", "tasks.md"]);
   assert.equal(JSON.stringify(a), JSON.stringify(b));
+});
+
+// ── T016 [US1] — amendment A-018-1: generic-fallback narrowing (018 contract Rule 2) ──
+
+test("discovery selection: spec-superpower claims a date-named plan beneath the plans root (Rule 2)", () => {
+  const record = select("docs/superpowers/plans/2026-11-09-auth.md", ["2026-11-09-auth.md"]);
+  assert.equal(record!.adapterId, "spec-superpower");
+  assert.equal(record!.via, "path");
+  assert.equal(record!.matchedPattern, "docs/superpowers/plans/");
+});
+
+test("discovery selection: a date-named file OUTSIDE the plans root is UNCLAIMED — no adapter, no generic (A-018-1, US1-AC4)", () => {
+  assert.equal(select("docs/superpowers/2026-11-05-outside.md", ["2026-11-05-outside.md"]), null, "zero-match candidates fall back to generic ONLY when the basename matches generic's effective taskFilePatterns");
+});
+
+test("discovery selection: a stray tasks.md with zero detection still falls back to generic as today (built-in behavior bit-identical)", () => {
+  const record = select("random/place/tasks.md", ["tasks.md"]);
+  assert.equal(record!.adapterId, "generic");
+  assert.equal(record!.via, "fallback");
+});
+
+test("discovery selection: custom-lane narrowing — a file matching only a custom descriptor's patterns with failing detection is unclaimed (A-018-1 consequence (c))", () => {
+  const reg = createAdapterRegistry(builtInDefaults, {
+    customAdapters: [{ id: "custom-x", taskFilePatterns: ["custom-*.md"], baseDirectories: ["misc/"], headingGrammar: "^### (.+)$" }],
+  });
+  const record = select("notes/custom-notes.md", ["custom-notes.md"], reg); // traversal candidate via the custom basename glob, but outside misc/ — custom detection fails
+  assert.equal(record, null, "custom detection fails and the basename matches no enabled pattern — not grabbed by generic anymore");
+  const still = select("notes/tasks.md", ["tasks.md"], reg);
+  assert.equal(still?.adapterId, "generic", "a real tasks.md outside the custom lane still gets the generic fallback");
+});
+
+test("discovery selection: generic disabled + zero matches still throws the typed error as today", () => {
+  const reg = createAdapterRegistry({ ...structuredClone(builtInDefaults), frameworkAdapters: ["kiro", "open-spec", "spec-kit", "bmad", "spec-superpower"] });
+  assert.throws(
+    () => select("docs/superpowers/2026-11-05-outside.md", ["2026-11-05-outside.md"], reg),
+    (err: unknown) => err instanceof SelectionOverrideError && err.requestedId === "generic",
+  );
 });

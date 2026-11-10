@@ -12,8 +12,8 @@ import { builtInDefaults } from "task-linear-sync/config";
 import { agentHookScaffold, builtInAdapters } from "task-linear-sync/discovery";
 import { listTree, withTempTree } from "../helpers/discovery-fixtures.js";
 
-test("discovery built-ins: the table exposes exactly the six frozen FrameworkIds, adapters frozen", () => {
-  assert.deepEqual(Object.keys(builtInAdapters).sort(), ["bmad", "generic", "kiro", "open-spec", "spec-kit", "spec-kitty"]);
+test("discovery built-ins: the table exposes exactly the seven frozen FrameworkIds, adapters frozen", () => {
+  assert.deepEqual(Object.keys(builtInAdapters).sort(), ["bmad", "generic", "kiro", "open-spec", "spec-kit", "spec-kitty", "spec-superpower"]);
   for (const adapter of Object.values(builtInAdapters)) {
     assert.ok(Object.isFrozen(adapter), `adapter '${adapter.id}' is immutable (built-in rows are constants)`);
   }
@@ -109,7 +109,7 @@ test("discovery built-ins: the other five rows carry NO checklistIdPattern/title
 });
 
 test("discovery built-ins: spec-kitty joins the default enabled set (C1.1)", () => {
-  assert.deepEqual(builtInDefaults.frameworkAdapters, ["bmad", "spec-kit", "open-spec", "kiro", "spec-kitty", "generic"]);
+  assert.deepEqual(builtInDefaults.frameworkAdapters, ["bmad", "spec-kit", "open-spec", "kiro", "spec-superpower", "spec-kitty", "generic"]);
 });
 
 test("discovery built-ins: agentHookScaffold(kiro) — `.kiro/hooks/` JSON Agent_Hook running `<binName> enqueue` (001 Glossary, FR-010)", () => {

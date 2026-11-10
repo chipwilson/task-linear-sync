@@ -2,7 +2,7 @@
  * Built-in adapter table (defaults layer, FR-007; contracts/framework-adapter.md built-in
  * table; T031). `builtInAdapters` is the frozen `FrameworkId → FrameworkAdapter` record 004
  * consumes (its `generic` entry is the 004 fixture adapter) and the surface snapshot gates
- * its keys against the frozen literals. Rows are declared in fixed marker-precedence
+ * its keys against the seven frozen literals. Rows are declared in fixed marker-precedence
  * display order; selection ranking lives in `../registry.ts`, never here.
  */
 import type { FrameworkId } from "../../domain/task.js";
@@ -14,6 +14,7 @@ import { kiroAdapter, kiroConventions } from "./kiro.js";
 import { openSpecAdapter, openSpecConventions } from "./open-spec.js";
 import { specKitAdapter, specKitConventions } from "./spec-kit.js";
 import { specKittyAdapter, specKittyConventions } from "./spec-kitty.js";
+import { specSuperpowerAdapter, specSuperpowerConventions } from "./spec-superpower.js";
 import type { ResolvedConventions } from "../conventions.js";
 
 export const builtInAdapters: Readonly<Record<FrameworkId, FrameworkAdapter>> = deepFreeze({
@@ -21,6 +22,7 @@ export const builtInAdapters: Readonly<Record<FrameworkId, FrameworkAdapter>> = 
   "spec-kit": specKitAdapter,
   "open-spec": openSpecAdapter,
   bmad: bmadAdapter,
+  "spec-superpower": specSuperpowerAdapter,
   "spec-kitty": specKittyAdapter,
   generic: genericAdapter,
 });
@@ -31,6 +33,7 @@ export const builtInAdapterRows: readonly { readonly id: FrameworkId; readonly c
   { id: "spec-kit", conventions: specKitConventions },
   { id: "open-spec", conventions: openSpecConventions },
   { id: "bmad", conventions: bmadConventions },
+  { id: "spec-superpower", conventions: specSuperpowerConventions },
   { id: "spec-kitty", conventions: specKittyConventions },
   { id: "generic", conventions: genericConventions },
 ]);

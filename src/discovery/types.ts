@@ -9,14 +9,15 @@ import type { DetectionRecord, DiscoveryOverrides } from "./adapter.js";
 
 /**
  * Identity vocabulary (003-local, research R5). Built-in adapters use ONLY the frozen
- * FrameworkId literals (widened to six by the 017 amendment — `spec-kitty` joins them),
- * so every built-in value is assignable to 002's `TaskFile.frameworkId` /
+ * FrameworkId literals (widened to seven by the 018/017 amendments — `spec-superpower` and
+ * `spec-kitty` join them), so every built-in value is assignable to 002's `TaskFile.frameworkId` /
  * `FrameworkMetadata.frameworkId`. Custom adapter ids (FR-011) are additional strings; the 002
- * union itself is unchanged (widening it is an amendment candidate, not executed here).
+ * union itself changes only via `docs/contract-amendments.md` (widened to include
+ * `spec-superpower` by amendment A-018-0, feature 018).
  */
 export type FrameworkIdentity = FrameworkId | (string & Record<never, never>);
 
-const BUILT_IN_FRAMEWORK_IDS: readonly string[] = ["bmad", "spec-kit", "open-spec", "kiro", "spec-kitty", "generic"];
+const BUILT_IN_FRAMEWORK_IDS: readonly string[] = ["bmad", "spec-kit", "open-spec", "kiro", "spec-superpower", "spec-kitty", "generic"];
 
 /** Type guard distinguishing the frozen 002 `FrameworkId` literals from custom identities (R5). */
 export function isBuiltInFrameworkId(value: string): value is FrameworkId {
@@ -55,7 +56,7 @@ export interface DiscoveryDiagnostic {
 export interface DiscoveredFile {
   /** Root-relative POSIX (FR-004); unique within a result; sorted lexicographically. */
   readonly filePath: string;
-  /** Selected per detection (§4); built-in adapters emit exactly the frozen literals. */
+  /** Selected per detection (§4); built-in adapters emit exactly the seven frozen literals. */
   readonly frameworkId: FrameworkIdentity;
   /** Winning adapter id (equals frameworkId for built-ins) — diagnostics distinguisher. */
   readonly adapterId: string;

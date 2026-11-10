@@ -67,9 +67,10 @@ test("framework-consistency: README documents behavior for every built-in framew
 });
 
 test("framework-consistency: README names no framework the code does not ship", () => {
-  // 016 pinned `spec-kitty` here too; 017 ships it as a real adapter, so only the
-  // framework that still has no code may stay on this list.
-  assert.doesNotMatch(readme, /spec-superpower/i, "no adapter for this name has ever existed in the code");
+  // 016 pinned `spec-kitty` and 018 pinned `spec-superpower` here; both shipped as real
+  // adapters (017/018), so the pin moves to a name no feature has ever shipped — the
+  // README must still not advertise any framework the code does not contain.
+  assert.doesNotMatch(readme, /spec-fluffy/i, "no adapter for this name has ever existed in the code");
   for (const id of registryIds) {
     assert.ok(readme.includes(`\`${id}\``), `README must carry the canonical id \`${id}\``);
   }

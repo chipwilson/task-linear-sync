@@ -9,6 +9,7 @@ import assert from "node:assert/strict";
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
+import { agentHookScaffold } from "../../src/discovery/agent-hooks.js";
 import { installAgentHooks, type AgentHookSettings } from "../../src/queue/agent-hooks.js";
 import { makeQueueHarness } from "../helpers/queue-harness.js";
 
@@ -109,6 +110,20 @@ test("framework without a scaffold template is refused", async () => {
     const res = await installAgentHooks(h.repositoryRoot, settings({ frameworkId: "spec-kit" }));
     assert.equal(res.status, "refused");
     assert.equal(readdirSync(h.repositoryRoot).includes(".kiro"), false);
+  } finally {
+    h.dispose();
+  }
+});
+
+test("spec-superpower carries no scaffold template — pure refusal, zero writes (018 FR-012)", async () => {
+  // The pure 003 seam: no template for this identity, whatever the bin name.
+  assert.equal(agentHookScaffold("spec-superpower", "task-linear-sync"), undefined);
+  const h = await makeQueueHarness();
+  try {
+    const before = readdirSync(h.repositoryRoot);
+    const res = await installAgentHooks(h.repositoryRoot, settings({ frameworkId: "spec-superpower" }));
+    assert.equal(res.status, "refused");
+    assert.deepEqual(readdirSync(h.repositoryRoot), before, "refusal performs zero writes");
   } finally {
     h.dispose();
   }

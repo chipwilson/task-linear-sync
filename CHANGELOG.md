@@ -7,9 +7,27 @@ this preview — lives in [docs/versioning.md](docs/versioning.md).
 
 ## [Unreleased]
 
-- Feature 017: `spec-kitty` is a real built-in adapter and the sixth syncable
-  framework identity, alongside `kiro`, `spec-kit`, `open-spec`, `bmad`, and
-  `generic`. Spec Kitty missions are discovered with zero configuration: a task
+- Feature 018 — `spec-superpower` ships as the sixth built-in, default-enabled
+  framework identity: dated plan files beneath the plans root
+  (`docs/superpowers/plans/`) are discovered and claimed, one task per
+  `Task N:` heading, every `- [ ] **Step N: …**` checkbox mirrored verbatim
+  into the task's issue description and never parsed as a task, and
+  date-stripped plan filenames derived as feature names — with file-scoped
+  identity seeds so same-name plans on different dates can never cross-match
+  (no agent-hook scaffold; installation refuses this identity). Three contract
+  amendments land in lockstep (docs/contract-amendments.md): **A-018-0**
+  widens the frozen `FrameworkId` union and its mirrored enums/enumerations;
+  **A-018-1** narrows discovery's zero-match fallback — an unclaimed file is
+  omitted instead of silently absorbed by `generic`; **A-018-2** adds the
+  whitelisted `identityFileScope` parse-adapter member without touching the
+  frozen seed layout. README, `specs/requirements.md` (Requirement 7 and the
+  framework glossary), `docs/framework-adapters.md`, and
+  `docs/configuration.md` document the new identity in the same change
+  (FR-013); the framework-consistency suite pins README ⇄ requirements ⇄
+  registry agreement throughout.
+- Feature 017: `spec-kitty` is a real built-in adapter and the seventh syncable
+  framework identity, alongside `kiro`, `spec-kit`, `open-spec`, `bmad`,
+  `spec-superpower`, and `generic`. Spec Kitty missions are discovered with zero configuration: a task
   file beneath `kitty-specs/` is `spec-kitty` with no sibling-document
   requirement, the mission directory is the feature name, the id printed at the
   start of a checklist line (`- [ ] T001 Create the scaffold`) is the local task
@@ -21,16 +39,16 @@ this preview — lives in [docs/versioning.md](docs/versioning.md).
   from discovery for every adapter, and `install-agent-hook --framework
   spec-kitty` refuses with zero writes like any identity without a template.
   Two optional adapter grammar members (`checklistIdPattern`, `titleTagPattern`)
-  and a whole-segment `*` in exclusion entries come with it; the existing five
-  identities are unchanged byte-for-byte. This supersedes the docs-only removal
+  and a whole-segment `*` in exclusion entries come with it; every pre-existing
+  identity is unchanged byte-for-byte. This supersedes the docs-only removal
   note below — `spec-kitty` now exists in code, so the consistency suite's
-  fabricated-name pin narrows to `spec-superpower`.
+  fabricated-name pin moved to a name no feature ships (`spec-fluffy`).
 - Docs: framework support consolidated on the code's actual built-in set
   (`kiro`, `spec-kit`, `open-spec`, `bmad`, `generic`). The README previously
   advertised adapters for `spec-kitty` and `spec-superpower`, which never
   existed in the code; it now documents per-framework discovery behavior for
   every built-in adapter, the real selection precedence, the custom-adapter
-  lane (discovery-only — the sync surface admits the five built-in
+  lane (discovery-only — the sync surface admits only the built-in
   identities), and truthful config keys (`taskFilePatterns` /
   `specsBaseDirectories` replace the invented `tasks.filename_patterns`).
   `specs/requirements.md` Purpose and the `Supported_Framework` glossary

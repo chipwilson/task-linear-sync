@@ -1,0 +1,64 @@
+{
+  "$comment": "Schema authority: tests/helpers/engine-harness.ts header docblock. Placeholders only (Principle III).",
+  "name": "spec-superpower-sync",
+  "clock": "2026-01-01T00:00:00.000Z",
+  "teams": [
+    {
+      "key": "TEAM-A",
+      "id": "ac000000-0000-4000-8000-000000000101",
+      "projects": [
+        {
+          "id": "proj-alpha",
+          "name": "Project Alpha"
+        }
+      ],
+      "workflowStates": [
+        {
+          "id": "ac000000-0000-4000-8000-000000000201",
+          "name": "Backlog",
+          "type": "backlog"
+        },
+        {
+          "id": "ac000000-0000-4000-8000-000000000202",
+          "name": "Todo",
+          "type": "todo"
+        },
+        {
+          "id": "ac000000-0000-4000-8000-000000000203",
+          "name": "Done",
+          "type": "completed"
+        }
+      ]
+    }
+  ],
+  "issues": [],
+  "attachments": [],
+  "config": {
+    "teams": {
+      "TEAM-A": {
+        "projects": [
+          "proj-alpha"
+        ],
+        "workflowStates": {
+          "backlog": "Backlog",
+          "todo": "Todo",
+          "done": "Done",
+          "completedTypes": [
+            "completed"
+          ],
+          "ignoredTypes": [
+            "canceled",
+            "duplicate"
+          ]
+        }
+      }
+    },
+    "defaultTeamKey": "TEAM-A",
+    "defaultProject": "proj-alpha",
+    "confirmationKey": "ACME",
+    "descriptionNormalizationProfile": "default"
+  },
+  "metadata": {
+    "scenario": "018 T018 \u2014 spec-superpower plans, empty tracker: bootstrap creates 3 issues per dated plan; checkbox flip re-mirrors exactly one description."
+  }
+}
