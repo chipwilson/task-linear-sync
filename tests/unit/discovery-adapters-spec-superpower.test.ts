@@ -8,7 +8,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 
 import { builtInDefaults } from "task-linear-sync/config";
-import { builtInAdapters } from "task-linear-sync/discovery";
+import { builtInAdapters, createAdapterRegistry } from "task-linear-sync/discovery";
 import type { DetectionContext } from "task-linear-sync/discovery";
 
 const row = builtInAdapters["spec-superpower"];
@@ -54,4 +54,29 @@ test("spec-superpower featureName: date-stripped basename table (research R5, co
   assert.equal(row.featureName("docs/superpowers/plans/2026-11-09-auth.md"), "auth");
   assert.equal(row.featureName("docs/superpowers/plans/2026-11-01-sync.md"), "sync");
   assert.equal(row.featureName("docs/superpowers/plans/notes.md"), "notes", "no date prefix (pattern-overridden team) — extension-stripped basename");
+});
+
+test("spec-superpower featureName: wrong-shape date prefixes are NOT stripped (T022, research R5/R8)", () => {
+  // The stripped prefix is exactly `\d{4}-\d{2}-\d{2}-` — partial or glued shapes stay.
+  assert.equal(row.featureName("docs/superpowers/plans/2026-11-auth.md"), "2026-11-auth", "two-segment date is not a date prefix");
+  assert.equal(row.featureName("docs/superpowers/plans/x2026-11-09-a.md"), "x2026-11-09-a", "date must start the basename, not hide inside it");
+  assert.equal(row.featureName("docs/superpowers/plans/2026-11-09-.md"), "", "pure date + extension stems to the empty string — derivation is total, downstream absence handling is 004's");
+});
+
+test("spec-superpower featureName: programmatic override beats the date-stripped rule via resolveConventions (T022, FR-003)", () => {
+  const forced = (filePath: string): string => `plan:${filePath.split("/").pop()}`;
+  const registry = createAdapterRegistry(builtInDefaults, {
+    adapters: { "spec-superpower": { featureName: forced } },
+  });
+  const overridden = registry.enabledAdapters.find((a) => a.id === "spec-superpower");
+  assert.ok(overridden, "the row stays enabled under the programmatic layer");
+  assert.equal(
+    overridden.featureName("docs/superpowers/plans/2026-11-09-sync.md"),
+    "plan:2026-11-09-sync.md",
+    "programmatic featureName wins over the built-in rule (highest layer, research R1)",
+  );
+  // Without the programmatic layer the row resolves back to the built-in rule.
+  const plain = createAdapterRegistry(builtInDefaults).enabledAdapters.find((a) => a.id === "spec-superpower");
+  assert.ok(plain);
+  assert.equal(plain.featureName("docs/superpowers/plans/2026-11-09-sync.md"), "sync", "the rule itself is untouched");
 });
