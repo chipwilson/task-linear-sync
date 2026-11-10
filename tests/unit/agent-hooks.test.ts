@@ -114,6 +114,21 @@ test("framework without a scaffold template is refused", async () => {
   }
 });
 
+test("spec-kitty is refused too: a template-less built-in writes nothing (017 FR-012, C1.3)", async () => {
+  const h = await makeQueueHarness();
+  try {
+    // "spec-kitty" is a built-in framework id but carries no agent-hook scaffold (017).
+    const res = await installAgentHooks(h.repositoryRoot, settings({ frameworkId: "spec-kitty" }));
+    assert.equal(res.status, "refused");
+    assert.match(res.detail ?? "", /spec-kitty.*no agent-hook scaffold template/u, "template-less diagnostic");
+    // Zero writes: neither the framework's hook directory nor any other new entry appears.
+    assert.equal(readdirSync(h.repositoryRoot).includes(".specify"), false);
+    assert.equal(readdirSync(h.repositoryRoot).includes("kitty-specs"), false);
+  } finally {
+    h.dispose();
+  }
+});
+
 test("binName drives both the file name and the enqueue command (single lock-free lane)", async () => {
   const h = await makeQueueHarness();
   try {

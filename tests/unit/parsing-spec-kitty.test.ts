@@ -169,6 +169,36 @@ test("parsing spec-kitty: work packages group subtasks and an empty work package
     [["T001", "WP01: Scaffold"]],
     "a work package with no subtasks yields zero tasks (C3.6)",
   );
+  // Grouping context only: subtasks written after the empty WP belong to it — the
+  // heading changes the grouping, then a later section groups nothing, with zero tasks.
+  const trailing = parseTaskFile(
+    PATH,
+    [
+      "## Work Package WP01: Scaffold",
+      "- [ ] T001 Do it",
+      "## Work Package WP02: Empty middle",
+      "## Work Package WP03: Carries the tail",
+      "- [ ] T002 Finish it",
+      "## Dependencies",
+      "- [ ] illustrative checkbox under a prose section",
+      "T002 depends on T001.",
+    ].join("\n"),
+    kitty,
+    cfg,
+  );
+  assert.deepEqual(
+    trailing.file.tasks.map((t) => [t.localTaskId, t.phase]),
+    [
+      ["T001", "WP01: Scaffold"],
+      ["T002", "WP03: Carries the tail"],
+    ],
+    "the empty WP contributes grouping context only: it yields zero tasks and re-groups what follows",
+  );
+  assert.deepEqual(
+    trailing.exclusions.map((e) => [e.lineNumber, e.reason]),
+    [[7, "summary-section"]],
+    "the prose section keeps grouping nothing — its checkbox is excluded, not grouped",
+  );
 });
 
 test("parsing spec-kitty: a roll-up is a flat document — metadata only, no behavioral consumer (research R3)", () => {

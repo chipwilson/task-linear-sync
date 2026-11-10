@@ -21,12 +21,12 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { cp, mkdtemp, rm, writeFile } from "node:fs/promises";
+import { cp, mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 import { builtInDefaults } from "task-linear-sync/config";
-import { builtInAdapters, discoverTaskFiles } from "task-linear-sync/discovery";
+import { builtInAdapters, createAdapterRegistry, discoverTaskFiles } from "task-linear-sync/discovery";
 import type { DiscoveryOverrides, DiscoveryResult } from "task-linear-sync/discovery";
 import { parseTaskFile } from "task-linear-sync/parsing";
 import type { TaskFileAdapter } from "task-linear-sync/parsing";
@@ -34,6 +34,7 @@ import type { Plan } from "task-linear-sync/domain";
 import type { GateRequest } from "task-linear-sync/gates";
 
 import { fixtureRepoPath } from "../helpers/discovery-fixtures.js";
+import { makeTestConfig } from "../helpers/parsing-fixtures.js";
 import { attachEngine, buildWorld, callsOf, type EngineWorld } from "../helpers/engine-harness.js";
 import { createSyncEngine } from "../../src/engine/create.js";
 
@@ -229,4 +230,147 @@ test("discovery spec-kitty: US1-AC3 + US1-AC4 — created titles carry no id/tag
     await world.dispose();
     await rm(scratch, { recursive: true, force: true });
   }
+});
+
+test("discovery spec-kitty: edge case — a mission directory with spec.md/plan.md but no task file yields no candidate and no diagnostic worse than informational", async () => {
+  const { world, scratch } = await buildKittyWorld();
+  try {
+    // The third mission carries spec.md + plan.md but NO tasks.md (spec Edge Cases).
+    const base = join(world.repositoryRoot, "kitty-specs", "003-docs-only");
+    await mkdir(base, { recursive: true });
+    await writeFile(join(base, "spec.md"), "# Specification: 003-docs-only\n\nNothing planned yet.\n", "utf8");
+    await writeFile(join(base, "plan.md"), "# Plan: 003-docs-only\n\nNo tasks file written.\n", "utf8");
+
+    const discovery = await discoverTaskFiles({ repositoryRoot: world.repositoryRoot, config: builtInDefaults, gitContext: false });
+    assert.ok(
+      !discovery.files.some((f) => f.filePath.startsWith("kitty-specs/003-docs-only/")),
+      "spec.md/plan.md never become task files",
+    );
+    assert.deepEqual(
+      discovery.diagnostics.filter((d) => d.path.startsWith("kitty-specs/003-docs-only/")),
+      [],
+      "the bare mission directory raises no diagnostic at all (nothing worse than informational)",
+    );
+
+    // And planning simply ignores the directory: still exactly the eight planned subtasks.
+    const engine = attachEngine(world, createSyncEngine, { keyProvider: world.keyProvider });
+    const plan = await engine.buildSyncPlan({ repositoryRoot: world.repositoryRoot });
+    assert.equal(plan.entries.length, 8);
+    assert.ok(!plan.entries.some((e) => e.filePath.startsWith("kitty-specs/003-docs-only/")));
+  } finally {
+    await world.dispose();
+    await rm(scratch, { recursive: true, force: true });
+  }
+});
+
+/** The T011 world plus one path rule sending the 002 mission to its own project (US3-AC1). */
+const KITTY_ROUTED_WORLD = {
+  ...KITTY_WORLD,
+  teams: [
+    {
+      ...KITTY_WORLD.teams[0],
+      projects: [
+        { id: "proj-alpha", name: "Project Alpha" },
+        { id: "proj-billing", name: "Billing" },
+      ],
+    },
+  ],
+  config: {
+    ...KITTY_WORLD.config,
+    teams: { "TEAM-A": { ...KITTY_WORLD.config.teams["TEAM-A"], projects: ["proj-alpha", "proj-billing"] } },
+    projectByPath: [{ prefix: "kitty-specs/002-billing", teamKey: "TEAM-A", project: "proj-billing" }],
+  },
+} as const;
+
+test("discovery spec-kitty: T018 routing case — a path rule on the 002 mission splits the plan across two projects (US3-AC1)", async () => {
+  const scratch = await mkdtemp(join(tmpdir(), "tls-017-kitty-routing-"));
+  try {
+    await writeFile(join(scratch, "world.json"), JSON.stringify(KITTY_ROUTED_WORLD), "utf8");
+    await cp(KITTY, join(scratch, "repo"), { recursive: true });
+    const world = await buildWorld(scratch);
+    try {
+      const engine = attachEngine(world, createSyncEngine, { keyProvider: world.keyProvider });
+      const plan = await engine.buildSyncPlan({ repositoryRoot: world.repositoryRoot });
+      assert.equal(plan.entries.length, 8, "one discovery run discovers both missions");
+
+      const routed = plan.entries.map((e) => ({ file: e.filePath, project: e.routing?.project ?? "?" }));
+      const billing = routed.filter((r) => r.file.startsWith("kitty-specs/002-billing/"));
+      const demo = routed.filter((r) => r.file.startsWith("kitty-specs/001-demo/"));
+      assert.equal(billing.length, 4);
+      assert.equal(demo.length, 4);
+      assert.ok(
+        billing.every((r) => r.project === "proj-billing"),
+        `002-billing routes to proj-billing per the configured rule (${billing.map((r) => r.project).join(", ")})`,
+      );
+      assert.ok(
+        demo.every((r) => r.project === "proj-alpha"),
+        "001-demo keeps the default project — missions route independently (US3-AC1)",
+      );
+      const billingEntry = plan.entries.find((e) => e.filePath.startsWith("kitty-specs/002-billing/"))!;
+      assert.equal(billingEntry.routing?.matchedPrefix, "kitty-specs/002-billing", "the path rule matched");
+      assert.equal(billingEntry.routing?.defaulted, false);
+      const demoEntry = plan.entries.find((e) => e.filePath.startsWith("kitty-specs/001-demo/"))!;
+      assert.equal(demoEntry.routing?.matchedPrefix, undefined, "no rule matched 001-demo — default routing");
+    } finally {
+      await world.dispose();
+    }
+  } finally {
+    await rm(scratch, { recursive: true, force: true });
+  }
+});
+
+test("discovery spec-kitty: FR-011 opt-out — removing spec-kitty from frameworkAdapters removes every trace of the row (C2.6)", async () => {
+  const disabledConfig = {
+    ...structuredClone(builtInDefaults),
+    frameworkAdapters: builtInDefaults.frameworkAdapters.filter((id) => id !== "spec-kitty"),
+  };
+
+  // 1. Enabled pool: the tasks-directory exclusion disappears exactly when the row is
+  //    removed (discover.ts skip set is built from the enabled adapters' exclusions).
+  const poolExclusions = (reg: ReturnType<typeof createAdapterRegistry>) =>
+    reg.enabledAdapters.flatMap((a) => [...(a.frameworkSpecificExclusions ?? [])]);
+  assert.ok(
+    poolExclusions(createAdapterRegistry(builtInDefaults)).includes("kitty-specs/*/tasks/"),
+    "with spec-kitty enabled the pool carries the exclusion",
+  );
+  assert.ok(
+    !poolExclusions(createAdapterRegistry(disabledConfig)).includes("kitty-specs/*/tasks/"),
+    "with spec-kitty disabled no enabled adapter carries the exclusion (C2.6)",
+  );
+  assert.ok(
+    !createAdapterRegistry(disabledConfig).enabledAdapters.some((a) => a.id === "spec-kitty"),
+    "spec-kitty is not in the enabled adapter pool",
+  );
+
+  // 2. Claims: the roll-ups fall back to `generic` exactly as before this feature —
+  //    positional parsing (printed ids stay INSIDE the title, no local ids) and no
+  //    mission feature name.
+  const result = await discoverTaskFiles({ repositoryRoot: KITTY, config: disabledConfig, gitContext: false });
+  assert.deepEqual(paths(result), ["kitty-specs/001-demo/tasks.md", "kitty-specs/002-billing/tasks.md"]);
+  assert.ok(
+    result.files.every((f) => f.adapterId === "generic"),
+    `roll-ups fall back to generic (${result.files.map((f) => f.adapterId).join(", ")})`,
+  );
+  assert.ok(
+    result.files.every((f) => (f.featureName ?? null) === null),
+    "no mission name — the spec-kitty feature extraction is gone",
+  );
+
+  const rollUp = readFileSync(join(KITTY, "kitty-specs/001-demo/tasks.md"), "utf8");
+  const parsed = parseTaskFile(
+    "kitty-specs/001-demo/tasks.md",
+    rollUp,
+    builtInAdapters.generic as unknown as TaskFileAdapter,
+    makeTestConfig(),
+  );
+  const checklist = parsed.file.tasks.filter((t) => t.kind === "checklist");
+  assert.ok(checklist.length > 0, "generic still claims the checkboxes");
+  assert.ok(
+    checklist.every((t) => (t.localTaskId ?? null) === null),
+    "no printed-id extraction — ids would be positional (identity as before 017)",
+  );
+  assert.ok(
+    checklist.some((t) => t.title.includes("T001 Create the scaffold")),
+    "the printed id stays inside the title under generic parsing",
+  );
 });
