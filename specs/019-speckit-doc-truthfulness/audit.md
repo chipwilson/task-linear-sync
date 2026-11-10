@@ -3,7 +3,7 @@
 - Baseline commit: 1fccd080f41af5a503c16724544dc937083a156d
 - Audited documents: README.md, docs/framework-adapters.md, docs/discovery.md,
   docs/parsing.md, specs/requirements.md
-- Open false/ambiguous verdicts: 14
+- Open false/ambiguous verdicts: 0
 
 Record format and self-check rules:
 [contracts/audit-record-format.md](./contracts/audit-record-format.md). Field vocabulary:
@@ -28,6 +28,8 @@ lines and the header counter; ids are never reused or renumbered.
 - **Reasoning**: the sentence promises issue-side tag and edge recording as the
   out-of-the-box Spec Kit outcome; the shipped tracker lane writes neither (verified
   at the baseline commit, clean tree).
+- **Correction**: rewrite — README Spec Kit step 1 now states what the sync actually records per task: one issue per task, the description mirrors the task body, a visible `[KEY-N]` reference token is written back on the task line, and durable mapping state lives in the issue's sync-attachment metadata; the sentence promises no tags, dependency edges, or milestones. (Landing: README.md Spec Kit section step 1, 2026-11-10; evidence: updateIssueImpl writes title/description/state only.)
+- **Guards**: GUARD-01, GUARD-05
 
 ### C-002 — README.md:186-187 — out-of-the-box T001 id capture
 
@@ -79,6 +81,8 @@ lines and the header counter; ids are never reused or renumbered.
   `ordinal:filePath` stable seed. Control: the same run parsed the heading line
   `## T001 Create the scaffold` with `localTaskId="T001"`, confirming the split
   is heading-vs-checkbox, not framework-vs-framework.
+- **Correction**: rewrite — README now keeps both truths: the `specs/<feature>/tasks.md` layout is config-free, and local-id capture follows the identifier grammar — headings capture their leading id token, checkbox lines need the grammar's separator punctuation (`- [ ] T001: …` captures; plain `- [ ] T001 …` syncs with no local id and falls back to the ordinal-based stable identity). (Landing: README.md Spec Kit section, T001 sentence + step 3, 2026-11-10; demo evidence above; routed gap FU-001.)
+- **Guards**: GUARD-02, GUARD-06
 
 ### C-003 — README.md:1 (whole-corpus absence) — native `[DEP:]`/`[Dep:]` parsing
 
@@ -141,6 +145,8 @@ lines and the header counter; ids are never reused or renumbered.
 - **Reasoning**: the marker-line story is a leftover from a pre-014 design; the shipped
   matching and idempotency machinery is reference-token + attachment based
   (src/domain/task.ts::taskStableSeed, src/tracker/operations).
+- **Correction**: rewrite — the intro's durability story is now as-built: the visible `[KEY-N]` reference token written back on the task line plus the deterministic anchor in the issue's sync-attachment metadata keep each pair together — no in-file marker exists (Constitution Principle II). Spec Kit step 3 re-states re-run safety in the same terms. (Landing: README.md intro + Spec Kit step 3, 2026-11-10; evidence: no marker writer in src/ — C-003/C-006 search scope.)
+- **Guards**: GUARD-04, GUARD-07
 
 ### C-007 — README.md:9, :194 — sections map to Linear milestones
 
@@ -157,6 +163,8 @@ lines and the header counter; ids are never reused or renumbered.
 - **Requirements check**: requirements-silent
 - **Reasoning**: the sync engine never creates, assigns, or clears Linear milestones;
   the README states a mapping that does not exist.
+- **Correction**: rewrite — the intro now states the truthful grouping: reports group tasks by project and feature, and the tool never creates or assigns Linear milestones. (Landing: README.md intro, 2026-11-10; evidence: report grouping bucket keyed on featureName is read-side presentation only — C-007 search scope.)
+- **Guards**: GUARD-04b, GUARD-24
 
 ### C-008 — README.md:5-6 — delivery state carried on issues
 
@@ -173,6 +181,8 @@ lines and the header counter; ids are never reused or renumbered.
   sets **in Linear**, never synced by the tool. The sentence is ambiguous because
   placed next to the sync description it reads as a list of what the sync keeps
   current. (Companion of C-001: labels are not written either.)
+- **Correction**: rewrite — the enumeration now reads as your team's Linear state ('your team's delivery state — assignee, branch, PR, labels, and workflow status'), and the sentence adds what the sync itself mirrors (titles and task bodies). (Landing: README.md intro, 2026-11-10; evidence: updateIssueImpl writes title/description/state only; team-managed fields are not synced.)
+- **Guards**: GUARD-08
 
 ### C-009 — README.md:11-15 — five built-in adapters plus custom adapters
 
@@ -238,6 +248,8 @@ lines and the header counter; ids are never reused or renumbered.
 - **Reasoning**: "every per-adapter convention" is an overclaim — the named advice
   (widen the two keys) is correct, but the sentence promises configurability the
   code does not offer.
+- **Correction**: rewrite — README now names `taskFilePatterns` and `specsBaseDirectories` as the configuration keys and states plainly that per-adapter detection markers, sibling-document sets, and feature-name rules are fixed conventions in the built-in adapter modules. (Landing: README.md adapter-selection paragraph, 2026-11-10; evidence: src/discovery/adapters/*.ts convention records are not config-backed.)
+- **Guards**: GUARD-09
 
 ### C-013 — README.md:180-184 — Spec Kit detection and siblings
 
@@ -266,6 +278,8 @@ lines and the header counter; ids are never reused or renumbered.
   merges, not commits (the README's own hook table says every-commit syncing
   requires adding `post-commit`). "as you commit" is false as shipped; the
   sentence must say push/merge (or point at the opt-in).
+- **Correction**: rewrite — step 1 now says Linear stays current on each push and after each merge, naming the installer-managed `pre-push` and `post-merge` hooks as the default set. (Landing: README.md Spec Kit step 1, 2026-11-10; evidence: src/config/defaults.ts:119 managedHooks.)
+- **Guards**: GUARD-10
 
 ### C-015 — README.md:197-199 — CI step failure conditions
 
@@ -349,6 +363,8 @@ lines and the header counter; ids are never reused or renumbered.
   linting` with the shipped defaults yields `localTaskId="Task"` and
   `title="1.2 Configure linting"` — the id captured is the single token `Task`,
   not the two-token `Task 1.2` the README example lists.
+- **Correction**: rewrite — the generic section now states the shipped grammar honestly: a single leading id token before the title (`T001`, `TASK-1`, `1.2`, …; in `## Task 1.2 …` only the token `Task` is captured), matching defaults.ts headingIdGrammar and the T010 demo. (Landing: README.md generic section, 2026-11-10.)
+- **Guards**: GUARD-11
 
 ### C-020 — README.md:241-243 — generic scaffold location
 
@@ -858,6 +874,8 @@ lines and the header counter; ids are never reused or renumbered.
   `Task\\s+\\d+(?:\\.\\d+)?` alternative (a two-token id captured whole) is NOT in
   the code default — shipped captures `Task` alone. Requirement left untouched
   (governance); the shipped-vs-mandated default drift is routed as FU-002.
+- **Correction**: label-planned — requirement text is NOT edited (unimplemented mandates are never erased from requirements.md; Governance). The shipped-default drift is routed to defects.md FU-002; docs-side wording follows the shipped grammar, and README's generic-grammar sentence (corrected per C-019) states the as-built capture. (Landing: none in requirements.md; FU-002 open.)
+- **Guards**: GUARD-12
 
 ### C-055 — specs/requirements.md:118 (R2.5) — mandated phase-pattern default
 
@@ -872,6 +890,8 @@ lines and the header counter; ids are never reused or renumbered.
 - **Reasoning**: shipped `phasePattern` default matches only `Phase\\s+[0-9]+` in
   an H1/H2 heading (case-sensitive); the mandated `story`/`milestone` alternatives
   and case-insensitivity are absent. Routed to FU-002; requirement untouched.
+- **Correction**: label-planned — mandate preserved in requirements.md; phase-pattern default drift routed to defects.md FU-002. No doc states the mandated pattern as shipped behavior. (Landing: none in requirements.md; FU-002 open.)
+- **Guards**: GUARD-13
 
 ### C-056 — specs/requirements.md:119 (R2.6) — mandated summary-pattern default
 
@@ -888,6 +908,8 @@ lines and the header counter; ids are never reused or renumbered.
   `^\\s{0,3}#{2,4}\\s+(?:Summary|Overview)\\b` — heading levels 2–4, two
   literals; the mandated seven-phrase, level-1-or-2 default is absent. Routed to
   FU-002; requirement untouched.
+- **Correction**: label-planned — mandate preserved in requirements.md; summary-pattern default drift routed to defects.md FU-002. docs/parsing.md describes the shipped summary exclusion truthfully. (Landing: none in requirements.md; FU-002 open.)
+- **Guards**: GUARD-14
 
 ### C-057 — specs/requirements.md:120 (R2.7) — mandated rollup-pattern default
 
@@ -902,6 +924,8 @@ lines and the header counter; ids are never reused or renumbered.
 - **Reasoning**: shipped `rollupPattern` default is `\\b(?:parent|roll-?up)\\b` —
   none of the mandated bold-label defaults. Routed to FU-002; requirement
   untouched.
+- **Correction**: label-planned — mandate preserved in requirements.md; rollup-pattern default drift routed to defects.md FU-002. docs/parsing.md describes the shipped rollup exclusion truthfully. (Landing: none in requirements.md; FU-002 open.)
+- **Guards**: GUARD-15
 
 ### C-058 — specs/requirements.md:215 (R7.4) — adapter supplies checklist identifier grammar
 
@@ -919,6 +943,8 @@ lines and the header counter; ids are never reused or renumbered.
   (`headingIdGrammar`), but the **checklist** leading-id span grammar
   (`LOCAL_ID_SPAN_RE`) is a module-local constant — not adapter-supplied and not
   configurable. Routed as FU-003; requirement untouched.
+- **Correction**: label-planned — mandate preserved in requirements.md; the missing adapter-supplied checklist grammar is routed to defects.md FU-003. docs/parsing.md does not claim the checklist grammar is configurable. (Landing: none in requirements.md; FU-003 open.)
+- **Guards**: GUARD-16
 
 ### C-059 — specs/requirements.md:121 (R2.8) — mandated flat-checklist default
 
@@ -936,6 +962,8 @@ lines and the header counter; ids are never reused or renumbered.
   while the shipped default is non-empty, so a grammar-headed doc whose first text
   line is a checkbox is flat in the code and non-flat under the mandated default.
   Default-value drift only; routed to FU-002; requirement untouched.
+- **Correction**: label-planned — mandate preserved in requirements.md; the non-empty shipped flatChecklistMarkers default contradicts the mandated empty list and is routed to defects.md FU-002. docs/parsing.md describes the shipped marker-list behavior. (Landing: none in requirements.md; FU-002 open.)
+- **Guards**: GUARD-17
 
 ### C-060 — specs/requirements.md:5 (Introduction) — supported-framework set
 
@@ -1381,3 +1409,19 @@ Worktree at branch `019-speckit-doc-truthfulness`, guard suite
 This run is the "disproven claim restored fails CI" scenario (US3-AS1): the
 uncorrected branch IS the restored-claim state, and the corrections in Phase 5
 are expected to turn these 14 failures green (US3-AS2).
+
+### Corrections landed (T017–T022, US2) — 2026-11-10
+
+- README.md corrected per the eight README-side entries: intro (C-006/C-007/
+  C-008), adapter-selection paragraph (C-012), Spec Kit section — T001
+  sentence, step 1, step 3 (C-001/C-002/C-014/C-006), generic section
+  (C-019). Corrected examples remain fictional/placeholder-grade (FR-008).
+- T019 outcome: docs/parsing.md carried NO false/ambiguous claim (C-045…
+  C-053 all `true` as-built) — closed with this record note and no edit, as
+  the task directs.
+- Requirements-side entries C-054…C-059 carry `label-planned` Corrections:
+  requirement text untouched, routed to FU-002/FU-003.
+- All 14 entries now carry `**Correction**:` + `**Guards**:` lines; header
+  `Open false/ambiguous verdicts: 0` (SC-001). Guard suite: 25 pass / 0 fail;
+  the 016 `framework-support-consistency:` suite still green against the
+  corrected README.
