@@ -50,6 +50,29 @@ test("discovery adapters: five-frameworks — every file carries its correct ide
   }
 });
 
+// 017 extended the parameterized identity table to the sixth built-in identity: the
+// spec-kitty row's claims come from `kitty-specs/` alone (C2.1), and the fixture's
+// non-mission Markdown (spec.md siblings, tasks/ prompts, .kittify/) stays unclaimed.
+const KITTY = fixtureRepoPath("spec-kitty");
+
+test("discovery adapters: spec-kitty identity row over the 017 fixture — path-only claim, mission features, spec.md siblings (SC-001)", async () => {
+  const result = await discoverTaskFiles({ repositoryRoot: KITTY, config: builtInDefaults, gitContext: false });
+  const files = byPath(result);
+
+  const expectations: readonly [string, string, string | undefined, readonly string[]][] = [
+    ["kitty-specs/001-demo/tasks.md", "spec-kitty", "001-demo", ["kitty-specs/001-demo/spec.md"]],
+    ["kitty-specs/002-billing/tasks.md", "spec-kitty", "002-billing", ["kitty-specs/002-billing/spec.md"]],
+  ];
+  assert.equal(result.files.length, expectations.length, "0 missed, 0 false — nothing else in the fixture is claimed");
+  for (const [filePath, frameworkId, featureName, siblingDocuments] of expectations) {
+    const file = files.get(filePath);
+    assert.ok(file, `${filePath} discovered`);
+    assert.equal(file.frameworkId, frameworkId, `${filePath} identity`);
+    assert.equal(file.featureName, featureName, `${filePath} Feature_Name — mission directory (C2.3)`);
+    assert.deepEqual(file.siblingDocuments, siblingDocuments, `${filePath} existing configured siblings in list order`);
+  }
+});
+
 test("discovery adapters: look-alike traps — .kiro/specs/ never resolves to spec-kit and a docs/ base without bmad markers is NOT bmad (001 R7.8)", async () => {
   const files = byPath(await discoverFive());
   assert.equal(files.get(".kiro/specs/auth/tasks.md")?.frameworkId, "kiro");

@@ -22,7 +22,7 @@ export const specKittyConventions: ResolvedConventions = {
   phasePattern: "^#{2,4}\\s+Work Package\\s+(?<phase>WP\\d+(?::\\s*[^\\n]*)?)\\s*$", // C3.6
   summaryPattern:
     "^\\s{0,3}#{2,4}\\s+(?:Inputs|Prerequisites|Organization|Subtask Format|Path Conventions|Goal|Independent Test|Implementation Notes|Parallel Opportunities|Dependencies|Risks & Mitigations)\\b", // C3.3
-  checklistIdPattern: "^(?<id>[Tt]?\\d{2,}(?:\\.\\d+)*)[ \\t]*[.:—–-]?[ \\t]+", // C3.4 (amendment 2)
+  checklistIdPattern: "^(?<id>[Tt]?\\d{2,}(?:\\.\\d+)*|\\d+(?:\\.\\d+)+)[ \\t]*[.:—–-]?[ \\t]+", // C3.4 (amendment 2) — second alternation: dotted variants with single-digit heads ("2.1"), per T012/C3.4
   titleTagPattern: "\\[(?:P\\d*|US\\d+)\\]", // C3.5 (amendment 2) — derived titles only
   titleBehavior: { stripPrefixes: [...builtInDefaults.titleStripPrefixes] },
   siblingDocuments: [...builtInDefaults.siblingDocuments],

@@ -94,7 +94,7 @@ test("discovery built-ins: spec-kitty row — kitty-specs/ base, path-only detec
   assert.equal(kitty.headingGrammar, "(?!)");
   assert.equal(new RegExp("(?!)", "u").test("## Work Package WP01: Setup"), false, "never-matching grammar (C3.1)");
   assert.equal(kitty.phasePattern, "^#{2,4}\\s+Work Package\\s+(?<phase>WP\\d+(?::\\s*[^\\n]*)?)\\s*$");
-  assert.equal(kitty.checklistIdPattern, "^(?<id>[Tt]?\\d{2,}(?:\\.\\d+)*)[ \\t]*[.:—–-]?[ \\t]+", "C3.4");
+  assert.equal(kitty.checklistIdPattern, "^(?<id>[Tt]?\\d{2,}(?:\\.\\d+)*|\\d+(?:\\.\\d+)+)[ \\t]*[.:—–-]?[ \\t]+", "C3.4 — dotted variants with single-digit heads ('2.1') included");
   assert.equal(kitty.titleTagPattern, "\\[(?:P\\d*|US\\d+)\\]", "C3.5");
   assert.equal(kitty.agentHooksDirectory, undefined, "no agent-hook scaffold (C1.3)");
   assert.equal(kitty.agentHookTemplate, undefined);
