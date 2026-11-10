@@ -42,7 +42,12 @@ correction.
 
 Extension record (2026-11-10): GUARD-08…GUARD-11 added per the extension rule below
 (one guard keyed 1:1 to the `Correction` of each audit entry that reached a
-false/ambiguous verdict during the T004 README enumeration).
+false/ambiguous verdict during the T004 README enumeration). GUARD-24 added for the
+C-007 corrected fact. GUARD-12…GUARD-17 added for the six requirements-side false
+verdicts (C-054…C-059): those Corrections are `label-planned` (requirement text is
+never edited to erase a mandate), so each guard is a **mandate-preservation** check —
+the mandated sentence must STAY in `specs/requirements.md` until its follow-up defect
+(FU-002/FU-003) lands, and must not be silently deleted to make docs match.
 
 ### Family 2 — required wording (drift guards)
 
@@ -53,6 +58,13 @@ false/ambiguous verdict during the T004 README enumeration).
 | GUARD-05 | C-001 | the Spec Kit section states what is actually recorded per task: mirrored description body, visible `[KEY-N]` reference token on the task line, durable sync state in the sync attachment (US2-AS1) |
 | GUARD-06 | C-002 | the corrected wording keeps both truths: the `specs/<feature>/tasks.md` layout is config-free, and local-id capture follows the documented identifier grammar (headings capture; checkbox ids need the grammar's separator) — no falsehood in either direction (US2-AS2) |
 | GUARD-07 | C-006 | the intro states mapping durability via the reference token + attachment-metadata anchor (no in-file marker — Constitution Principle II) |
+| GUARD-24 | C-007 | the intro states the truthful grouping story: reports group by project/feature, and the tool never creates or assigns Linear milestones |
+| GUARD-12 | C-054 | requirements.md R2.2 keeps its mandated heading-grammar default (incl. the `Task\s+\d+` alternative the code lacks) — erasure forbidden while FU-002 is open |
+| GUARD-13 | C-055 | requirements.md R2.5 keeps its mandated phase-pattern default (`phase\|story\|milestone`) |
+| GUARD-14 | C-056 | requirements.md R2.6 keeps its mandated summary-pattern default (`timeline estimate` phrase set) |
+| GUARD-15 | C-057 | requirements.md R2.7 keeps its mandated bold-label rollup defaults (`completion checklist`) |
+| GUARD-16 | C-058 | requirements.md R7.4 keeps the "heading/checklist identifier grammar" adapter mandate |
+| GUARD-17 | C-059 | requirements.md R2.8 keeps its mandated empty-default flat-checklist marker list |
 
 ### Family 3 — audit-record self-checks
 
@@ -62,6 +74,14 @@ record exists; header keys present; verdict vocabulary legal; every false/ambigu
 entry carries a Correction; the six FR-002 suspect topics are present; open
 false/ambiguous count is 0 on the delivered branch; every `FU-` source claim id
 resolves in the record.
+
+Catalog mapping for the implementation ids: GUARD-18 header keys (baseline hash,
+five audited documents, integer open-count); GUARD-19 rule 1 (every claim section
+carries Verdict + Evidence kind + Evidence pointer whose target resolves at HEAD);
+GUARD-20 legal vocabularies + rule 2 (false/ambiguous ⇒ `**Correction**:` present);
+GUARD-21 rule 3 (header count equals the counted open entries and equals 0);
+GUARD-22 rule 4 (six FR-002 suspect topics); GUARD-23 `defects.md` source-claim
+resolution and the category-`defect` ⇒ `requirements-mandate-code-lacks` rule.
 
 ## Non-goals / extension rules
 

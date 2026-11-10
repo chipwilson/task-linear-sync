@@ -1348,3 +1348,36 @@ accounted for — SC-001 coverage 100% (79 claim entries; entries C-001…C-079)
 - The report's grouping bucket field is internally named `milestone` but its value is
   the `featureName` grouping key — cited in C-007's search scope so the distinction is
   on record.
+
+## Verification notes
+
+### Red-first guard run (T013–T016, US3-AS1 evidence) — 2026-11-10
+
+Worktree at branch `019-speckit-doc-truthfulness`, guard suite
+`tests/contract/doc-truthfulness.test.ts` authored (24 tests) against the
+**uncorrected** documents, then `npm run pretest && npm run test:contract`:
+
+- Baseline before the suite existed: 315 pass / 0 fail.
+- Red run: **326 pass / 14 fail** — every failure a `doc-truthfulness:` guard,
+  each message naming the guard id, its audit entry (`C-\d{3}`), and the
+  offending document. Failing guards:
+  - Family 1 (disproven phrasing still present in README.md): GUARD-01 (C-001),
+    GUARD-02 (C-002), GUARD-04 (C-006), GUARD-04b (C-007), GUARD-08 (C-008),
+    GUARD-09 (C-012), GUARD-10 (C-014), GUARD-11 (C-019).
+  - Family 2 (corrected wording not yet landed — pending Phase 5): GUARD-05
+    (C-001), GUARD-06 (C-002), GUARD-07 (C-006), GUARD-24 (C-007).
+  - Family 3 (record open at close-out): GUARD-20 and GUARD-21 — 14
+    false/ambiguous entries still lack `**Correction**:` lines; header count
+    agrees (14) but must reach 0.
+- Green already, as designed: GUARD-03 (C-003 — the disproven `[DEP:]`
+  phrasing is genuinely absent corpus-wide), GUARD-12…GUARD-17 (mandated
+  requirements.md sentences present and preserved), GUARD-18, GUARD-19 (79
+  entries, all evidence pointers resolve), GUARD-22, GUARD-23, and every
+  pre-existing suite including the 016 `framework-support-consistency:` pins.
+- Test-side fix during this step (not a doc change): GUARD-13's pattern
+  corrected to the non-capturing group `(?:phase|story|milestone)` exactly as
+  requirements.md R2.5 spells it.
+
+This run is the "disproven claim restored fails CI" scenario (US3-AS1): the
+uncorrected branch IS the restored-claim state, and the corrections in Phase 5
+are expected to turn these 14 failures green (US3-AS2).
