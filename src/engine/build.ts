@@ -106,6 +106,7 @@ import { parseTaskFile } from "../parsing/index.js";
 import type { TaskFileAdapter } from "../parsing/index.js";
 import { resolveRouting } from "../routing/index.js";
 import { deriveTitle } from "../titles/index.js";
+import { adapterDerivedTitle } from "./derived-title.js";
 import {
   DurableIdentityCollisionError,
   matchAllTasks,
@@ -511,8 +512,9 @@ export async function buildSyncPlan(
         filePath: file.filePath,
         specSection: mirrorRegion(rawLines, task),
         routing,
-        // Undecorated comparison title — header decision note.
-        derivedTitle: deriveTitle(task, config).baseTitle,
+        // Undecorated comparison title — header decision note; adapters carrying
+        // `titleTagPattern` strip capability tags from it (017 C3.5, inert otherwise).
+        derivedTitle: adapterDerivedTitle(deriveTitle(task, config).baseTitle, task, adapter, config),
       });
     }
   }

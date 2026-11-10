@@ -18,6 +18,7 @@ import { parseTaskFile } from "task-linear-sync/parsing";
 import { fixtureRepoPath, listTree, openCountingProbe, withTempTree } from "../helpers/discovery-fixtures.js";
 
 const FIVE = fixtureRepoPath("five-frameworks");
+const KITTY = fixtureRepoPath("spec-kitty");
 
 const CUSTOM: CustomAdapterDescriptor = {
   id: "acme-flow", // placeholder identity only (zero org literals — constitution III)
@@ -115,6 +116,30 @@ test("e2e US: repeat-run byte-identity across the whole result (SC-002)", async 
   assert.equal(JSON.stringify(a), JSON.stringify(b));
 });
 
+test("e2e US: spec-kitty zero-config walkthrough — the id set keyed off builtInAdapters, spec-kitty included (017 US1)", async () => {
+  const kitty = await discoverTaskFiles({ repositoryRoot: KITTY, config: builtInDefaults, gitContext: false });
+  assert.deepEqual(
+    kitty.files.map((f) => [f.filePath, f.frameworkId, f.featureName]),
+    [
+      ["kitty-specs/001-demo/tasks.md", "spec-kitty", "001-demo"],
+      ["kitty-specs/002-billing/tasks.md", "spec-kitty", "002-billing"],
+    ],
+    "zero configuration keys: the mission directory is the Feature_Name (US1-AC2)",
+  );
+  const five = await discoverTaskFiles({ repositoryRoot: FIVE, config: builtInDefaults });
+  const superpower = await discoverTaskFiles({ repositoryRoot: fixtureRepoPath("spec-superpower"), config: builtInDefaults, gitContext: false });
+  const seen = new Set<string>([
+    ...five.files.map((f) => f.frameworkId),
+    ...kitty.files.map((f) => f.frameworkId),
+    ...superpower.files.map((f) => f.frameworkId),
+  ]);
+  assert.deepEqual(
+    [...seen].sort(),
+    Object.keys(builtInAdapters).sort(),
+    "the fixture set together exercises EVERY built-in identity (seven since 017/018)",
+  );
+});
+
 test("e2e US: override run — the custom adapter wins over built-in markers on flows/** (FR-011)", async () => {
   await withTempTree(
     "e2e-custom-win",
@@ -158,7 +183,7 @@ test("e2e US: escape fixture — refusal recorded with 0 opens outside the canon
 });
 
 test("e2e US: read-only posture — 0 files or directories created across every fixture repo (Principle I)", async () => {
-  const repos = ["five-frameworks", "empty", "no-task-files", "git-loose", "git-packed", "git-detached", "git-no-remote", "git-none"];
+  const repos = ["five-frameworks", "spec-kitty", "empty", "no-task-files", "git-loose", "git-packed", "git-detached", "git-no-remote", "git-none"];
   const before = new Map<string, string[]>();
   for (const name of repos) before.set(name, await listTree(fixtureRepoPath(name)));
   for (const name of repos) {

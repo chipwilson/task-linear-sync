@@ -13,7 +13,7 @@ import assert from "node:assert/strict";
 import { parseTaskFile, renderTaskLines, cleanTitle, LineRenderError, scanConflictBlocks, splitLines } from "task-linear-sync/parsing";
 import type { LineAssignment, TaskFileAdapter } from "task-linear-sync/parsing";
 
-import { genericFixtureAdapter, makeTestConfig } from "../helpers/parsing-fixtures.js";
+import { genericFixtureAdapter, specKittyFixtureAdapter, readFrameworkFixture, makeTestConfig } from "../helpers/parsing-fixtures.js";
 
 const cfg = makeTestConfig();
 const VIRTUAL_PATH = "specs/generated/tasks.md";
@@ -190,6 +190,68 @@ test("parsing round-trip (property) — parse → render → parse reproduces id
     const rendered2 = renderTaskLines(VIRTUAL_PATH, rendered.content, again, cfg);
     assert.equal(rendered2.content, rendered.content, `iteration ${iter}: render→parse→render bytes stable (no prefix growth)`);
   }
+});
+
+test("parsing round-trip (spec-kitty, 017 C3.8) — file bytes stable apart from the [KEY-N] prefix; tags survive; no progressive prefixing", () => {
+  const KITTY_PATH = "kitty-specs/001-corpus/tasks.md";
+  const content = readFrameworkFixture("spec-kitty");
+  const first = parseTaskFile(KITTY_PATH, content, specKittyFixtureAdapter, cfg);
+  const assignments = first.file.tasks.map((task, ordinal) => ({
+    task,
+    // The FILE keeps the raw title (id span excluded, capability tags intact); only the
+    // engine-derived issue title strips tags (C3.5) — rendering never applies titleTagPattern.
+    desiredTitle: cleanTitle(task.title, {
+      confirmationKey: cfg.confirmationKey,
+      ...(task.localTaskId !== undefined ? { localTaskId: task.localTaskId } : {}),
+      titleStripPrefixes: cfg.titleStripPrefixes,
+    }),
+    issueRef: { key: cfg.confirmationKey, number: 100 + ordinal },
+  }));
+
+  const rendered = renderTaskLines(KITTY_PATH, content, assignments, cfg, { checklistIdPattern: specKittyFixtureAdapter.checklistIdPattern });
+  const before = lines(content);
+  const after = lines(rendered.content);
+  assert.equal(after.length, before.length);
+  const assigned = new Map(assignments.map((a) => [a.task.lineNumber, a]));
+  const refSpan = new RegExp(` \\[${cfg.confirmationKey}-\\d+\\]`, "gu");
+  for (const line of before) {
+    const out = after[line.number - 1];
+    assert.ok(out);
+    if (assigned.has(line.number)) {
+      // Byte-identical APART FROM the visible reference prefix — and tags/id span survive.
+      assert.equal(out.text.replace(refSpan, ""), line.text, `line ${line.number}: only the reference prefix may differ`);
+      assert.equal(out.terminator, line.terminator);
+    } else {
+      assert.equal(out.text + out.terminator, line.text + line.terminator, `unassigned line ${line.number} bytes changed`);
+    }
+  }
+  assert.match(after[19].text, /\[P\]/u, "[P] tag survives the write-back");
+  assert.match(after[24].text, /\[US1\]/u, "[US1] tag survives the write-back");
+  assert.match(after[19].text, /T001/u, "the printed local id span is preserved");
+
+  // Re-parse: identical titles and ids; the reference never leaks into stored titles.
+  const second = parseTaskFile(KITTY_PATH, rendered.content, specKittyFixtureAdapter, cfg);
+  assert.equal(second.file.tasks.length, first.file.tasks.length);
+  for (const task of second.file.tasks) {
+    const expected = first.file.tasks.find((t) => t.lineNumber === task.lineNumber);
+    assert.ok(expected);
+    assert.equal(task.title, expected.title, `title at line ${task.lineNumber} survives the round trip`);
+    assert.equal(task.localTaskId, expected.localTaskId);
+    assert.ok(!task.title.includes(`[${cfg.confirmationKey}-`), "no reference may leak into stored titles");
+  }
+
+  // Second cycle over the written-back file: NO PROGRESSIVE PREFIXING — bytes are a fixpoint.
+  const reassignments = second.file.tasks.map((task) => ({
+    task,
+    desiredTitle: cleanTitle(task.title, {
+      confirmationKey: cfg.confirmationKey,
+      ...(task.localTaskId !== undefined ? { localTaskId: task.localTaskId } : {}),
+      titleStripPrefixes: cfg.titleStripPrefixes,
+    }),
+    issueRef: task.issueRef ?? { key: cfg.confirmationKey, number: 999 },
+  }));
+  const rendered2 = renderTaskLines(KITTY_PATH, rendered.content, reassignments, cfg, { checklistIdPattern: specKittyFixtureAdapter.checklistIdPattern });
+  assert.equal(rendered2.content, rendered.content, "render → parse → render is a byte fixpoint (no prefix growth, no tag loss)");
 });
 
 test("parsing round-trip (property, SC-003) — every corrupted generated file halts with file+line error and identical input bytes", () => {

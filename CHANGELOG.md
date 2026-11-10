@@ -25,6 +25,24 @@ this preview — lives in [docs/versioning.md](docs/versioning.md).
   `docs/configuration.md` document the new identity in the same change
   (FR-013); the framework-consistency suite pins README ⇄ requirements ⇄
   registry agreement throughout.
+- Feature 017: `spec-kitty` is a real built-in adapter and the seventh syncable
+  framework identity, alongside `kiro`, `spec-kit`, `open-spec`, `bmad`,
+  `spec-superpower`, and `generic`. Spec Kitty missions are discovered with zero configuration: a task
+  file beneath `kitty-specs/` is `spec-kitty` with no sibling-document
+  requirement, the mission directory is the feature name, the id printed at the
+  start of a checklist line (`- [ ] T001 Create the scaffold`) is the local task
+  id, `## Work Package WPnn: …` headings group subtasks into phases without
+  becoming tasks themselves, the template/prose sections carry no tasks, and
+  `[P]` / `[Pn]` / `[USn]` capability tags stay verbatim in the task file and
+  mirrored issue bodies while disappearing from derived titles and issue titles.
+  The generated `kitty-specs/<mission>/tasks/` agent-prompt directory is excluded
+  from discovery for every adapter, and `install-agent-hook --framework
+  spec-kitty` refuses with zero writes like any identity without a template.
+  Two optional adapter grammar members (`checklistIdPattern`, `titleTagPattern`)
+  and a whole-segment `*` in exclusion entries come with it; every pre-existing
+  identity is unchanged byte-for-byte. This supersedes the docs-only removal
+  note below — `spec-kitty` now exists in code, so the consistency suite's
+  fabricated-name pin moved to a name no feature ships (`spec-fluffy`).
 - Docs: framework support consolidated on the code's actual built-in set
   (`kiro`, `spec-kit`, `open-spec`, `bmad`, `generic`). The README previously
   advertised adapters for `spec-kitty` and `spec-superpower`, which never

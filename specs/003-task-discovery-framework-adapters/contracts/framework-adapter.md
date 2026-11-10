@@ -11,10 +11,11 @@ R11; fields: [../data-model.md](../data-model.md) §3–§6. **This interface is
 import type { FrameworkId, FrameworkMetadata } from "task-linear-sync/domain"; // frozen 002 — consumed, never redefined
 
 /**
- * Identity vocabulary (003-local, research R5). Built-in adapters use ONLY the five frozen
- * FrameworkId literals, so every built-in value is assignable to 002's TaskFile.frameworkId /
- * FrameworkMetadata.frameworkId. Custom adapter ids (FR-011) are additional strings; the 002
- * union itself is unchanged (widening it is an amendment candidate, not executed here).
+ * Identity vocabulary (003-local, research R5). Built-in adapters use ONLY the seven frozen
+ * FrameworkId literals (widened in lockstep by the 017 amendment and 018 A-018-0,
+ * docs/contract-amendments.md), so every built-in value is assignable to 002's
+ * TaskFile.frameworkId / FrameworkMetadata.frameworkId. Custom adapter ids (FR-011) are
+ * additional strings.
  */
 export type FrameworkIdentity = FrameworkId | (string & Record<never, never>);
 export function isBuiltInFrameworkId(value: string): value is FrameworkId;
@@ -61,11 +62,23 @@ export interface FrameworkAdapter {
   readonly phasePattern?: string;
   readonly summaryPattern?: string;
   readonly rollupPattern?: string;
+  /**
+   * 017 amendment 2 — optional checklist-specific grammar members, regex sources like every
+   * other grammar field. `checklistIdPattern` overrides the built-in leading local-ID span
+   * for CHECKLIST lines (named group `id`); `titleTagPattern` lists capability-tag tokens
+   * removed from DERIVED titles. Both absent on every pre-017 built-in, where resolution
+   * keeps the previous behavior byte-for-byte (017 C5.3).
+   */
+  readonly checklistIdPattern?: string;
+  readonly titleTagPattern?: string;
   readonly titleBehavior?: { readonly stripPrefixes: readonly string[] }; // consumed by 005
   readonly siblingDocuments: readonly string[];         // configured sibling doc names (001 R7.5)
   readonly agentHooksDirectory?: string;                // e.g. ".kiro/hooks/"
   readonly agentHookTemplate?: "kiro-json" | "command-json" | "none"; // research R11
   readonly frameworkSpecificExclusions?: readonly string[]; // MUST be empty for "generic" (FR-010)
+  //   Entry grammar (017 amendment 3): a root-relative directory prefix (contains "/"), a bare
+  //   directory name at any depth, or an entry whose whole segment is `*` — exactly one path
+  //   segment, root-relative, matching directory included with its whole subtree.
 
   /** Pure predicate. Returns the best match for this adapter, or null. Deterministic; no I/O (ctx is pre-supplied). */
   detect(candidatePath: string, ctx: DetectionContext): DetectionMatch | null;
@@ -85,8 +98,9 @@ export interface DetectionRecord {
 /**
  * Selection (data-model §4). Rank: (1) longest matchedPattern, (2) index in precedence list,
  * (3) alphabetical. Precedence default = ["kiro","open-spec","spec-kit","bmad",
- * "spec-superpower","generic"] — the spec's fixed marker precedence, overridable via
- * overrides.precedence (order amended by 018 A-018-1). Zero matches → generic (via:
+ * "spec-superpower","spec-kitty","generic"] — the spec's fixed marker precedence, overridable
+ * via overrides.precedence (order amended by 018 A-018-1; 017 entry 1 inserts
+ * "spec-kitty" before "generic"). Zero matches → generic (via:
  * "fallback") ONLY when the basename still matches the enabled generic adapter's effective
  * taskFilePatterns; otherwise the file is unclaimed and returned as `null`, and discovery
  * omits it without a diagnostic (018 amendment A-018-1). Generic entirely disabled with
@@ -166,6 +180,10 @@ export const builtInAdapters: Readonly<Record<FrameworkId, FrameworkAdapter>>;
 //   .bmad:      baseDirectories ["bmad/","bmad-method/","docs/"], tasks.md, Feature=parent-or-basename,
 //               siblings [requirements.md, design.md, architecture.md, prd.md, spec.md],
 //               detect: pathContains("bmad/"|"bmad-method/") OR sibling(prd.md|architecture.md)
+//   .spec-kitty: baseDirectories ["kitty-specs/"], tasks.md, Feature=parent-dir (the mission),
+//               siblings from config.siblingDocuments; checklistIdPattern + titleTagPattern
+//               (017 amendment 2); frameworkSpecificExclusions ["kitty-specs/*/tasks/"]
+//               (017 amendment 3); no agentHooksDirectory and agentHookTemplate "none" (017 C1.3)
 //   .generic:   baseDirectories from config.specsBaseDirectories, tasks.md, Feature=parent-dir-if-under-base,
 //               broad heading grammar; frameworkSpecificExclusions: [] (FR-010: "no framework-specific exclusions
 //               beyond the global summary/rollup defaults"); agentHooksDirectory ".task-linear-sync/hooks/"

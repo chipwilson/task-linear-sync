@@ -74,7 +74,11 @@ test("discovery selection: sibling-only markers — bmad via prd.md/architecture
 test("discovery selection: equal-length ties resolve by precedence index (open-spec before bmad by the fixed list)", () => {
   const record = select("notes/tasks.md", ["openspec.json", "prd.md", "tasks.md"]);
   assert.deepEqual(record!.candidates, ["bmad", "open-spec"], "candidates sorted alphabetically");
-  assert.equal(record!.adapterId, "open-spec", "precedence [kiro, open-spec, spec-kit, bmad, generic]: open-spec index 1 < bmad index 3");
+  assert.equal(record!.adapterId, "open-spec", "precedence [kiro, open-spec, spec-kit, bmad, spec-superpower, spec-kitty, generic]: open-spec index 1 < bmad index 3");
+});
+
+test("discovery selection: DEFAULT_PRECEDENCE pins the seven built-in ids — spec-superpower and spec-kitty inserted before the generic fallback (018/017 R1)", () => {
+  assert.deepEqual(registry.precedence, ["kiro", "open-spec", "spec-kit", "bmad", "spec-superpower", "spec-kitty", "generic"]);
 });
 
 test("discovery selection: equal-length AND equal-unknown-precedence ties fall to the alphabetical adapter id", () => {

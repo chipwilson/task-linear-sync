@@ -47,6 +47,7 @@ test("discovery overrides: adapters.kiro.taskFilePatterns replaces the basename 
       "spec-kit": { taskFilePatterns: ["todo-*.md"] },
       "open-spec": { taskFilePatterns: ["todo-*.md"] },
       bmad: { taskFilePatterns: ["todo-*.md"] },
+      "spec-kitty": { taskFilePatterns: ["todo-*.md"] },
       generic: { taskFilePatterns: ["todo-*.md"] },
     },
   });
@@ -58,7 +59,7 @@ test("discovery overrides: adapters.kiro.taskFilePatterns replaces the basename 
       { kind: "file", path: "tasks.md" },
     ],
     async (tree) => {
-      const result = await discoverTaskFiles({ repositoryRoot: tree, config: builtInDefaults, gitContext: false, overrides: { adapters: { kiro: { taskFilePatterns: ["todo-*.md"] }, "spec-kit": { taskFilePatterns: ["todo-*.md"] }, "open-spec": { taskFilePatterns: ["todo-*.md"] }, bmad: { taskFilePatterns: ["todo-*.md"] }, generic: { taskFilePatterns: ["todo-*.md"] } } } });
+      const result = await discoverTaskFiles({ repositoryRoot: tree, config: builtInDefaults, gitContext: false, overrides: { adapters: { kiro: { taskFilePatterns: ["todo-*.md"] }, "spec-kit": { taskFilePatterns: ["todo-*.md"] }, "open-spec": { taskFilePatterns: ["todo-*.md"] }, bmad: { taskFilePatterns: ["todo-*.md"] }, "spec-kitty": { taskFilePatterns: ["todo-*.md"] }, generic: { taskFilePatterns: ["todo-*.md"] } } } });
       assert.deepEqual(result.files.map((f) => f.filePath), [".kiro/specs/auth/todo-deploy.md"], "tasks.md no longer matches; todo-deploy.md does");
       assert.equal(result.files[0].frameworkId, "kiro");
     },
@@ -157,6 +158,6 @@ test("discovery overrides: layering — programmatic beats the config layer beat
 
 test("discovery overrides: unknown adapter ids in the overrides map are inert (known adapters only, FR-011)", () => {
   const registry = reg({ adapters: { "no-such": { headingGrammar: "X" } } });
-  assert.equal(registry.enabledAdapters.length, 6);
+  assert.equal(registry.enabledAdapters.length, 7);
   assert.equal(adapterById(registry, "kiro").headingGrammar, builtInDefaults.headingIdGrammar);
 });

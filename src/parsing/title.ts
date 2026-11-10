@@ -10,6 +10,9 @@
  *    parse-side stripping) and the bare `<KEY>-<N>` form (leading only);
  *  - a leading local-ID prefix duplicate (`Task 1.2:`, `T001 —`) when the task already
  *    carries that ID;
+ *  - capability-tag tokens matching `titleTagPattern` (017 amendment 2; anywhere) when the
+ *    caller supplies one — DERIVED titles only: extraction, storage, and the renderer's
+ *    file rewrite never pass the member, so repository files keep tags verbatim;
  * then collapses resulting duplicate whitespace.
  *
  * Idempotency (Principle IV): cleaning is fixpoint-stable, so render→parse→render emits
@@ -23,11 +26,14 @@ export interface CleanTitleOptions {
   readonly confirmationKey: string;
   readonly localTaskId?: string;
   readonly titleStripPrefixes: readonly string[];
+  /** Regex source of capability tags to strip (017 amendment 2); absent ⇒ no tag stripping (SC-005). */
+  readonly titleTagPattern?: string;
 }
 
 export function cleanTitle(text: string, opts: CleanTitleOptions): string {
   const bracketedRef = new RegExp(`\\[${escapeRegExp(opts.confirmationKey)}-\\d+\\]`, "gu");
   const bareLeadingRef = new RegExp(`^${escapeRegExp(opts.confirmationKey)}-\\d+\\b[ \\t]*`, "u");
+  const titleTags = opts.titleTagPattern !== undefined ? new RegExp(opts.titleTagPattern, "gu") : undefined;
   const localIdPrefix =
     opts.localTaskId !== undefined
       ? new RegExp(`^${escapeRegExp(opts.localTaskId)}[ \\t]*[.:—–-]?[ \\t]+`, "u")
@@ -59,6 +65,10 @@ export function cleanTitle(text: string, opts: CleanTitleOptions): string {
     }
     if (localIdPrefix && localIdPrefix.test(current)) {
       current = current.replace(localIdPrefix, "");
+      changed = true;
+    }
+    if (titleTags && titleTags.test(current)) {
+      current = current.replace(titleTags, " ").replace(/^[ \t]+/u, "");
       changed = true;
     }
     if (before === current) changed = false;

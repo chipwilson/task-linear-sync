@@ -71,6 +71,7 @@ Per-framework convention bundle; 003 implements, 004 consumes the *interface* on
 | `detect(taskFilePath, repoCtx)` | adapter-selection predicate |
 | `featureName(taskFilePath)` | derived or `undefined` |
 | `headingGrammar`, `phasePattern`, `summaryPattern`, `rollupPattern` | overridable regex sources |
+| `checklistIdPattern?`, `titleTagPattern?` | optional regex sources (017 amendment 2) — the leading local-ID span on checklist lines, and the capability-tag tokens dropped from derived titles; absent ⇒ the built-in defaults, unchanged for every pre-017 identity |
 | `titleBehavior` | hook into 005 derivation |
 | `agentHooksDirectory?` | framework-specific default |
 

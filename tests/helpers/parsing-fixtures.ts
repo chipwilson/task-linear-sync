@@ -88,6 +88,24 @@ export const specKitFixtureAdapter = {
   id: "spec-kit" as const,
   featureName: prefixedFeatureName("specs/"),
 } satisfies TaskFileAdapter;
+/**
+ * spec-kitty (017): `kitty-specs/<mission>/tasks.md` → `<mission>`. The grammar members
+ * mirror the built-in row verbatim so the corpus exercises the shipped grammars:
+ * never-matching headings (C3.1), WP grouping (C3.6), template-section exclusion (C3.3),
+ * the widened local-id grammar (C3.4) and tag stripping (C3.5). Literal mirrors follow the
+ * kiro precedent — this helper imports no 003 code; the corpus integration test pins the
+ * mirror against the real row.
+ */
+export const specKittyFixtureAdapter = {
+  id: "spec-kitty" as const,
+  featureName: prefixedFeatureName("kitty-specs/"),
+  headingGrammar: "(?!)",
+  phasePattern: "^#{2,4}\\s+Work Package\\s+(?<phase>WP\\d+(?::\\s*[^\\n]*)?)\\s*$",
+  summaryPattern:
+    "^\\s{0,3}#{2,4}\\s+(?:Inputs|Prerequisites|Organization|Subtask Format|Path Conventions|Goal|Independent Test|Implementation Notes|Parallel Opportunities|Dependencies|Risks & Mitigations)\\b",
+  checklistIdPattern: "^(?<id>[Tt]?\\d{2,}(?:\\.\\d+)*|\\d+(?:\\.\\d+)+)[ \\t]*[.:—–-]?[ \\t]+",
+  titleTagPattern: "\\[(?:P\\d*|US\\d+)\\]",
+} satisfies TaskFileAdapter;
 /** open-spec: `openspec/<feature>/tasks.md` → `<feature>`; no grammar overrides. */
 export const openSpecFixtureAdapter = {
   id: "open-spec" as const,
