@@ -5,8 +5,13 @@ Module: `src/domain/task.ts`, `src/domain/match.ts`, `src/domain/routing.ts`,
 rules: [../data-model.md](../data-model.md) § 1–8.
 
 ```ts
-/** Canonical framework identifiers (001 Glossary: Supported_Framework). */
-export type FrameworkId = "bmad" | "spec-kit" | "open-spec" | "kiro" | "generic";
+/**
+ * Canonical framework identifiers (001 Glossary: Supported_Framework).
+ * Amended 2026-11-10 by feature 017 (docs/contract-amendments.md, entry 1): `"spec-kitty"`
+ * inserted immediately before `"generic"`; every prior value keeps its meaning, its state
+ * payloads, and its `Stable_UUID` seeds.
+ */
+export type FrameworkId = "bmad" | "spec-kit" | "open-spec" | "kiro" | "spec-kitty" | "generic";
 
 export type TaskKind = "heading" | "checklist";
 

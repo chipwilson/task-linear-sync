@@ -5,7 +5,7 @@
  */
 
 /** Canonical framework identifiers (001 Glossary: Supported_Framework). */
-export type FrameworkId = "bmad" | "spec-kit" | "open-spec" | "kiro" | "generic";
+export type FrameworkId = "bmad" | "spec-kit" | "open-spec" | "kiro" | "spec-kitty" | "generic";
 
 export type TaskKind = "heading" | "checklist";
 

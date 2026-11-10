@@ -9,8 +9,8 @@ when task headings are reworded, and task-file *sections* map 1:1 to Linear
 milestones.
 
 Works with any Spec-Driven Development framework that keeps work in
-`tasks.md`-style checklists — five built-in adapters (GitHub Spec Kit, AWS
-Kiro, OpenSpec, BMAD, and a configurable generic lane), plus custom adapters
+`tasks.md`-style checklists — six built-in adapters (GitHub Spec Kit, AWS
+Kiro, OpenSpec, BMAD, Spec Kitty, and a configurable generic lane), plus custom adapters
 and widenable file patterns for anything else (per-framework behavior:
 [SDD frameworks](#using-it-with-your-sdd-framework)).
 
@@ -156,7 +156,7 @@ auth tiers, caching, SSE vs polling, deployment patterns:
 
 Framework layout is never hardcoded: discovery walks the repository, and each
 built-in adapter carries its framework's conventions — detection markers, base
-directories, feature-name rule, sibling documents. Five built-in adapters ship,
+directories, feature-name rule, sibling documents. Six built-in adapters ship,
 all enabled by default through the `frameworkAdapters` config key:
 
 | Adapter id | Framework | Detected by | Base directories | Feature name from |
@@ -165,10 +165,12 @@ all enabled by default through the `frameworkAdapters` config key:
 | `spec-kit` | GitHub Spec Kit | beneath `specs/`/`spec/` **and** a sibling `spec.md`/`plan.md` | `specs/`, `spec/` | feature dir under a base |
 | `open-spec` | OpenSpec | path contains `openspec/`/`open-spec/` **or** sibling `openspec.json`/`proposal.md` | `openspec/`, `open-spec/` | segment after `openspec/`, `changes/`, or `specs/` |
 | `bmad` | BMAD | path contains `bmad/`/`bmad-method/` **or** sibling `prd.md`/`architecture.md` | `bmad/`, `bmad-method/`, `docs/` | parent dir, else task-file basename |
+| `spec-kitty` | Spec Kitty | path beneath `kitty-specs/` (no sibling requirement) | `kitty-specs/` | mission dir under `kitty-specs/`, else parent dir |
 | `generic` | any Markdown layout | fallback — never claims a file by marker | configured base dirs | parent dir under a base |
 
 When several adapters match one file, selection ranks the longest matching
-path pattern first, then the fixed precedence `kiro` → `open-spec` → `spec-kit` → `bmad` → `generic`,
+path pattern first, then the fixed precedence
+`kiro` → `open-spec` → `spec-kit` → `bmad` → `spec-kitty` → `generic`,
 then alphabetical tie-break; a file no adapter claims falls back to `generic`.
 Task-file names (default `tasks.md`, `TASKS.md`), base directories, and every
 per-adapter convention are configuration keys — widen `taskFilePatterns` /
@@ -229,6 +231,26 @@ directory, not a BMAD marker: a `docs/**` task file without BMAD siblings is
 `generic`, never silently `bmad`. Sibling documents cover the BMAD set:
 `requirements.md`, `design.md`, `architecture.md`, `prd.md`, and `spec.md`.
 
+### Spec Kitty (`spec-kitty`)
+
+Spec Kitty keeps one mission per directory: the checklist is
+`kitty-specs/<mission>/tasks.md`, the mission directory is the feature name,
+and `spec.md`, `plan.md`, and `research.md` ride along as sibling documents.
+Anything beneath `kitty-specs/` is claimed — no sibling marker is required —
+and the `kitty-specs/<mission>/tasks/` bookkeeping directory (the per-work-package
+agent-prompt files Spec Kitty generates) is excluded from discovery, because
+those prompts are not tasks.
+
+Checklist lines carry their own id, printed without the `[]` Spec Kit uses —
+`- [ ] T001 Create the scaffold` — so the local id is read out of the line body
+(`<id> <text>`), and `## Work Package WP01: <title>` headings group the subtasks
+into phases rather than becoming tasks themselves. `[P]`, `[P1]`, and `[US1]`
+capability tags stay verbatim in the file and in the mirrored issue body but are
+stripped from derived task titles, so the issue title is the plain task text.
+Task-file names, base directories, and both grammars are configuration or
+override keys — `overrides.adapters["spec-kitty"]` re-points `baseDirectories`,
+`checklistIdPattern`, or `titleTagPattern` for a forked kit layout.
+
 ### Generic Markdown (`generic`)
 
 Any repository with task-shaped Markdown — a homegrown `tasks.md`
@@ -244,12 +266,12 @@ scaffold (`install-agent-hook --framework generic`) lands in
 
 ### Your own framework (`customAdapters`)
 
-For a layout none of the five models, register a custom adapter through the
+For a layout none of the six models, register a custom adapter through the
 `task-linear-sync/discovery` API (`CustomAdapterDescriptor`: your id,
 path/base-directory patterns, task-file names, heading grammar — an
 incomplete descriptor is refused by naming every missing part before any
 I/O, and a custom id shadows a built-in only with an explicit opt-in).
-Scope note: custom adapters extend **discovery**; the five built-in
+Scope note: custom adapters extend **discovery**; the six built-in
 frameworks are the only syncable identities, so a custom id never reaches
 `plan`/`apply`/`rollback` — the engine refuses it with a named error instead
 of mislabeling your tasks.

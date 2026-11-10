@@ -118,3 +118,43 @@ so entries can never be silently dropped.
   MISSING value keeps the lenient fallback · 014 quickstart Scenario 5 shape fault ·
   clients sending string versions (supported or not) see unchanged behavior
 
+## Feature 017 amendments — the `spec-kitty` identity
+
+Adding a sixth built-in framework identity touches three frozen contracts at once.
+Each entry names the amended element, the before → after change, the artifacts moved
+together in the same change, and the gate that pins it.
+
+- 2026-11-10 · domain · `FrameworkId` / `BUILT_IN_FRAMEWORK_IDS` · five literals → six,
+  with `spec-kitty` inserted immediately before `generic` · 017 C1.1 (a Spec Kitty mission
+  must be syncable end to end, and the engine refuses any identity outside the frozen
+  union) · artifacts: `specs/002-core-domain-contracts/contracts/task-model.md`,
+  `src/domain/task.ts`, `tests/contract/snapshots/frozen-surface.json` (regenerated with
+  `UPDATE_FROZEN_SNAPSHOT=1 npm run test:contract`; the exported-name sets are unchanged, so
+  the snapshot diff is empty) · gate: `tests/contract/frozen-surface.test.ts` plus the
+  016 consistency suite · migration: none for existing repositories — every prior value
+  keeps its meaning, its state payloads, and its `Stable_UUID` seeds; a state file written
+  with `spec-kitty` is simply unreadable by an older build
+- 2026-11-10 · parsing · `src/parsing/adapter.ts` member whitelist · the consumed adapter
+  members gain optional `checklistIdPattern` and `titleTagPattern` (regex **source** strings,
+  like every other grammar member) · 017 C3.4/C3.5 (a Spec Kitty checklist prints its own id
+  at the start of the line text, and `[P]`/`[Pn]`/`[USn]` capability tags belong to the file
+  rather than to the derived title) · artifacts:
+  `specs/004-task-parsing-line-rendering/contracts/adapter-consumption.md` (boundary rule 2),
+  `src/parsing/{adapter,extract,title,render}.ts`, `src/discovery/{adapter,conventions}.ts`
+  (the members are overridable through `DiscoveryOverrides.adapters["spec-kitty"]` and
+  `CustomAdapterDescriptor`, and introduce **no** new `ResolvedConfig` key, C5.1) · gate:
+  `tests/unit/parsing-conventions-017.test.ts` · migration: none — both members are absent on
+  every other built-in, where resolution falls back to the existing `LOCAL_ID_SPAN_RE` and
+  tag-free title cleaning, so the five prior identities parse byte-identically (C5.3)
+- 2026-11-10 · discovery · `frameworkSpecificExclusions` entry grammar · a prefix-or-basename
+  entry → an entry whose whole segment is `*` now compiles to exactly one path segment
+  (`kitty-specs/*/tasks/` matches `kitty-specs/<mission>/tasks`), root-relative, and a
+  matching directory skips its whole subtree · 017 C2.5 (the generated per-work-package agent
+  prompts must never be candidates for **any** adapter, including `generic`, at mission depth)
+  · artifacts: `specs/003-task-discovery-framework-adapters/contracts/framework-adapter.md`,
+  `src/discovery/traverse.ts` (`skipByExclusion`), `docs/framework-adapters.md` · gate:
+  `tests/unit/discovery-traverse.test.ts` (exclusion + disable-restores-prior-behavior) ·
+  migration: entries without `*` compile to the unchanged predicates; no shipped default used
+  `*` before this feature, so a custom entry that carried a literal `*` in a segment now
+  needs that segment spelled without the wildcard to keep matching literally
+

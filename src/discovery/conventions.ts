@@ -49,6 +49,10 @@ export interface ResolvedConventions {
   readonly phasePattern?: string;
   readonly summaryPattern?: string;
   readonly rollupPattern?: string;
+  /** 017 amendment 2: checklist local-ID span grammar (regex source); absent ⇒ 004 built-in. */
+  readonly checklistIdPattern?: string;
+  /** 017 amendment 2: capability-tag strip grammar for derived titles (regex source); absent ⇒ no stripping. */
+  readonly titleTagPattern?: string;
   readonly titleBehavior?: { readonly stripPrefixes: readonly string[] };
   readonly siblingDocuments: readonly string[];
   readonly agentHooksDirectory?: string;
@@ -208,6 +212,8 @@ export function defineFrameworkAdapter(c: ResolvedConventions): FrameworkAdapter
     phasePattern: c.phasePattern,
     summaryPattern: c.summaryPattern,
     rollupPattern: c.rollupPattern,
+    checklistIdPattern: c.checklistIdPattern,
+    titleTagPattern: c.titleTagPattern,
     titleBehavior: c.titleBehavior,
     siblingDocuments: [...c.siblingDocuments],
     agentHooksDirectory: c.agentHooksDirectory,
@@ -262,6 +268,8 @@ export function customDescriptorConventions(descriptor: CustomAdapterDescriptor,
     ...(descriptor.phasePattern !== undefined ? { phasePattern: descriptor.phasePattern } : {}),
     ...(descriptor.summaryPattern !== undefined ? { summaryPattern: descriptor.summaryPattern } : {}),
     ...(descriptor.rollupPattern !== undefined ? { rollupPattern: descriptor.rollupPattern } : {}),
+    ...(descriptor.checklistIdPattern !== undefined ? { checklistIdPattern: descriptor.checklistIdPattern } : {}),
+    ...(descriptor.titleTagPattern !== undefined ? { titleTagPattern: descriptor.titleTagPattern } : {}),
     ...(descriptor.titleBehavior ? { titleBehavior: descriptor.titleBehavior } : {}),
     ...(descriptor.siblingDocuments ? { siblingDocuments: [...descriptor.siblingDocuments] } : {}),
     ...(descriptor.agentHooksDirectory !== undefined ? { agentHooksDirectory: descriptor.agentHooksDirectory } : {}),

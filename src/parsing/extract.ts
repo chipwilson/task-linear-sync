@@ -11,7 +11,7 @@
 import type { IssueRef, TaskKind } from "../domain/task.js";
 import type { ResolvedConfig } from "../config/schema.js";
 import type { TaskFileAdapter } from "./adapter.js";
-import { escapeRegExp, headingLevelOf, matchCheckbox, stripLeadingLocalId } from "./content.js";
+import { escapeRegExp, headingLevelOf, LOCAL_ID_SPAN_RE, matchCheckbox, stripLeadingLocalId } from "./content.js";
 import type { ContentLine } from "./content.js";
 
 /** 004-local exclusion record (data-model § 2; FR-004). */
@@ -43,6 +43,8 @@ export interface ResolvedConventions {
   readonly phasePattern: RegExp;
   readonly summaryPattern: RegExp;
   readonly rollupPattern: RegExp;
+  /** 017 amendment 2: adapter `checklistIdPattern` ?? built-in `LOCAL_ID_SPAN_RE` (no config key). */
+  readonly checklistIdPattern: RegExp;
 }
 
 /** Override precedence (adapter-consumption rule 3, verbatim): `adapter.<member> ?? config.<grammar key>`. */
@@ -52,6 +54,7 @@ export function resolveConventions(adapter: TaskFileAdapter, config: ResolvedCon
     phasePattern: new RegExp(adapter.phasePattern ?? config.phasePattern, "u"),
     summaryPattern: new RegExp(adapter.summaryPattern ?? config.summaryPattern, "u"),
     rollupPattern: new RegExp(adapter.rollupPattern ?? config.rollupPattern, "u"),
+    checklistIdPattern: new RegExp(adapter.checklistIdPattern ?? LOCAL_ID_SPAN_RE.source, "u"),
   };
 }
 
@@ -178,7 +181,7 @@ export function extractTasks(
     while (stack.length > 0 && (stack[stack.length - 1]?.indentWidth ?? 0) >= line.indentWidth) stack.pop();
     const parent = stack[stack.length - 1] ?? currentHeading;
 
-    const idSplit = stripLeadingLocalId(cb.rest);
+    const idSplit = stripLeadingLocalId(cb.rest, conv.checklistIdPattern);
     const localPart = idSplit?.[0];
     const afterId = idSplit ? idSplit[1] : cb.rest;
     const { rest, issueRef } = parseIssueRefAndCleanTitle(afterId, config.confirmationKey);

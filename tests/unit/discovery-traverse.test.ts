@@ -223,3 +223,43 @@ test("discovery traverse: diagnostics and refusals are deterministically ordered
     },
   );
 });
+
+test("discovery traverse: the `kitty-specs/*/tasks/` exclusion skips per-work-package prompt dirs for EVERY adapter — `*` is exactly one segment (017 C2.5, amendment 3)", async () => {
+  await withTempTree(
+    "traverse-kitty-exclusion",
+    [
+      { kind: "file", path: "kitty-specs/launch/tasks.md" },
+      { kind: "file", path: "kitty-specs/launch/tasks/WP01-setup.md" },
+      { kind: "file", path: "kitty-specs/launch/tasks/tasks.md" },
+      { kind: "file", path: "kitty-specs/launch/tasks/deep/tasks.md" },
+      { kind: "file", path: "kitty-specs/launch/tasks2/tasks.md" },
+      { kind: "file", path: "kitty-specs/tasks/tasks.md" },
+    ],
+    async (tree) => {
+      const result = await walk(tree);
+      assert.deepEqual(
+        filePaths(result),
+        ["kitty-specs/launch/tasks.md", "kitty-specs/launch/tasks2/tasks.md", "kitty-specs/tasks/tasks.md"],
+        "the mission roll-up survives; `tasks/` (and its subtree) is skipped at exactly one segment; `tasks2/` is a different name; `kitty-specs/tasks/` is a mission NAMED tasks — its roll-up syncs",
+      );
+    },
+  );
+});
+
+test("discovery traverse: disabling spec-kitty removes its exclusion — affected files behave exactly as before 017 (C2.6, FR-011)", async () => {
+  await withTempTree(
+    "traverse-kitty-disabled",
+    [
+      { kind: "file", path: "kitty-specs/launch/tasks/tasks.md" },
+      { kind: "file", path: "notes/tasks.md" },
+    ],
+    async (tree) => {
+      const config = {
+        ...structuredClone(builtInDefaults),
+        frameworkAdapters: ["bmad", "spec-kit", "open-spec", "kiro", "generic"],
+      } as ResolvedConfig;
+      const result = await walk(tree, config);
+      assert.ok(filePaths(result).includes("kitty-specs/launch/tasks/tasks.md"), "exclusion is gone with the disabled adapter");
+    },
+  );
+});

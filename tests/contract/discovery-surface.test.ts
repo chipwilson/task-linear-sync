@@ -133,14 +133,14 @@ test("discovery surface: snapshot tier lists are well-formed (sorted, disjoint) 
   }
 });
 
-test("discovery surface: builtInAdapters keys === the five frozen FrameworkIds (active from US2)", async (t) => {
+test("discovery surface: builtInAdapters keys === the six frozen FrameworkIds (017 widened the union)", async (t) => {
   const mod = (await import("task-linear-sync/discovery")) as Record<string, unknown>;
   if (!("builtInAdapters" in mod)) {
     t.skip("builtInAdapters lands with the US2 tier (T034) — skip is deliberate, not silent");
     return;
   }
   const builtIn = mod.builtInAdapters as Record<string, unknown>;
-  assert.deepEqual(Object.keys(builtIn).sort(), ["bmad", "generic", "kiro", "open-spec", "spec-kit"]);
+  assert.deepEqual(Object.keys(builtIn).sort(), ["bmad", "generic", "kiro", "open-spec", "spec-kit", "spec-kitty"]);
 });
 
 // ── T037 packaging proof (mirrors 002's package-surface.test.ts rules WITHOUT editing it) ──

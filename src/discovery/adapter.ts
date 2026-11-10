@@ -50,7 +50,7 @@ export type FeatureNameRule =
  * 003 does not parse task content.
  */
 export interface FrameworkAdapter {
-  /** Built-ins are the five frozen literals; custom = any non-empty string outside them (R5). */
+  /** Built-ins are the frozen literals (six since 017); custom = any non-empty string outside them (R5). */
   readonly id: FrameworkIdentity;
   /** Basename globs (research R2); effective value after merge (R7). */
   readonly taskFilePatterns: readonly string[];
@@ -73,6 +73,13 @@ export interface FrameworkAdapter {
   readonly phasePattern?: string;
   readonly summaryPattern?: string;
   readonly rollupPattern?: string;
+  /**
+   * Checklist-line local-ID span grammar (regex source, `id` named group) — 017 amendment 2.
+   * Absent on every pre-017 adapter; consumed by 004 instead of its built-in default.
+   */
+  readonly checklistIdPattern?: string;
+  /** Capability-tag strip grammar for derived titles (regex source) — 017 amendment 2; absent ⇒ no stripping. */
+  readonly titleTagPattern?: string;
   /** Default title strip prefixes (FR-007); hook for 005 derivation. */
   readonly titleBehavior?: { readonly stripPrefixes: readonly string[] };
   /** Per-adapter configured sibling doc names (001 R7.5). */
@@ -106,7 +113,7 @@ export interface DetectionRecord {
  * implemented in `./registry.ts` (this file is interface + types ONLY, no behavior). */
 export interface AdapterRegistry {
   readonly enabledAdapters: readonly FrameworkAdapter[];
-  /** Built-in default ["kiro","open-spec","spec-kit","bmad","generic"]; overridable (FR-011). */
+  /** Built-in default ["kiro","open-spec","spec-kit","bmad","spec-kitty","generic"]; overridable (FR-011). */
   readonly precedence: readonly string[];
   readonly selectionOverride?: FrameworkIdentity | ((fp: string, c: DetectionContext) => FrameworkIdentity | undefined);
   /** Frozen 002 merged config; read-only. */
@@ -115,9 +122,9 @@ export interface AdapterRegistry {
 
 /**
  * Selection (data-model §4). Rank: (1) longest matchedPattern, (2) index in precedence list,
- * (3) alphabetical. Precedence default = ["kiro","open-spec","spec-kit","bmad","generic"] — the
- * spec's fixed marker precedence, overridable via overrides.precedence. Zero matches → generic
- * (via: "fallback"). overrides.selection short-circuits (via: "explicit").
+ * (3) alphabetical. Precedence default = ["kiro","open-spec","spec-kit","bmad","spec-kitty",
+ * "generic"] — the spec's fixed marker precedence, overridable via overrides.precedence.
+ * Zero matches → generic (via: "fallback"). overrides.selection short-circuits (via: "explicit").
  */
 export declare function selectAdapter(filePath: string, ctx: DetectionContext, registry: AdapterRegistry): DetectionRecord;
 
@@ -145,6 +152,9 @@ export interface CustomAdapterDescriptor {
   readonly phasePattern?: string;
   readonly summaryPattern?: string;
   readonly rollupPattern?: string;
+  /** 017 amendment 2 members — carried verbatim onto the custom row when declared. */
+  readonly checklistIdPattern?: string;
+  readonly titleTagPattern?: string;
   readonly titleBehavior?: { readonly stripPrefixes: readonly string[] };
   /** Defaults to the configured `siblingDocuments` when absent. */
   readonly siblingDocuments?: readonly string[];
@@ -163,6 +173,9 @@ export interface AdapterConventions {
   readonly phasePattern?: string;
   readonly summaryPattern?: string;
   readonly rollupPattern?: string;
+  /** 017 amendment 2 — programmatic override of the two new grammar members (C5.1). */
+  readonly checklistIdPattern?: string;
+  readonly titleTagPattern?: string;
   readonly titleBehavior?: { readonly stripPrefixes: readonly string[] };
   readonly siblingDocuments?: readonly string[];
   readonly featureNameRule?: FeatureNameRule;
