@@ -19,6 +19,12 @@ whose *name* matches a configured `skipDirectories` entry (defaults `.git`,
 Only regular files are matched, on their basename, against the enabled adapters' effective
 `taskFilePatterns`. Symlinked files and directories are excluded from results and never
 traversed, silently, without aborting the walk — symlink loops therefore terminate.
+On top of `skipDirectories`, every **enabled** adapter's `frameworkSpecificExclusions`
+entries are skipped as well (`spec-kitty` contributes `kitty-specs/*/tasks/`): an entry
+containing a `/` is a repository-root-relative directory prefix, a bare entry is a directory
+name at any depth, and a `*` occupying a whole segment matches exactly one segment — a
+matching directory is skipped with its whole subtree (017 amendment 3). Disabling an adapter
+withdraws its entries, so the files behave exactly as before the feature.
 
 **Escape refusals.** Before any directory contents are read, the directory is verified
 (via `realpath`) to be separator-bounded inside the canonical root; a symlink that

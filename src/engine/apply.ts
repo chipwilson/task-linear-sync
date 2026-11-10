@@ -94,6 +94,7 @@ import { resolveRouting } from "../routing/index.js";
 import type { RoutingResolution } from "../domain/routing.js";
 import { canonicalAttachmentUrl } from "../urls/attachment-url.js";
 import { deriveTitle } from "../titles/index.js";
+import { adapterDerivedTitle } from "./derived-title.js";
 import { discoverTaskFiles } from "../discovery/index.js";
 import type { MatchCandidate, TaskMatchInput } from "../matching/index.js";
 import { matchAllTasks } from "../matching/index.js";
@@ -151,6 +152,10 @@ interface TaskFlow {
   readonly specSection: string;
   /** Undecorated derived title (the create/update title, the checkpoint title). */
   readonly baseTitle: string;
+  /** Base title before adapter tag stripping — the file-line rewrite material (017 C3.5/C3.8). */
+  readonly rawBaseTitle: string;
+  /** 017 amendment 2: the selected adapter's local-id grammar for write-back rendering. */
+  readonly checklistIdPattern: string | undefined;
   readonly entry: Plan["entries"][number];
   /** Live matched issue (fresh deterministic match at apply time). */
   readonly issue: IssueView | undefined;
@@ -490,6 +495,10 @@ async function deriveFlows(
     specSection: string;
     routing: RoutingResolution;
     baseTitle: string;
+    /** Base title BEFORE adapter tag stripping — what repository file lines keep (017 C3.5/C3.8). */
+    rawBaseTitle: string;
+    /** 017 amendment 2: the selected adapter's local-id grammar for write-back rendering. */
+    checklistIdPattern: string | undefined;
   }
   const fileHashes: Record<string, string> = {};
   const units: Unit[] = [];
@@ -505,12 +514,17 @@ async function deriveFlows(
     const parsed = parseTaskFile(file.filePath, content, adapter as TaskFileAdapter, config);
     const routing = resolveRouting(file.filePath, config);
     for (const task of parsed.file.tasks) {
+      const rawBaseTitle = deriveTitle(task, config).baseTitle;
       units.push({
         task,
         filePath: file.filePath,
         specSection: mirrorRegion(rawLines, task),
         routing,
-        baseTitle: deriveTitle(task, config).baseTitle,
+        // Issue/checkpoint title — adapters carrying `titleTagPattern` strip capability
+        // tags here (017 C3.5); the file rewrite below keeps the RAW title instead.
+        baseTitle: adapterDerivedTitle(rawBaseTitle, task, adapter, config),
+        rawBaseTitle,
+        checklistIdPattern: adapter.checklistIdPattern,
       });
     }
   }
@@ -574,6 +588,8 @@ async function deriveFlows(
       routing: unit.routing,
       specSection: unit.specSection,
       baseTitle: unit.baseTitle,
+      rawBaseTitle: unit.rawBaseTitle,
+      checklistIdPattern: unit.checklistIdPattern,
       entry,
       issue,
       checkpoint: storeFile.checkpoints[unit.task.stableUuid],
@@ -1022,11 +1038,18 @@ async function landAssignedTaskLine(
   }
   const issueRef: IssueRef = { key: keyMatch[1]!, number: Number(keyMatch[2]) };
   const assignments: readonly LineAssignment[] = [
-    { task: flow.task, desiredTitle: screenText(context.screener, flow.baseTitle), issueRef },
+    // RAW title: capability tags are repository content (017 C3.5); only ISSUE titles are stripped.
+    { task: flow.task, desiredTitle: screenText(context.screener, flow.rawBaseTitle), issueRef },
   ];
   let rendered: string;
   try {
-    rendered = renderTaskLines(flow.filePath, content, assignments, context.config).content;
+    rendered = renderTaskLines(
+      flow.filePath,
+      content,
+      assignments,
+      context.config,
+      flow.checklistIdPattern === undefined ? {} : { checklistIdPattern: flow.checklistIdPattern },
+    ).content;
   } catch {
     return; // 004 refuses a conflict-block/frozen target — skipped, never forced.
   }

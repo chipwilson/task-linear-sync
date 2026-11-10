@@ -32,4 +32,24 @@ export interface TaskFileAdapter {
   readonly summaryPattern?: string;
   /** Optional regex source overriding `config.rollupPattern` (FR-004). */
   readonly rollupPattern?: string;
+  /**
+   * Optional regex source overriding the module-local built-in `LOCAL_ID_SPAN_RE` for the
+   * leading local-ID span on CHECKLIST lines (017 amendment 2; must expose the named group
+   * `id`). Absent ⇒ built-in default, unchanged for every pre-017 identity (SC-005).
+   */
+  readonly checklistIdPattern?: string;
+  /**
+   * Optional regex source for capability-tag tokens stripped from DERIVED titles only
+   * (017 amendment 2; consumed by `cleanTitle` via `CleanTitleOptions.titleTagPattern` —
+   * never by extraction, file rendering, or task storage). Absent ⇒ no stripping.
+   */
+  readonly titleTagPattern?: string;
+  /**
+   * 018 amendment A-018-2 (whitelisted member, 004 adapter-consumption contract): when true,
+   * the seed input for a task with a local id is composed as
+   * `` `${basename(filePath)}\u0000${localTaskId}` `` at the `parseTaskFile` seed call site —
+   * `taskStableSeed` itself and its frozen layout are unchanged; `Task.localTaskId` stays the
+   * bare id; adapters omitting this member keep byte-identical seed inputs (SC-005).
+   */
+  readonly identityFileScope?: boolean;
 }

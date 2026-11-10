@@ -8,13 +8,17 @@
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 
 import { builtInDefaults } from "task-linear-sync/config";
-import { discoverTaskFiles } from "task-linear-sync/discovery";
+import { builtInAdapters, discoverTaskFiles } from "task-linear-sync/discovery";
 import type { CustomAdapterDescriptor } from "task-linear-sync/discovery";
+import { parseTaskFile } from "task-linear-sync/parsing";
 import { fixtureRepoPath, listTree, openCountingProbe, withTempTree } from "../helpers/discovery-fixtures.js";
 
 const FIVE = fixtureRepoPath("five-frameworks");
+const KITTY = fixtureRepoPath("spec-kitty");
 
 const CUSTOM: CustomAdapterDescriptor = {
   id: "acme-flow", // placeholder identity only (zero org literals — constitution III)
@@ -38,10 +42,102 @@ test("e2e US: five-frameworks in one flow — all five identities, siblings, and
   assert.ok(result.diagnostics.some((d) => d.path === ".git" && d.condition.includes("git")));
 });
 
+test("e2e US: spec-superpower corpus (018) — dated plans selected, decoys unclaimed, repeat-run byte-identity (SC-001/SC-002)", async () => {
+  const root = fixtureRepoPath("spec-superpower");
+  const a = await discoverTaskFiles({ repositoryRoot: root, config: builtInDefaults });
+  assert.deepEqual([...new Set(a.files.map((f) => f.frameworkId))], ["spec-superpower"]);
+  assert.deepEqual(
+    a.files.map((f) => f.filePath).sort(),
+    [
+      "docs/superpowers/plans/2026-11-01-sync.md",
+      "docs/superpowers/plans/2026-11-02-auth.md",
+      "docs/superpowers/plans/2026-11-09-sync.md",
+    ],
+  );
+  const b = await discoverTaskFiles({ repositoryRoot: root, config: builtInDefaults });
+  assert.equal(JSON.stringify(a), JSON.stringify(b));
+});
+
+test("e2e US1/US3 walkthrough (018): claim → opt-out silence → per-plan parse with collision-free names, all read-only", async () => {
+  const root = fixtureRepoPath("spec-superpower");
+  // US1-AC1/AC4: default config claims exactly the three dated plans.
+  const claimed = await discoverTaskFiles({ repositoryRoot: root, config: builtInDefaults, gitContext: false });
+  assert.deepEqual(
+    claimed.files.map((f) => [f.filePath, f.frameworkId, f.featureName]).sort(),
+    [
+      ["docs/superpowers/plans/2026-11-01-sync.md", "spec-superpower", "sync"],
+      ["docs/superpowers/plans/2026-11-02-auth.md", "spec-superpower", "auth"],
+      ["docs/superpowers/plans/2026-11-09-sync.md", "spec-superpower", "sync"],
+    ],
+    "SC-003: derived names are the date-stripped plan filenames",
+  );
+  // US1-AC2: removing the identity from frameworkAdapters silences it ENTIRELY —
+  // with A-018-1 the decoys are unclaimed too, not silently absorbed by generic.
+  const optedOut = {
+    ...structuredClone(builtInDefaults),
+    frameworkAdapters: builtInDefaults.frameworkAdapters.filter((id) => id !== "spec-superpower"),
+  };
+  const silent = await discoverTaskFiles({ repositoryRoot: root, config: optedOut, gitContext: false });
+  assert.deepEqual(silent.files, [], "no config, no identity: nothing enters the sync (A-018-1)");
+  // US3 plan-level surface: three tasks per plan, pairwise-distinct identities across
+  // the two `sync` plans, and zero writes anywhere (Principle I).
+  const before = await listTree(root);
+  const uuidsByFile = new Map<string, string[]>();
+  for (const file of claimed.files) {
+    const row = builtInAdapters["spec-superpower"];
+    const result = parseTaskFile(
+      file.filePath,
+      readFileSync(join(root, file.filePath), "utf8"),
+      {
+        id: "spec-superpower" as const,
+        featureName: (p: string) => row.featureName(p),
+        headingGrammar: row.headingGrammar,
+        phasePattern: row.phasePattern,
+        summaryPattern: row.summaryPattern,
+        rollupPattern: row.rollupPattern,
+        identityFileScope: row.identityFileScope,
+      },
+      builtInDefaults,
+    );
+    assert.equal(result.file.tasks.length, 3, `${file.filePath}: Task 1–3 (US3 walkthrough)`);
+    assert.equal(result.warnings.length, 0, `${file.filePath}: clean fixture parses carry no warnings`);
+    uuidsByFile.set(file.filePath, result.file.tasks.map((t) => t.stableUuid));
+  }
+  const a = new Set(uuidsByFile.get("docs/superpowers/plans/2026-11-01-sync.md"));
+  for (const uuid of uuidsByFile.get("docs/superpowers/plans/2026-11-09-sync.md") as string[]) {
+    assert.ok(!a.has(uuid), "two `sync` plans share no task identities (US3-AC2)");
+  }
+  assert.deepEqual(await listTree(root), before, "read-only walkthrough — zero filesystem writes");
+});
+
 test("e2e US: repeat-run byte-identity across the whole result (SC-002)", async () => {
   const a = await discoverTaskFiles({ repositoryRoot: FIVE, config: builtInDefaults });
   const b = await discoverTaskFiles({ repositoryRoot: FIVE, config: builtInDefaults });
   assert.equal(JSON.stringify(a), JSON.stringify(b));
+});
+
+test("e2e US: spec-kitty zero-config walkthrough — the id set keyed off builtInAdapters, spec-kitty included (017 US1)", async () => {
+  const kitty = await discoverTaskFiles({ repositoryRoot: KITTY, config: builtInDefaults, gitContext: false });
+  assert.deepEqual(
+    kitty.files.map((f) => [f.filePath, f.frameworkId, f.featureName]),
+    [
+      ["kitty-specs/001-demo/tasks.md", "spec-kitty", "001-demo"],
+      ["kitty-specs/002-billing/tasks.md", "spec-kitty", "002-billing"],
+    ],
+    "zero configuration keys: the mission directory is the Feature_Name (US1-AC2)",
+  );
+  const five = await discoverTaskFiles({ repositoryRoot: FIVE, config: builtInDefaults });
+  const superpower = await discoverTaskFiles({ repositoryRoot: fixtureRepoPath("spec-superpower"), config: builtInDefaults, gitContext: false });
+  const seen = new Set<string>([
+    ...five.files.map((f) => f.frameworkId),
+    ...kitty.files.map((f) => f.frameworkId),
+    ...superpower.files.map((f) => f.frameworkId),
+  ]);
+  assert.deepEqual(
+    [...seen].sort(),
+    Object.keys(builtInAdapters).sort(),
+    "the fixture set together exercises EVERY built-in identity (seven since 017/018)",
+  );
 });
 
 test("e2e US: override run — the custom adapter wins over built-in markers on flows/** (FR-011)", async () => {
@@ -87,7 +183,7 @@ test("e2e US: escape fixture — refusal recorded with 0 opens outside the canon
 });
 
 test("e2e US: read-only posture — 0 files or directories created across every fixture repo (Principle I)", async () => {
-  const repos = ["five-frameworks", "empty", "no-task-files", "git-loose", "git-packed", "git-detached", "git-no-remote", "git-none"];
+  const repos = ["five-frameworks", "spec-kitty", "empty", "no-task-files", "git-loose", "git-packed", "git-detached", "git-no-remote", "git-none"];
   const before = new Map<string, string[]>();
   for (const name of repos) before.set(name, await listTree(fixtureRepoPath(name)));
   for (const name of repos) {

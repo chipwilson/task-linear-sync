@@ -50,6 +50,61 @@ test("discovery adapters: five-frameworks — every file carries its correct ide
   }
 });
 
+// 017 extended the parameterized identity table to the new built-in identities: the
+// spec-kitty row's claims come from `kitty-specs/` alone (C2.1), and the fixture's
+// non-mission Markdown (spec.md siblings, tasks/ prompts, .kittify/) stays unclaimed.
+const KITTY = fixtureRepoPath("spec-kitty");
+
+test("discovery adapters: spec-kitty identity row over the 017 fixture — path-only claim, mission features, spec.md siblings (SC-001)", async () => {
+  const result = await discoverTaskFiles({ repositoryRoot: KITTY, config: builtInDefaults, gitContext: false });
+  const files = byPath(result);
+
+  const expectations: readonly [string, string, string | undefined, readonly string[]][] = [
+    ["kitty-specs/001-demo/tasks.md", "spec-kitty", "001-demo", ["kitty-specs/001-demo/spec.md"]],
+    ["kitty-specs/002-billing/tasks.md", "spec-kitty", "002-billing", ["kitty-specs/002-billing/spec.md"]],
+  ];
+  assert.equal(result.files.length, expectations.length, "0 missed, 0 false — nothing else in the fixture is claimed");
+  for (const [filePath, frameworkId, featureName, siblingDocuments] of expectations) {
+    const file = files.get(filePath);
+    assert.ok(file, `${filePath} discovered`);
+    assert.equal(file.frameworkId, frameworkId, `${filePath} identity`);
+    assert.equal(file.featureName, featureName, `${filePath} Feature_Name — mission directory (C2.3)`);
+    assert.deepEqual(file.siblingDocuments, siblingDocuments, `${filePath} existing configured siblings in list order`);
+  }
+});
+
+test("discovery adapters: spec-superpower fixture (018) — dated plans under the plans root are claimed; the decoys are not (US1-AC1/US1-AC4)", async () => {
+  const result = await discoverTaskFiles({
+    repositoryRoot: fixtureRepoPath("spec-superpower"),
+    config: builtInDefaults,
+    gitContext: false,
+  });
+  const files = byPath(result);
+  assert.deepEqual(
+    result.files.map((f) => f.filePath).sort(),
+    [
+      "docs/superpowers/plans/2026-11-01-sync.md",
+      "docs/superpowers/plans/2026-11-02-auth.md",
+      "docs/superpowers/plans/2026-11-09-sync.md",
+    ],
+    "exactly the three dated plans — the non-date scratch.md and the above-the-plans-root file are never claimed",
+  );
+  for (const filePath of [
+    "docs/superpowers/plans/2026-11-01-sync.md",
+    "docs/superpowers/plans/2026-11-02-auth.md",
+    "docs/superpowers/plans/2026-11-09-sync.md",
+  ]) {
+    const file = files.get(filePath);
+    assert.ok(file, `${filePath} discovered`);
+    assert.equal(file.frameworkId, "spec-superpower", `${filePath} identity`);
+    assert.equal(
+      file.featureName,
+      filePath.split("/").at(-1)!.replace(/^2026-11-0\d-/, "").replace(/\.md$/, ""),
+      `${filePath} Feature_Name = date-stripped basename`,
+    );
+  }
+});
+
 test("discovery adapters: look-alike traps — .kiro/specs/ never resolves to spec-kit and a docs/ base without bmad markers is NOT bmad (001 R7.8)", async () => {
   const files = byPath(await discoverFive());
   assert.equal(files.get(".kiro/specs/auth/tasks.md")?.frameworkId, "kiro");

@@ -167,9 +167,9 @@ export function escapeRegExp(literal: string): string {
 export const LOCAL_ID_SPAN_RE =
   /^(?<id>(?:[A-Za-z][A-Za-z0-9-]*[ \t]+)?[0-9]+(?:\.[0-9]+)*[ \t]*[.:—–-]|[A-Za-z][A-Za-z0-9-]*\d+[ \t]*[.:—–-])[ \t]+/u;
 
-/** Strip a leading local-ID span, returning [idWithoutSeparator, remainder] when present. */
-export function stripLeadingLocalId(rest: string): [id: string, remainder: string] | undefined {
-  const m = LOCAL_ID_SPAN_RE.exec(rest);
+/** Strip a leading local-ID span, returning [idWithoutSeparator, remainder] when present. `idPattern` (017 amendment 2) overrides the built-in span grammar; its `id` named group is the captured ID. */
+export function stripLeadingLocalId(rest: string, idPattern?: RegExp): [id: string, remainder: string] | undefined {
+  const m = (idPattern ?? LOCAL_ID_SPAN_RE).exec(rest);
   const id = m?.groups?.id;
   if (!m || !id) return undefined;
   return [id.replace(/[ \t]*[.:—–-]$/u, "").trim(), rest.slice(m[0].length)];

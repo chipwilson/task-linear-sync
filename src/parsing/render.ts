@@ -34,6 +34,12 @@ import { cleanTitle } from "./title.js";
 export interface RenderOptions {
   /** Re-emit the line's leading local-task-ID span. Defaults to true. */
   readonly preserveLocalTaskId?: boolean;
+  /**
+   * Regex source for the leading local-ID span (017 amendment 2) — the same grammar the
+   * parser used, so the span is preserved on write-back instead of being consumed into the
+   * title. Absent ⇒ built-in `LOCAL_ID_SPAN_RE`, unchanged for pre-017 identities.
+   */
+  readonly checklistIdPattern?: string;
 }
 
 /** The four structural surprises an assignment can hit (line-rendering.md failure matrix). */
@@ -86,7 +92,7 @@ function structureMatches(text: string, task: Task, config: ResolvedConfig): boo
 }
 
 /** Rebuild one validated line (the task on it is known to match structurally). */
-function renderLine(text: string, assignment: LineAssignment, config: ResolvedConfig, preserveLocalId: boolean): string {
+function renderLine(text: string, assignment: LineAssignment, config: ResolvedConfig, preserveLocalId: boolean, localIdRe?: RegExp): string {
   let head: string;
   let rest: string;
   if (assignment.task.kind === "heading") {
@@ -104,10 +110,11 @@ function renderLine(text: string, assignment: LineAssignment, config: ResolvedCo
     }
   }
 
-  const stripped = stripLeadingLocalId(rest);
+  const stripped = stripLeadingLocalId(rest, localIdRe);
   const localSpan = stripped ? rest.slice(0, rest.length - stripped[1].length) : "";
 
   const title = cleanTitle(assignment.desiredTitle, {
+    // `titleTagPattern` is deliberately NOT passed here: repository files keep tags verbatim (017 C3.5).
     confirmationKey: config.confirmationKey,
     ...(assignment.task.localTaskId !== undefined ? { localTaskId: assignment.task.localTaskId } : {}),
     titleStripPrefixes: config.titleStripPrefixes,
@@ -130,6 +137,7 @@ export function renderTaskLines(
   options: RenderOptions = {},
 ): RenderResult {
   const preserveLocalId = options.preserveLocalTaskId ?? true;
+  const localIdRe = options.checklistIdPattern !== undefined ? new RegExp(options.checklistIdPattern, "u") : undefined;
   const lines: readonly ContentLine[] = splitLines(fileContent, config.tabWidth);
   const frozen = frozenLineSet(scanConflictBlocks(lines));
 
@@ -156,7 +164,7 @@ export function renderTaskLines(
     const n = assignment.task.lineNumber;
     const line = lines[n - 1] as ContentLine;
     const before = texts[n - 1] as string;
-    const after = renderLine(before, assignment, config, preserveLocalId);
+    const after = renderLine(before, assignment, config, preserveLocalId, localIdRe);
     texts[n - 1] = after;
     // before/after carry the line's ORIGINAL terminator bytes on both sides (009 material).
     changes.push({ lineNumber: n, before: before + line.terminator, after: after + line.terminator });

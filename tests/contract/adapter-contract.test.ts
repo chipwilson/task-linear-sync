@@ -55,7 +55,7 @@ test("discovery adapter contract: the custom adapter is selectable — it wins o
       const byPath = new Map(result.files.map((f) => [f.filePath, f]));
       assert.equal(byPath.get("flows/todo-deploy.md")?.frameworkId, "my-flow", "detection wins on flows/** paths");
       assert.equal(byPath.get("flows/todo-deploy.md")?.detection.via, "path");
-      assert.equal(byPath.get("todo-deploy.md")?.frameworkId, "generic", "outside flows/ → generic fallback");
+      assert.equal(byPath.get("todo-deploy.md"), undefined, "outside flows/ → UNCLAIMED (018 amendment A-018-1: generic catches only basenames matching its own patterns)");
       assert.equal(byPath.get("tasks.md")?.frameworkId, "generic");
     },
   );

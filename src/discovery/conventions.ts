@@ -49,11 +49,17 @@ export interface ResolvedConventions {
   readonly phasePattern?: string;
   readonly summaryPattern?: string;
   readonly rollupPattern?: string;
+  /** 017 amendment 2: checklist local-ID span grammar (regex source); absent ⇒ 004 built-in. */
+  readonly checklistIdPattern?: string;
+  /** 017 amendment 2: capability-tag strip grammar for derived titles (regex source); absent ⇒ no stripping. */
+  readonly titleTagPattern?: string;
   readonly titleBehavior?: { readonly stripPrefixes: readonly string[] };
   readonly siblingDocuments: readonly string[];
   readonly agentHooksDirectory?: string;
   readonly agentHookTemplate?: "kiro-json" | "command-json" | "none";
   readonly frameworkSpecificExclusions: readonly string[];
+  /** 018 A-018-2: file-scoped seed composition (carried to the adapter by `defineFrameworkAdapter`). */
+  readonly identityFileScope?: boolean;
   /** Programmatic Feature_Name override (research R9) beats the declarative rule. */
   readonly featureNameOverride?: (relPath: string) => string | undefined;
 }
@@ -160,6 +166,14 @@ export function applyFeatureNameRule(rule: FeatureNameRule, baseDirectories: rea
       }
       return undefined;
     }
+    case "date-stripped-basename": {
+      // 018 R5: basename → strip a leading `NNNN-NN-NN-` date prefix when present →
+      // strip the final extension. Never undefined for a claimed path (the filename
+      // pattern guarantees a basename); derivation is pure per path (contract Rule 3).
+      const name = basename(relPath);
+      const undated = name.replace(/^\d{4}-\d{2}-\d{2}-/, "");
+      return undated.replace(/\.[^./]+$/, "");
+    }
   }
 }
 
@@ -208,11 +222,14 @@ export function defineFrameworkAdapter(c: ResolvedConventions): FrameworkAdapter
     phasePattern: c.phasePattern,
     summaryPattern: c.summaryPattern,
     rollupPattern: c.rollupPattern,
+    checklistIdPattern: c.checklistIdPattern,
+    titleTagPattern: c.titleTagPattern,
     titleBehavior: c.titleBehavior,
     siblingDocuments: [...c.siblingDocuments],
     agentHooksDirectory: c.agentHooksDirectory,
     agentHookTemplate: c.agentHookTemplate,
     frameworkSpecificExclusions: [...c.frameworkSpecificExclusions],
+    ...(c.identityFileScope !== undefined ? { identityFileScope: c.identityFileScope } : {}),
     detect,
     featureName,
   });
@@ -262,6 +279,8 @@ export function customDescriptorConventions(descriptor: CustomAdapterDescriptor,
     ...(descriptor.phasePattern !== undefined ? { phasePattern: descriptor.phasePattern } : {}),
     ...(descriptor.summaryPattern !== undefined ? { summaryPattern: descriptor.summaryPattern } : {}),
     ...(descriptor.rollupPattern !== undefined ? { rollupPattern: descriptor.rollupPattern } : {}),
+    ...(descriptor.checklistIdPattern !== undefined ? { checklistIdPattern: descriptor.checklistIdPattern } : {}),
+    ...(descriptor.titleTagPattern !== undefined ? { titleTagPattern: descriptor.titleTagPattern } : {}),
     ...(descriptor.titleBehavior ? { titleBehavior: descriptor.titleBehavior } : {}),
     ...(descriptor.siblingDocuments ? { siblingDocuments: [...descriptor.siblingDocuments] } : {}),
     ...(descriptor.agentHooksDirectory !== undefined ? { agentHooksDirectory: descriptor.agentHooksDirectory } : {}),

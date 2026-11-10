@@ -139,8 +139,20 @@ export function skipByName(matchesName: (name: string) => boolean): (dirPath: st
 /**
  * Directory-skip predicate for one framework-specific exclusion entry: an entry with a
  * `/` is a root-relative directory prefix; a bare entry is a name at any depth.
+ * A `*` occupies exactly one whole path segment (017 amendment 3): the default
+ * `kitty-specs` mission-tasks entry matches `kitty-specs/<mission>/tasks` (and its
+ * subtree) at exactly that depth, with the root-relative prefix semantics unchanged.
  */
 export function skipByExclusion(entry: string): (dirPath: string, dirName: string) => boolean {
+  if (entry.includes("*")) {
+    const pattern = `^${entry
+      .replace(/\/+$/, "")
+      .split("/")
+      .map((segment) => (segment === "*" ? "[^/]+" : segment.replace(/[.*+?^${}()|[\]\\]/gu, "\\$&")))
+      .join("/")}(?:/.*)?$`;
+    const re = new RegExp(pattern, "u");
+    return (dirPath) => re.test(dirPath);
+  }
   if (entry.includes("/")) {
     const prefix = entry.endsWith("/") ? entry.slice(0, -1) : entry;
     return (dirPath) => dirPath === prefix || dirPath.startsWith(`${prefix}/`);

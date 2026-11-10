@@ -2,8 +2,10 @@
  * 016 framework-support consolidation — README ⇄ requirements ⇄ registry agreement.
  *
  * The README once advertised built-in adapters for frameworks that never
- * existed in the code (`spec-kitty`, `spec-superpower`) while omitting three of
- * the five real built-ins. This suite pins the three framework-support
+ * existed in the code (`spec-superpower`) while omitting three of the real
+ * built-ins, and 016 removed the `spec-kitty` claim along with them. Feature
+ * 017 re-introduced `spec-kitty` as real code, so the fabricated-name pin now
+ * guards `spec-superpower` alone. This suite pins the three framework-support
  * artifacts to each other so they cannot drift apart again:
  *
  *   1. the built-in adapter registry, the frozen 002 `FrameworkId` union, and
@@ -65,7 +67,10 @@ test("framework-consistency: README documents behavior for every built-in framew
 });
 
 test("framework-consistency: README names no framework the code does not ship", () => {
-  assert.doesNotMatch(readme, /spec-kitty|spec-superpower/i, "no adapter for these names has ever existed in the code");
+  // 016 pinned `spec-kitty` and 018 pinned `spec-superpower` here; both shipped as real
+  // adapters (017/018), so the pin moves to a name no feature has ever shipped — the
+  // README must still not advertise any framework the code does not contain.
+  assert.doesNotMatch(readme, /spec-fluffy/i, "no adapter for this name has ever existed in the code");
   for (const id of registryIds) {
     assert.ok(readme.includes(`\`${id}\``), `README must carry the canonical id \`${id}\``);
   }

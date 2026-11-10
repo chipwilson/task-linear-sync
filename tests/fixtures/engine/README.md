@@ -40,3 +40,4 @@ worlds/<world>/
 | `formatting-noise/` | Round-trip formatting drift only — zero conflicts (SC-002) |
 | `rollback-full/` | Full apply → total-restoration rollback (SC-003) |
 | `rollback-interrupted/` | Rollback interrupted at every step index — resumable |
+| `spec-kitty-basic/` | Spec Kitty roll-up layout — engine lifecycle with the five-identity results shape (017 SC-005) |

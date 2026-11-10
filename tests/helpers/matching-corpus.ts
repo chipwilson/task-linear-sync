@@ -131,7 +131,7 @@ const WORDS = [
 
 const TEAMS = ["acme-team", "glob-team", "initeam"] as const;
 const PROJECTS = ["proj-alpha", "proj-beta", "proj-gamma"] as const;
-const FRAMEWORKS: readonly FrameworkId[] = ["spec-kit", "kiro", "open-spec", "bmad", "generic"];
+const FRAMEWORKS: readonly FrameworkId[] = ["spec-kit", "kiro", "open-spec", "bmad", "spec-superpower", "generic"];
 
 function titleWords(rng: Rng, uniqueToken: string): string {
   const n = 2 + rng.nextInt(3);

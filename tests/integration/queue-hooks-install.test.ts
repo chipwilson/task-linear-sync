@@ -144,6 +144,22 @@ test("an unsupported managedGitHooks name exits 4 and writes NOTHING under .git/
   }
 });
 
+test("install-agent-hook --framework spec-superpower refuses with zero writes (018 FR-012)", async () => {
+  const cli = makeCliSandbox();
+  const h = await makeHarness({ taskFilePatterns: ["specs/**/*.md"] });
+  try {
+    const before = readdirSync(h.repositoryRoot).sort();
+    const res = spawnCli(cli.bin, ["install-agent-hook", "--framework", "spec-superpower"], h.repositoryRoot, envBase(h));
+    assert.equal(res.status, 4, `stdout=${res.stdout} stderr=${res.stderr}`);
+    assert.match(res.stderr, /refused:/, "named refusal on stderr");
+    assert.equal(res.stdout, "", "refusals never print on stdout");
+    assert.deepEqual(readdirSync(h.repositoryRoot).sort(), before, "zero writes — no hook directories land");
+  } finally {
+    h.dispose();
+    cli.dispose();
+  }
+});
+
 test("install-agent-hook --framework kiro lands under .kiro/hooks and never overwrites (FR-009)", async () => {
   const cli = makeCliSandbox();
   const h = await makeHarness({ taskFilePatterns: ["specs/**/*.md"] });
