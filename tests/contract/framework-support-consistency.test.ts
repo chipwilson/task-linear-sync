@@ -65,7 +65,7 @@ test("framework-consistency: README documents behavior for every built-in framew
 });
 
 test("framework-consistency: README names no framework the code does not ship", () => {
-  assert.doesNotMatch(readme, /spec-kitty|spec-superpower/i, "no adapter for these names has ever existed in the code");
+  assert.doesNotMatch(readme, /spec-kitty/i, "no adapter for this name has ever existed in the code (spec-superpower landed with 018)");
   for (const id of registryIds) {
     assert.ok(readme.includes(`\`${id}\``), `README must carry the canonical id \`${id}\``);
   }

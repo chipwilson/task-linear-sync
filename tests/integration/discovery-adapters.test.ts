@@ -50,6 +50,38 @@ test("discovery adapters: five-frameworks — every file carries its correct ide
   }
 });
 
+test("discovery adapters: spec-superpower fixture (018) — dated plans under the plans root are claimed; the decoys are not (US1-AC1/US1-AC4)", async () => {
+  const result = await discoverTaskFiles({
+    repositoryRoot: fixtureRepoPath("spec-superpower"),
+    config: builtInDefaults,
+    gitContext: false,
+  });
+  const files = byPath(result);
+  assert.deepEqual(
+    result.files.map((f) => f.filePath).sort(),
+    [
+      "docs/superpowers/plans/2026-11-01-sync.md",
+      "docs/superpowers/plans/2026-11-02-auth.md",
+      "docs/superpowers/plans/2026-11-09-sync.md",
+    ],
+    "exactly the three dated plans — the non-date scratch.md and the above-the-plans-root file are never claimed",
+  );
+  for (const filePath of [
+    "docs/superpowers/plans/2026-11-01-sync.md",
+    "docs/superpowers/plans/2026-11-02-auth.md",
+    "docs/superpowers/plans/2026-11-09-sync.md",
+  ]) {
+    const file = files.get(filePath);
+    assert.ok(file, `${filePath} discovered`);
+    assert.equal(file.frameworkId, "spec-superpower", `${filePath} identity`);
+    assert.equal(
+      file.featureName,
+      filePath.split("/").at(-1)!.replace(/^2026-11-0\d-/, "").replace(/\.md$/, ""),
+      `${filePath} Feature_Name = date-stripped basename`,
+    );
+  }
+});
+
 test("discovery adapters: look-alike traps — .kiro/specs/ never resolves to spec-kit and a docs/ base without bmad markers is NOT bmad (001 R7.8)", async () => {
   const files = byPath(await discoverFive());
   assert.equal(files.get(".kiro/specs/auth/tasks.md")?.frameworkId, "kiro");

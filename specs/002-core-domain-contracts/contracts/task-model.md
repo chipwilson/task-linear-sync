@@ -6,7 +6,7 @@ rules: [../data-model.md](../data-model.md) § 1–8.
 
 ```ts
 /** Canonical framework identifiers (001 Glossary: Supported_Framework). */
-export type FrameworkId = "bmad" | "spec-kit" | "open-spec" | "kiro" | "generic";
+export type FrameworkId = "bmad" | "spec-kit" | "open-spec" | "kiro" | "spec-superpower" | "generic";
 
 export type TaskKind = "heading" | "checklist";
 

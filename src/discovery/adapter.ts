@@ -41,6 +41,8 @@ export type FeatureNameRule =
   | { readonly kind: "parent-or-basename" }
   /** Meaningful segment after one of the markers, e.g. ["openspec/","changes/","specs/"] (open-spec). */
   | { readonly kind: "segment-after"; readonly markers: readonly string[] }
+  /** Task-file basename with a leading `NNNN-NN-NN-` date prefix and the final extension removed (spec-superpower, 018 R5). */
+  | { readonly kind: "date-stripped-basename" }
   | { readonly kind: "none" };
 
 /**
@@ -50,7 +52,7 @@ export type FeatureNameRule =
  * 003 does not parse task content.
  */
 export interface FrameworkAdapter {
-  /** Built-ins are the five frozen literals; custom = any non-empty string outside them (R5). */
+  /** Built-ins are the six frozen literals; custom = any non-empty string outside them (R5). */
   readonly id: FrameworkIdentity;
   /** Basename globs (research R2); effective value after merge (R7). */
   readonly taskFilePatterns: readonly string[];
@@ -83,6 +85,12 @@ export interface FrameworkAdapter {
   readonly agentHookTemplate?: "kiro-json" | "command-json" | "none";
   /** MUST be empty for "generic" (FR-010: no framework-specific exclusions beyond global summary/rollup defaults). */
   readonly frameworkSpecificExclusions?: readonly string[];
+  /**
+   * 018 amendment A-018-2 (research R7): when true, `parseTaskFile` composes the stable-seed
+   * local-id input as `<task-file basename>\u0000<localTaskId>` so same-feature-name files keep
+   * pairwise-distinct identities. Absent/false ⇒ seed inputs byte-identical (SC-005).
+   */
+  readonly identityFileScope?: boolean;
 
   /** Pure predicate. Returns the best match for this adapter, or null. Deterministic; no I/O (ctx is pre-supplied). */
   detect(candidatePath: string, ctx: DetectionContext): DetectionMatch | null;
@@ -106,7 +114,7 @@ export interface DetectionRecord {
  * implemented in `./registry.ts` (this file is interface + types ONLY, no behavior). */
 export interface AdapterRegistry {
   readonly enabledAdapters: readonly FrameworkAdapter[];
-  /** Built-in default ["kiro","open-spec","spec-kit","bmad","generic"]; overridable (FR-011). */
+  /** Built-in default ["kiro","open-spec","spec-kit","bmad","spec-superpower","generic"]; overridable (FR-011). */
   readonly precedence: readonly string[];
   readonly selectionOverride?: FrameworkIdentity | ((fp: string, c: DetectionContext) => FrameworkIdentity | undefined);
   /** Frozen 002 merged config; read-only. */
@@ -115,11 +123,13 @@ export interface AdapterRegistry {
 
 /**
  * Selection (data-model §4). Rank: (1) longest matchedPattern, (2) index in precedence list,
- * (3) alphabetical. Precedence default = ["kiro","open-spec","spec-kit","bmad","generic"] — the
+ * (3) alphabetical. Precedence default = ["kiro","open-spec","spec-kit","bmad","spec-superpower",
+ * "generic"] — the
  * spec's fixed marker precedence, overridable via overrides.precedence. Zero matches → generic
- * (via: "fallback"). overrides.selection short-circuits (via: "explicit").
+ * (via: "fallback") only while the basename still matches generic's effective patterns;
+ * otherwise unclaimed (`null`, A-018-1). overrides.selection short-circuits (via: "explicit").
  */
-export declare function selectAdapter(filePath: string, ctx: DetectionContext, registry: AdapterRegistry): DetectionRecord;
+export declare function selectAdapter(filePath: string, ctx: DetectionContext, registry: AdapterRegistry): DetectionRecord | null;
 
 /**
  * Build the registry from the frozen config + optional programmatic overrides (highest
@@ -168,6 +178,8 @@ export interface AdapterConventions {
   readonly featureNameRule?: FeatureNameRule;
   readonly agentHooksDirectory?: string;
   readonly agentHookTemplate?: "kiro-json" | "command-json" | "none";
+  /** 018 A-018-2: per-adapter file-scoped identity toggle (see `FrameworkAdapter.identityFileScope`). */
+  readonly identityFileScope?: boolean;
   /** Programmatic Feature_Name extraction override (research R9); beats `featureNameRule`. */
   readonly featureName?: (relPath: string) => string | undefined;
 }

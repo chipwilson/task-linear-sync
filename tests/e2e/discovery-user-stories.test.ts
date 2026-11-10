@@ -8,10 +8,13 @@
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 
 import { builtInDefaults } from "task-linear-sync/config";
-import { discoverTaskFiles } from "task-linear-sync/discovery";
+import { builtInAdapters, discoverTaskFiles } from "task-linear-sync/discovery";
 import type { CustomAdapterDescriptor } from "task-linear-sync/discovery";
+import { parseTaskFile } from "task-linear-sync/parsing";
 import { fixtureRepoPath, listTree, openCountingProbe, withTempTree } from "../helpers/discovery-fixtures.js";
 
 const FIVE = fixtureRepoPath("five-frameworks");
@@ -36,6 +39,74 @@ test("e2e US: five-frameworks in one flow — all five identities, siblings, and
   assert.equal("git" in result, true, "git context present by default");
   assert.deepEqual(result.git, {}, "the fixture is not a git repository — values omitted WITHOUT failing (FR-006)");
   assert.ok(result.diagnostics.some((d) => d.path === ".git" && d.condition.includes("git")));
+});
+
+test("e2e US: spec-superpower corpus (018) — dated plans selected, decoys unclaimed, repeat-run byte-identity (SC-001/SC-002)", async () => {
+  const root = fixtureRepoPath("spec-superpower");
+  const a = await discoverTaskFiles({ repositoryRoot: root, config: builtInDefaults });
+  assert.deepEqual([...new Set(a.files.map((f) => f.frameworkId))], ["spec-superpower"]);
+  assert.deepEqual(
+    a.files.map((f) => f.filePath).sort(),
+    [
+      "docs/superpowers/plans/2026-11-01-sync.md",
+      "docs/superpowers/plans/2026-11-02-auth.md",
+      "docs/superpowers/plans/2026-11-09-sync.md",
+    ],
+  );
+  const b = await discoverTaskFiles({ repositoryRoot: root, config: builtInDefaults });
+  assert.equal(JSON.stringify(a), JSON.stringify(b));
+});
+
+test("e2e US1/US3 walkthrough (018): claim → opt-out silence → per-plan parse with collision-free names, all read-only", async () => {
+  const root = fixtureRepoPath("spec-superpower");
+  // US1-AC1/AC4: default config claims exactly the three dated plans.
+  const claimed = await discoverTaskFiles({ repositoryRoot: root, config: builtInDefaults, gitContext: false });
+  assert.deepEqual(
+    claimed.files.map((f) => [f.filePath, f.frameworkId, f.featureName]).sort(),
+    [
+      ["docs/superpowers/plans/2026-11-01-sync.md", "spec-superpower", "sync"],
+      ["docs/superpowers/plans/2026-11-02-auth.md", "spec-superpower", "auth"],
+      ["docs/superpowers/plans/2026-11-09-sync.md", "spec-superpower", "sync"],
+    ],
+    "SC-003: derived names are the date-stripped plan filenames",
+  );
+  // US1-AC2: removing the identity from frameworkAdapters silences it ENTIRELY —
+  // with A-018-1 the decoys are unclaimed too, not silently absorbed by generic.
+  const optedOut = {
+    ...structuredClone(builtInDefaults),
+    frameworkAdapters: builtInDefaults.frameworkAdapters.filter((id) => id !== "spec-superpower"),
+  };
+  const silent = await discoverTaskFiles({ repositoryRoot: root, config: optedOut, gitContext: false });
+  assert.deepEqual(silent.files, [], "no config, no identity: nothing enters the sync (A-018-1)");
+  // US3 plan-level surface: three tasks per plan, pairwise-distinct identities across
+  // the two `sync` plans, and zero writes anywhere (Principle I).
+  const before = await listTree(root);
+  const uuidsByFile = new Map<string, string[]>();
+  for (const file of claimed.files) {
+    const row = builtInAdapters["spec-superpower"];
+    const result = parseTaskFile(
+      file.filePath,
+      readFileSync(join(root, file.filePath), "utf8"),
+      {
+        id: "spec-superpower" as const,
+        featureName: (p: string) => row.featureName(p),
+        headingGrammar: row.headingGrammar,
+        phasePattern: row.phasePattern,
+        summaryPattern: row.summaryPattern,
+        rollupPattern: row.rollupPattern,
+        identityFileScope: row.identityFileScope,
+      },
+      builtInDefaults,
+    );
+    assert.equal(result.file.tasks.length, 3, `${file.filePath}: Task 1–3 (US3 walkthrough)`);
+    assert.equal(result.warnings.length, 0, `${file.filePath}: clean fixture parses carry no warnings`);
+    uuidsByFile.set(file.filePath, result.file.tasks.map((t) => t.stableUuid));
+  }
+  const a = new Set(uuidsByFile.get("docs/superpowers/plans/2026-11-01-sync.md"));
+  for (const uuid of uuidsByFile.get("docs/superpowers/plans/2026-11-09-sync.md") as string[]) {
+    assert.ok(!a.has(uuid), "two `sync` plans share no task identities (US3-AC2)");
+  }
+  assert.deepEqual(await listTree(root), before, "read-only walkthrough — zero filesystem writes");
 });
 
 test("e2e US: repeat-run byte-identity across the whole result (SC-002)", async () => {

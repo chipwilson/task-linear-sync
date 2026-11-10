@@ -35,7 +35,7 @@ actionable unit. (Owner of derivation/computation: 004; shape frozen here.)
 | `kind` | `"heading" \| "checklist"` | |
 | `filePath` | `string` | Repository-relative POSIX path of the TaskFile |
 | `lineNumber` | `integer ≥ 1` | 1-based line position |
-| `frameworkId` | `FrameworkId` = `"bmad" \| "spec-kit" \| "open-spec" \| "kiro" \| "generic"` | |
+| `frameworkId` | `FrameworkId` = `"bmad" \| "spec-kit" \| "open-spec" \| "kiro" \| "spec-superpower" \| "generic"` | |
 | `featureName` | `string \| undefined` | Adapter-derived; absent when underivable |
 | `localTaskId` | `string \| undefined` | Parsed identifier (e.g. `Task 1.2`, `T001`) when grammar matched |
 | `phase` | `string \| undefined` | Text of most recent phase-pattern heading |

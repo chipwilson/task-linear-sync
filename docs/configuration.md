@@ -78,6 +78,38 @@ overridable (an explicit `metadataNamespaceKey`, for instance, always wins):
 | `manifestKeyEnvVarName` | `<PREFIX>_MANIFEST_KEY` |
 | `web.authEnvVarName` / `mcp.authEnvVarName` | `<PREFIX>_WEB_TOKEN` / `<PREFIX>_MCP_TOKEN` |
 
+## Per-adapter discovery overrides (programmatic layer)
+
+The highest discovery layer (`DiscoveryOverrides.adapters.<id>`) overrides one built-in
+row without touching the config file. Arrays and scalars **replace wholesale** (002 merge
+semantics) — a programmatic `taskFilePatterns` is the complete new list, never a union:
+
+```ts
+import { discoverTaskFiles } from "task-linear-sync/discovery";
+
+await discoverTaskFiles({
+  repositoryRoot: repo,
+  config,
+  overrides: {
+    adapters: {
+      "spec-superpower": {
+        // move the plans root (detection.pathPrefixes defaults to baseDirectories),
+        baseDirectories: ["plans/superpowers/"],
+        detection: { pathPrefixes: ["plans/superpowers/"] },
+        // or widen the filename convention from dated plans to every plan file
+        // (array replace: the dated basename glob no longer applies):
+        taskFilePatterns: ["*.md"],
+      },
+    },
+  },
+});
+```
+
+With `taskFilePatterns: ["*.md"]` the plans-root gate stays — files above
+`baseDirectories` remain unclaimed (feature 018, research R8). Precedence and
+selection overrides (`overrides.precedence`, `overrides.selection`) short-circuit
+detection entirely; see [framework-adapters.md](./framework-adapters.md).
+
 ## State directory placement
 
 Unless `stateDirectory` is configured (used verbatim after canonicalization), the default

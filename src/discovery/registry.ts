@@ -5,7 +5,8 @@
  *
  * Ranking: (1) longest `matchedPattern` (rank material — base-dir patterns included, R8),
  * (2) index in the precedence list, (3) alphabetical adapter id. Zero matches → `generic`
- * fallback; `overrides.selection` short-circuits (via "explicit").
+ * fallback ONLY when the basename still matches generic's effective patterns (A-018-1),
+ * else unclaimed (`null`); `overrides.selection` short-circuits (via "explicit").
  */
 import type { ResolvedConfig } from "../config/schema.js";
 import type {
@@ -17,6 +18,7 @@ import type {
   DiscoveryOverrides,
   FrameworkAdapter,
 } from "./adapter.js";
+import { compileNamePattern } from "./patterns.js";
 import { CustomAdapterError, SelectionOverrideError } from "./adapter.js";
 import { builtInAdapterRows } from "./adapters/index.js";
 import {
@@ -30,10 +32,10 @@ import {
 import type { FrameworkIdentity } from "./types.js";
 
 /** The spec's fixed marker precedence (contracts/framework-adapter.md rule 1). */
-export const DEFAULT_PRECEDENCE: readonly string[] = ["kiro", "open-spec", "spec-kit", "bmad", "generic"];
+export const DEFAULT_PRECEDENCE: readonly string[] = ["kiro", "open-spec", "spec-kit", "bmad", "spec-superpower", "generic"];
 
 /**
- * Built-in conventions rows (defaults layer, FR-007) — the five-adapter table from
+ * Built-in conventions rows (defaults layer, FR-007) — the six-adapter table from
  * `adapters/index.ts` (T031), gated by T023's table tests and the T007 surface snapshot.
  */
 export function builtInConventionRows(): readonly { readonly id: FrameworkIdentity; readonly conventions: ResolvedConventions }[] {
@@ -97,9 +99,12 @@ function longerMatch(a: DetectionMatch, b: DetectionMatch): boolean {
 /**
  * Selection (data-model §4, pure). Explicit overrides short-circuit with via "explicit";
  * otherwise rank matched adapters by longest `matchedPattern` → precedence index →
- * alphabetical; zero matches fall back to `generic` (via "fallback").
+ * alphabetical. Zero matches fall back to `generic` (via "fallback") ONLY when the
+ * basename still matches the enabled generic adapter's effective `taskFilePatterns`;
+ * otherwise the file is unclaimed (`null`, amendment A-018-1). Generic entirely
+ * disabled + zero matches keeps throwing the typed error as before.
  */
-export function selectAdapter(filePath: string, ctx: DetectionContext, registry: AdapterRegistry): DetectionRecord {
+export function selectAdapter(filePath: string, ctx: DetectionContext, registry: AdapterRegistry): DetectionRecord | null {
   const byId = new Map(registry.enabledAdapters.map((adapter) => [adapter.id, adapter]));
   const candidates = [...byId.keys()]
     .filter((id) => byId.get(id)?.detect(filePath, ctx) !== null)
@@ -130,6 +135,13 @@ export function selectAdapter(filePath: string, ctx: DetectionContext, registry:
     const generic = byId.get("generic");
     if (generic === undefined) {
       throw new SelectionOverrideError("generic", "no adapter matched and the generic fallback is not enabled");
+    }
+    // A-018-1: the fallback is an opt-in catch-all, not a universal magnet — a zero-match
+    // candidate is claimed by generic only while its basename still matches generic's
+    // effective patterns; otherwise the file is simply not a task file (`null`).
+    const basename = filePath.slice(filePath.lastIndexOf("/") + 1);
+    if (!generic.taskFilePatterns.some((pattern) => compileNamePattern(pattern)(basename))) {
+      return null;
     }
     return { adapterId: "generic", frameworkId: "generic", matchedPattern: "", via: "fallback", candidates: [] };
   }
