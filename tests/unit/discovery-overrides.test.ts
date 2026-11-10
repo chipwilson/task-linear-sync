@@ -157,6 +157,6 @@ test("discovery overrides: layering — programmatic beats the config layer beat
 
 test("discovery overrides: unknown adapter ids in the overrides map are inert (known adapters only, FR-011)", () => {
   const registry = reg({ adapters: { "no-such": { headingGrammar: "X" } } });
-  assert.equal(registry.enabledAdapters.length, 5);
+  assert.equal(registry.enabledAdapters.length, 6);
   assert.equal(adapterById(registry, "kiro").headingGrammar, builtInDefaults.headingIdGrammar);
 });

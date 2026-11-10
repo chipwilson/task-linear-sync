@@ -12,8 +12,8 @@ import { builtInDefaults } from "task-linear-sync/config";
 import { agentHookScaffold, builtInAdapters } from "task-linear-sync/discovery";
 import { listTree, withTempTree } from "../helpers/discovery-fixtures.js";
 
-test("discovery built-ins: the table exposes exactly the five frozen FrameworkIds, adapters frozen", () => {
-  assert.deepEqual(Object.keys(builtInAdapters).sort(), ["bmad", "generic", "kiro", "open-spec", "spec-kit"]);
+test("discovery built-ins: the table exposes exactly the six frozen FrameworkIds, adapters frozen", () => {
+  assert.deepEqual(Object.keys(builtInAdapters).sort(), ["bmad", "generic", "kiro", "open-spec", "spec-kit", "spec-superpower"]);
   for (const adapter of Object.values(builtInAdapters)) {
     assert.ok(Object.isFrozen(adapter), `adapter '${adapter.id}' is immutable (built-in rows are constants)`);
   }
