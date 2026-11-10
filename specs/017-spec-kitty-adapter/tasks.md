@@ -22,7 +22,7 @@
 
 **Purpose**: Verified green starting point
 
-- [ ] T001 Confirm branch `017-spec-kitty-adapter` is checked out and the baseline is green at repo root: `npm ci && npm run build && npm run compile:tests && npm test` (all suites pass before any change)
+- [X] T001 Confirm branch `017-spec-kitty-adapter` is checked out and the baseline is green at repo root: `npm ci && npm run build && npm run compile:tests && npm test` (all suites pass before any change)
 
 ---
 
