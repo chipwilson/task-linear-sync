@@ -16,6 +16,7 @@ Everything below is the 003 realization of 001 R7.2/R7.5; the normative contract
 | `spec-kit` | `specs/`, `spec/` | path beneath a base **AND** sibling `spec.md`/`plan.md` (conjunctive) | immediate parent dir beneath a base | `spec.md`, `plan.md`, `requirements.md` | — |
 | `open-spec` | `openspec/`, `open-spec/` | path contains `openspec/`/`open-spec/` **OR** sibling `openspec.json`/`proposal.md` | segment after `openspec/`, `changes/`, or `specs/` | `spec.md`, `proposal.md`, `tasks.md` | — |
 | `bmad` | `bmad/`, `bmad-method/`, `docs/` | path contains `bmad/`/`bmad-method/` **OR** sibling `prd.md`/`architecture.md` | parent dir, or task-file basename when no feature dir | `requirements.md`, `design.md`, `architecture.md`, `prd.md`, `spec.md` | — |
+| `spec-superpower` | `docs/superpowers/plans/` | path beneath the plans root (path-only — no sibling markers; the dated-filename convention lives in `taskFilePatterns`) | date-stripped task-file basename (`2026-11-09-auth.md` → `auth`) | none | — |
 | `generic` | from config `specsBaseDirectories` | none — detection matches nothing | parent dir beneath a configured base, else absent | from config `siblingDocuments` | `.task-linear-sync/hooks/` · `command-json` |
 
 Notes:
@@ -29,9 +30,16 @@ Notes:
 - Grammar fields (`headingGrammar`, `phasePattern`, `summaryPattern`, `rollupPattern`,
   `titleBehavior.stripPrefixes`) are regex-source strings consumed downstream (004/005).
   003 never parses task content.
-- `builtInAdapters` (`task-linear-sync/discovery`) is the frozen five-key record
-  (`kiro`, `spec-kit`, `open-spec`, `bmad`, `generic`) of immutable
+- `builtInAdapters` (`task-linear-sync/discovery`) is the frozen six-key record
+  (`kiro`, `spec-kit`, `open-spec`, `bmad`, `spec-superpower`, `generic`) of immutable
   `FrameworkAdapter` values.
+- The `spec-superpower` row (feature 018) claims only date-prefixed plan files
+  (`taskFilePatterns: ["[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]-*.md"]`) beneath the
+  plans root at any depth; its 004-facing grammar is `^\s{0,3}#{2,4}\s+(?<id>Task\s+[0-9]+)\s*:\s*(?<title>.+)$`
+  with every `- [ ] **Step N: …**` checkbox line matching the rollup pattern (mirrored
+  body content, never a task), and `identityFileScope: true` composes the task-file
+  basename into the seed input so same-name plans on different dates stay collision-free
+  (amendment A-018-2).
 
 ## Detection precedence and ranking
 
