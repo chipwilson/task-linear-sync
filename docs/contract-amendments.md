@@ -49,6 +49,30 @@ breaks the build — amendments are visible by construction (feature 002 SC-004
 - `tests/contract/defaults-scan.test.ts` — shipped defaults stay free of real
   organization identifiers.
 
+## Log — 002 frozen surface
+
+Amendments to the 002 frozen contracts, same entry format as the per-surface logs below
+(`YYYY-MM-DD · surface · element-id · before → after · rationale · migration`), recorded in
+the same change as the contract doc + module + snapshot trio (three-artifact rule).
+
+- 2026-11-10 · domain · `type.FrameworkId` · `"bmad" | "spec-kit" | "open-spec" | "kiro" |
+  "generic"` → `"bmad" | "spec-kit" | "open-spec" | "kiro" | "spec-superpower" | "generic"` ·
+  A-018-0 (feature 018): `spec-superpower` ships as a built-in, default-enabled identity
+  (FR-001); the widening was pre-authorized as an amendment candidate in
+  `src/discovery/types.ts`. Mirrored in lockstep within this entry: `src/domain/task.ts`,
+  `specs/002-core-domain-contracts/contracts/task-model.md`, the `plan-report.schema.json`
+  `framework` enum, `specs/002-core-domain-contracts/data-model.md` §1, and the regenerated
+  `tests/contract/snapshots/frozen-surface.json` · no migration: the member is additive,
+  existing records and seeds are unchanged
+
+- 2026-11-10 · parsing (004 contract) · `TaskFileAdapter.identityFileScope` · absent →
+  optional whitelisted member consumed at the `parseTaskFile` seed call site · A-018-2
+  (feature 018): plans sharing a derived feature name need file-scoped seed inputs to keep
+  pairwise-distinct `Stable_UUID`s (FR-010); amends
+  `specs/004-task-parsing-line-rendering/contracts/adapter-consumption.md` rule 2 —
+  `taskStableSeed` and its frozen layout are unchanged · no migration: adapters omitting the
+  member (all current ones) keep byte-identical seed inputs
+
 ## Surface contract freezes (011/012) — feature 014
 
 The history server (011) and the MCP server (012) carry the same freeze regime as the 002

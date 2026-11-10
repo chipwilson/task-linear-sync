@@ -30,10 +30,10 @@ import {
 import type { FrameworkIdentity } from "./types.js";
 
 /** The spec's fixed marker precedence (contracts/framework-adapter.md rule 1). */
-export const DEFAULT_PRECEDENCE: readonly string[] = ["kiro", "open-spec", "spec-kit", "bmad", "generic"];
+export const DEFAULT_PRECEDENCE: readonly string[] = ["kiro", "open-spec", "spec-kit", "bmad", "spec-superpower", "generic"];
 
 /**
- * Built-in conventions rows (defaults layer, FR-007) — the five-adapter table from
+ * Built-in conventions rows (defaults layer, FR-007) — the six-adapter table from
  * `adapters/index.ts` (T031), gated by T023's table tests and the T007 surface snapshot.
  */
 export function builtInConventionRows(): readonly { readonly id: FrameworkIdentity; readonly conventions: ResolvedConventions }[] {

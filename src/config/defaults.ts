@@ -40,7 +40,7 @@ export const builtInDefaults: ResolvedConfig = {
   stateDirAppSegment: DEFAULT_TOOL_ID,
 
   // ── Discovery: generic framework directory names are discovery defaults, not routing defaults ──
-  frameworkAdapters: ["bmad", "spec-kit", "open-spec", "kiro", "generic"],
+  frameworkAdapters: ["bmad", "spec-kit", "open-spec", "kiro", "spec-superpower", "generic"],
   taskFilePatterns: ["tasks.md", "TASKS.md"],
   specsBaseDirectories: ["specs/", ".kiro/specs/", "openspec/", "bmad/"],
   skipDirectories: [".git", "node_modules", "dist", ".next", "coverage"],

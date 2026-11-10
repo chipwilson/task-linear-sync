@@ -24,6 +24,7 @@ export interface TaskFileAdapter {
   readonly phasePattern?: string;
   readonly summaryPattern?: string;
   readonly rollupPattern?: string;
+  readonly identityFileScope?: boolean;  // 018 A-018-2: seed-input composition (see rule 2)
 }
 ```
 
@@ -38,6 +39,12 @@ export interface TaskFileAdapter {
    real adapter carries (`detect`, `taskFilePatterns`, `titleBehavior`,
    `agentHooksDirectory`) are invisible to the parser — structural typing means 003 may
    add or evolve them with zero 004 impact.
+   **Amendment A-018-2** (logged in `docs/contract-amendments.md`, feature 018) whitelists
+   one further member: `identityFileScope?: boolean`. When `true` and the task has a local
+   id, the `parseTaskFile` seed call site composes the local-id SEED INPUT as
+   `` `${basename(filePath)}\u0000${localTaskId}` ``; `taskStableSeed` and its frozen layout
+   are unchanged, `Task.localTaskId` stays the bare id, and adapters omitting the member
+   (or setting it false) keep byte-identical seed inputs.
 3. **Override precedence** (research R2): per convention,
    `adapter.<member> ?? config.<grammar key>` — the merged `ResolvedConfig` already
    carries built-in defaults, so the parser needs no third fallback.

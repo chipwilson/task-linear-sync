@@ -84,7 +84,7 @@
         "taskUuid": { "type": "string", "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$" },
         "issueId": { "type": ["string", "null"] },
         "decision": { "enum": ["create", "update", "no-change", "conflict", "skip-unresolved", "archive"] },
-        "framework": { "enum": ["bmad", "spec-kit", "open-spec", "kiro", "generic"] },
+        "framework": { "enum": ["bmad", "spec-kit", "open-spec", "kiro", "spec-superpower", "generic"] },
         "featureName": { "type": ["string", "null"] },
         "filePath": { "type": "string", "description": "Repository-relative POSIX path." },
         "confidence": { "enum": ["high", "medium", "low", "unmatched"] },
