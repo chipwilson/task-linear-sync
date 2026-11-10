@@ -40,7 +40,7 @@ messages carry no `Co-Authored-By` / "Generated with" trailers (repo AGENTS.md).
 
 **Purpose**: Branch and baseline pinning
 
-- [ ] T001 Confirm HEAD is on branch `019-speckit-doc-truthfulness` (`git switch 019-speckit-doc-truthfulness` if not) and capture the baseline commit full hash with `git rev-parse HEAD` — this exact value becomes the `Baseline commit:` header field of specs/019-speckit-doc-truthfulness/audit.md (research R10 evidence-aging rule)
+- [X] T001 Confirm HEAD is on branch `019-speckit-doc-truthfulness` (`git switch 019-speckit-doc-truthfulness` if not) and capture the baseline commit full hash with `git rev-parse HEAD` — this exact value becomes the `Baseline commit:` header field of specs/019-speckit-doc-truthfulness/audit.md (research R10 evidence-aging rule)
 
 ---
 
@@ -50,8 +50,8 @@ messages carry no `Co-Authored-By` / "Generated with" trailers (repo AGENTS.md).
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete
 
-- [ ] T002 Create specs/019-speckit-doc-truthfulness/audit.md with the exact machine-parsed header block from contracts/audit-record-format.md (`Baseline commit:`, `Audited documents:` listing README.md, docs/framework-adapters.md, docs/discovery.md, docs/parsing.md, specs/requirements.md, `Open false/ambiguous verdicts:`) plus the seven seeded claim sections C-001…C-007 transcribed from the consolidated evidence index in specs/019-speckit-doc-truthfulness/research.md, each using the claim-entry template fields with the data-model.md enum vocabulary (`Verdict.status`: true | false | ambiguous | true-no-claim-present; `EvidenceEntry.kind`: source | test | demo | absence-search; `Verdict.requirementsCheck`: requirements-silent | requirements-agree | requirements-mandate-code-lacks; `Correction.action`: rewrite | remove | label-planned)
-- [ ] T003 [P] Create specs/019-speckit-doc-truthfulness/defects.md with the `# Follow-up Entries (defect log)` header and the entry template from contracts/audit-record-format.md (fields: `Category` enum defect | enhancement, `Source claim` id pattern C-\d{3}, `Expectation`, `As built`, `Suggested home`, `Status` enum open | mirrored-issue:<url> | absorbed-into:<feature>; entries append-only except Status)
+- [X] T002 Create specs/019-speckit-doc-truthfulness/audit.md with the exact machine-parsed header block from contracts/audit-record-format.md (`Baseline commit:`, `Audited documents:` listing README.md, docs/framework-adapters.md, docs/discovery.md, docs/parsing.md, specs/requirements.md, `Open false/ambiguous verdicts:`) plus the seven seeded claim sections C-001…C-007 transcribed from the consolidated evidence index in specs/019-speckit-doc-truthfulness/research.md, each using the claim-entry template fields with the data-model.md enum vocabulary (`Verdict.status`: true | false | ambiguous | true-no-claim-present; `EvidenceEntry.kind`: source | test | demo | absence-search; `Verdict.requirementsCheck`: requirements-silent | requirements-agree | requirements-mandate-code-lacks; `Correction.action`: rewrite | remove | label-planned)
+- [X] T003 [P] Create specs/019-speckit-doc-truthfulness/defects.md with the `# Follow-up Entries (defect log)` header and the entry template from contracts/audit-record-format.md (fields: `Category` enum defect | enhancement, `Source claim` id pattern C-\d{3}, `Expectation`, `As built`, `Suggested home`, `Status` enum open | mirrored-issue:<url> | absorbed-into:<feature>; entries append-only except Status)
 
 **Checkpoint**: Both records exist with schema-conformant skeletons; family-3 self-check guards will parse these exact shapes.
 
