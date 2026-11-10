@@ -38,6 +38,22 @@ test("e2e US: five-frameworks in one flow — all five identities, siblings, and
   assert.ok(result.diagnostics.some((d) => d.path === ".git" && d.condition.includes("git")));
 });
 
+test("e2e US: spec-superpower corpus (018) — dated plans selected, decoys unclaimed, repeat-run byte-identity (SC-001/SC-002)", async () => {
+  const root = fixtureRepoPath("spec-superpower");
+  const a = await discoverTaskFiles({ repositoryRoot: root, config: builtInDefaults });
+  assert.deepEqual([...new Set(a.files.map((f) => f.frameworkId))], ["spec-superpower"]);
+  assert.deepEqual(
+    a.files.map((f) => f.filePath).sort(),
+    [
+      "docs/superpowers/plans/2026-11-01-sync.md",
+      "docs/superpowers/plans/2026-11-02-auth.md",
+      "docs/superpowers/plans/2026-11-09-sync.md",
+    ],
+  );
+  const b = await discoverTaskFiles({ repositoryRoot: root, config: builtInDefaults });
+  assert.equal(JSON.stringify(a), JSON.stringify(b));
+});
+
 test("e2e US: repeat-run byte-identity across the whole result (SC-002)", async () => {
   const a = await discoverTaskFiles({ repositoryRoot: FIVE, config: builtInDefaults });
   const b = await discoverTaskFiles({ repositoryRoot: FIVE, config: builtInDefaults });
