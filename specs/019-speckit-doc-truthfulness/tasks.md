@@ -210,3 +210,15 @@ Task: "Record FU-001 in specs/019-speckit-doc-truthfulness/defects.md"
 - All example identifiers in corrected text fictional/placeholder-grade (FR-008, constitution Principle III)
 - Commit after each phase; every commit stays on `019-speckit-doc-truthfulness` with no attribution trailers
 - Stop at any checkpoint to validate a story independently
+
+## Post-completion extension (2026-11-10)
+
+After all tasks above completed, main landed features 017 (`spec-kitty`) and 018
+(`spec-superpower`). Per the follow-up request the branch merged `origin/main`
+(conflict-free, `a1e59b4`) and the truthfulness sweep was extended to the two new
+frameworks: 20 appended entries C-080…C-099 (16 true / 2 false / 2 ambiguous),
+four corrected sentences (README adapter count, `spec-kitty` feature-name cell,
+the 017-grammar override-keys claim, docs/framework-adapters.md row count), and
+four new guards GUARD-25…GUARD-28 authored test-first (red trail in
+`audit.md ## Verification notes`). No original task changed status; the record
+header remains at 0 open false/ambiguous verdicts.

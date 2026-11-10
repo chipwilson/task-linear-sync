@@ -35,7 +35,7 @@ Notes:
 - `spec-kitty`'s two extra grammar members follow the same override lanes as every other
   convention — `overrides.adapters["spec-kitty"]` (deep-merged, arrays replace) beats the
   built-in row — but neither has a config-file key, so `adapter.<member> ?? built-in default`
-  is the whole resolution (017 C5.1). Their defaults stay inert for the other five rows,
+  is the whole resolution (017 C5.1). Their defaults stay inert for the other six rows,
   which parse exactly as before (017 C5.3).
 - Grammar fields (`headingGrammar`, `phasePattern`, `summaryPattern`, `rollupPattern`,
   `titleBehavior.stripPrefixes`, plus the optional `checklistIdPattern` and `titleTagPattern`

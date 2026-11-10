@@ -356,3 +356,79 @@ test("doc-truthfulness: GUARD-23 every defect entry's source claim resolves", ()
     }
   }
 });
+
+// ── Family 4 — extension guards (017/018 frameworks, C-080..C-099) ────────────
+
+test("doc-truthfulness: GUARD-25 README adapter counts match the adapter table", () => {
+  const WORDS: Record<string, number> = { four: 4, five: 5, six: 6, seven: 7, eight: 8 };
+  const header = readme.indexOf("| Adapter id | Framework |");
+  assert.ok(header >= 0, "GUARD-25 (C-081): README.md must keep the adapter table");
+  const rows: string[] = [];
+  for (const line of readme.slice(header).split("\n").slice(1)) {
+    if (!line.startsWith("|")) break;
+    if (/^\| `[a-z-]+` \|/.test(line)) rows.push(line);
+  }
+  const ship = readme.match(/([A-Za-z]+) built-in adapters ship/);
+  const intro = readme.match(/([a-z-]+) built-in adapters \(/);
+  assert.ok(ship && intro, 'GUARD-25 (C-081): README.md must state the shipped adapter count ("… built-in adapters ship" and the intro mention)');
+  assert.equal(
+    WORDS[ship[1]!.toLowerCase()],
+    rows.length,
+    `GUARD-25 (C-081): README.md "… built-in adapters ship" contradicts the ${rows.length}-row adapter table — builtInAdapters is a seven-key record`,
+  );
+  assert.equal(
+    WORDS[intro[1]!.toLowerCase()],
+    rows.length,
+    `GUARD-25 (C-081): README.md intro adapter count contradicts the ${rows.length}-row adapter table`,
+  );
+});
+
+test("doc-truthfulness: GUARD-26 framework-adapters counts the other built-in rows correctly", () => {
+  const doc = AUDITED[1]![1];
+  assert.match(
+    doc,
+    /the other six rows/,
+    "GUARD-26 (C-094): docs/framework-adapters.md must say the 017 grammar defaults stay inert for the other SIX built-in rows (seven built-ins minus spec-kitty)",
+  );
+  assert.doesNotMatch(
+    doc,
+    /the other five rows/,
+    'GUARD-26 (C-094): stale count — docs/framework-adapters.md still says "the other five rows" after the 017/018 seven-adapter registry',
+  );
+});
+
+test("doc-truthfulness: GUARD-27 spec-kitty feature-name cell states the parent-dir rule", () => {
+  const row = readme.split("\n").find((l) => /^\| `spec-kitty` \|/.test(l));
+  assert.ok(row, "GUARD-27 (C-083): README.md keeps the spec-kitty adapter row");
+  assert.doesNotMatch(
+    row,
+    /else parent dir/,
+    "GUARD-27 (C-083): README.md spec-kitty row claims a fallback the code lacks — the parent-dir rule (src/discovery/conventions.ts) yields no feature name when the file sits directly in the base",
+  );
+  assert.match(
+    row,
+    /immediate parent dir beneath `kitty-specs\/`/,
+    "GUARD-27 (C-083): README.md spec-kitty row must name the immediate-parent-dir derivation (docs/framework-adapters.md row agrees)",
+  );
+});
+
+test("doc-truthfulness: GUARD-28 017 grammar members are programmatic overrides only", () => {
+  assert.doesNotMatch(
+    readme,
+    /both grammars are configuration or/,
+    "GUARD-28 (C-090): README.md must not call checklistIdPattern/titleTagPattern configuration keys — src/config/schema.ts has no such key",
+  );
+  const start = readme.indexOf("### Spec Kitty");
+  const para = readme.slice(start, readme.indexOf("### Generic Markdown"));
+  assert.ok(start >= 0 && para.length > 0, "GUARD-28 (C-090): README.md keeps the Spec Kitty section");
+  assert.match(
+    para,
+    /overrides\.adapters\["spec-kitty"\][\s\S]{0,200}programmatic|programmatic[\s\S]{0,200}overrides\.adapters\["spec-kitty"\]/,
+    'GUARD-28 (C-090): README.md spec-kitty section must attribute the two grammar members to the PROGRAMMATIC overrides.adapters["spec-kitty"] lane (src/discovery/adapter.ts AdapterConventions)',
+  );
+  assert.match(
+    para,
+    /no config-file key/,
+    "GUARD-28 (C-090): README.md spec-kitty section must state the two grammar members have no config-file key (docs/framework-adapters.md 017 C5.1 note)",
+  );
+});

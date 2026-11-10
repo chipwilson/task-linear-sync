@@ -1239,6 +1239,346 @@ lines and the header counter; ids are never reused or renumbered.
   shipped defaults are empty placeholders that fail validation until supplied
   (defaults.ts:57-58); adapters carry only framework-layout conventions.
 
+### C-080 — README.md:15-17 — intro enumerates seven built-in adapters
+
+- **Verdict**: true
+- **Framework scope**: all
+- **Claim**: "seven built-in adapters (GitHub Spec Kit, AWS Kiro, OpenSpec, BMAD,
+  Spec Superpowers, Spec Kitty, and a configurable generic lane)".
+- **Evidence kind**: source
+- **Evidence pointer**: src/discovery/types.ts:20
+- **Requirements check**: requirements-agree
+- **Reasoning**: `BUILT_IN_FRAMEWORK_IDS` carries exactly these seven literals and
+  `FrameworkId` (src/domain/task.ts:8) is the same seven-member union; requirements
+  R7 (post-017/018) states the seven built-ins are the only identities the sync
+  surface admits.
+
+### C-081 — README.md:162 — shipped adapter count "Six"
+
+- **Verdict**: false
+- **Framework scope**: all
+- **Claim**: "Six built-in adapters ship, all enabled by default through the
+  `frameworkAdapters` config key".
+- **Evidence kind**: source
+- **Evidence pointer**: src/discovery/types.ts:20
+- **Requirements check**: requirements-agree
+- **Reasoning**: the merged registry ships seven built-in rows (types.ts:20 seven
+  literals; `builtInAdapters` is the frozen seven-key record), the README's own
+  adapter table has seven rows and its own intro (README.md:15) says seven — the
+  sentence is a stale 018-era count the 017 merge left behind. Enabled-by-default
+  via `frameworkAdapters` is itself true; only the count was false.
+- **Correction**: rewrite — "Seven built-in adapters ship, all enabled by default
+  through the `frameworkAdapters` config key". (Landing: README.md adapter
+  selection paragraph, 2026-11-10; evidence: src/discovery/types.ts:20.)
+- **Guards**: GUARD-25
+
+### C-082 — README.md:171 — spec-superpower adapter table row
+
+- **Verdict**: true
+- **Framework scope**: spec-superpower
+- **Claim**: detected by "path beneath `docs/superpowers/plans/`"; base directories
+  `docs/superpowers/plans/`; feature name "date-stripped plan filename".
+- **Evidence kind**: source
+- **Evidence pointer**: src/discovery/adapters/spec-superpower.ts:18
+- **Requirements check**: requirements-agree
+- **Reasoning**: adapter row declares `baseDirectories: ["docs/superpowers/plans/"]`,
+  path-only `detection.pathPrefixes` (no sibling markers), and
+  `featureNameRule: { kind: "date-stripped-basename" }` (conventions.ts:169-175
+  strips the leading `YYYY-MM-DD-` then the extension); discovery tests pin
+  claim/no-claim behavior.
+
+### C-083 — README.md:172 — spec-kitty feature-name cell "else parent dir"
+
+- **Verdict**: ambiguous
+- **Framework scope**: spec-kitty
+- **Claim**: feature name from "mission dir under `kitty-specs/`, else parent dir".
+- **Evidence kind**: source
+- **Evidence pointer**: src/discovery/conventions.ts:147
+- **Requirements check**: requirements-agree
+- **Reasoning**: the row's rule is `parent-dir` — the immediate parent directory
+  beneath the base, with NO fallback branch: a task file sitting directly in
+  `kitty-specs/` derives no feature name at all (parentDir at conventions.ts:133
+  returns the parent dir; the `dir.startsWith(base)` gate at :151 returns
+  undefined otherwise). "else parent dir" describes a second branch that does not
+  exist and reads like the bmad row's real `parent-or-basename` fallback;
+  requirements R7 (017) and docs/framework-adapters.md:20 both say the name is
+  "the mission directory immediately beneath the root" / "immediate parent dir".
+- **Correction**: rewrite — the cell now reads "immediate parent dir beneath
+  `kitty-specs/` (the mission)", matching docs/framework-adapters.md:20.
+  (Landing: README.md adapter table, 2026-11-10; evidence: conventions.ts:147-151.)
+- **Guards**: GUARD-27
+
+### C-084 — README.md:175-178 — selection precedence chain
+
+- **Verdict**: true
+- **Framework scope**: all
+- **Claim**: ties rank by longest matching path pattern, then "kiro → open-spec →
+  spec-kit → bmad → spec-superpower → spec-kitty → generic", then alphabetical
+  tie-break; unclaimed files fall back to `generic`.
+- **Evidence kind**: source
+- **Evidence pointer**: src/discovery/registry.ts:35
+- **Requirements check**: requirements-agree
+- **Reasoning**: `DEFAULT_PRECEDENCE` is the identical seven-id list in the
+  documented order; ranking and generic fallback are pinned by the discovery
+  selection tests (017/018 updated for the two new ids).
+
+### C-085 — README.md:252-258 — spec-superpower tasks and verbatim mirrors
+
+- **Verdict**: true
+- **Framework scope**: spec-superpower
+- **Claim**: "one task per `Task N:` heading (levels 2–4), and every
+  `- [ ] **Step N: …**` checkbox is mirrored verbatim into the task's issue
+  description — steps, file lists, commands, and fenced code included. Checkbox
+  state is mirrored content, never a completion input".
+- **Evidence kind**: test
+- **Evidence pointer**: tests/integration/sync-spec-superpower-drift.test.ts:129
+- **Requirements check**: requirements-agree
+- **Reasoning**: the sync test asserts created descriptions contain the step
+  checkbox lines, file-list bullets, `sh` and TypeScript fences verbatim
+  (:143-151); adapter grammar (:23 heading levels 2-4, :25 rollup pattern
+  matching every checkbox) makes checkboxes body content only.
+
+### C-086 — README.md:259-264 — spec-superpower identity rules
+
+- **Verdict**: true
+- **Framework scope**: spec-superpower
+- **Claim**: feature name is the date-stripped filename; "two plans sharing a name
+  on different dates keep distinct deterministic identities and can never
+  cross-match each other's issues (a renamed or re-dated plan file is a new
+  feature — there is no rename tracking)".
+- **Evidence kind**: test
+- **Evidence pointer**: tests/unit/parsing-spec-superpower-identity.test.ts:24
+- **Requirements check**: requirements-agree
+- **Reasoning**: the identity test pins pairwise-distinct `stableUuid`s for
+  same-name dated plans (A-018-2 `identityFileScope` seed composition, adapter
+  :31), determinism, and in-place-edit stability; identity derives purely from
+  (file-scoped basename, feature name, local id), so a rename or re-date changes
+  the seed input — and an absence sweep found no rename-tracking lane for
+  derived identities.
+
+### C-087 — README.md:263-265 — spec-superpower claim limits and no scaffold
+
+- **Verdict**: true
+- **Framework scope**: spec-superpower
+- **Claim**: "Files above the plans root and non-dated filenames are never claimed
+  (widen `taskFilePatterns` for that); there is no agent-hook scaffold for this
+  framework."
+- **Evidence kind**: test
+- **Evidence pointer**: tests/integration/queue-hooks-install.test.ts:147
+- **Requirements check**: requirements-agree
+- **Reasoning**: `taskFilePatterns` is the dated-basename glob (adapter :17) and
+  discovery tests pin non-dated/outside-root refusal plus the
+  taskFilePatterns-override widening; `install-agent-hook --framework
+  spec-superpower` refuses with zero writes (018 FR-012) because the adapter
+  declares no hooks directory or template (agent-hooks.ts:26).
+
+### C-088 — README.md:269-275 — spec-kitty layout and exclusion claims
+
+- **Verdict**: true
+- **Framework scope**: spec-kitty
+- **Claim**: one mission per directory, checklist `kitty-specs/<mission>/tasks.md`,
+  mission dir is the feature name, `spec.md`/`plan.md`/`research.md` ride along as
+  siblings, anything beneath `kitty-specs/` is claimed with no sibling marker, and
+  the `kitty-specs/<mission>/tasks/` bookkeeping directory is excluded.
+- **Evidence kind**: source
+- **Evidence pointer**: src/discovery/adapters/spec-kitty.ts:15
+- **Requirements check**: requirements-agree
+- **Reasoning**: adapter row: `baseDirectories: ["kitty-specs/"]`,
+  path-only detection (:18), `parent-dir` feature rule (:20), inherited
+  `siblingDocuments` = defaults.ts:47 `["spec.md","plan.md","research.md"]`,
+  `frameworkSpecificExclusions: ["kitty-specs/*/tasks/"]` (:30); discovery tests
+  and docs/discovery.md:23 confirm the exclusion and marker-free claim.
+
+### C-089 — README.md:277-282 — spec-kitty id, phase and tag semantics
+
+- **Verdict**: true
+- **Framework scope**: spec-kitty
+- **Claim**: checklist lines carry their own id read out of the line body
+  (`<id> <text>`); `## Work Package WP01: <title>` headings "group the subtasks
+  into phases rather than becoming tasks themselves"; `[P]`, `[P1]`, `[US1]`
+  tags "stay verbatim in the file and in the mirrored issue body but are stripped
+  from derived task titles".
+- **Evidence kind**: test
+- **Evidence pointer**: tests/unit/parsing-conventions-017.test.ts:90
+- **Requirements check**: requirements-agree
+- **Reasoning**: `checklistIdPattern` (adapter :26) captures the id span from the
+  line body after the checkbox; `headingGrammar: "(?!)"` never matches so zero
+  heading tasks originate (:21, C3.1) while `phasePattern` (:24) reads
+  `## Work Package WP<n>:` as a phase organizer (grouping-only churn test at
+  tests/integration/sync-spec-kitty-drift.test.ts:130); the C3.4/C3.5 tests pin
+  raw titles keeping tags while `titleTagPattern` (:27) strips them from derived
+  titles only — the created issue title is the plain task text
+  (sync-spec-kitty-drift.test.ts:122).
+
+### C-090 — README.md:283-285 — 017 grammars as "configuration or override keys"
+
+- **Verdict**: ambiguous
+- **Framework scope**: spec-kitty
+- **Claim**: "Task-file names, base directories, and both grammars are
+  configuration or override keys — `overrides.adapters[\"spec-kitty\"]` re-points
+  `baseDirectories`, `checklistIdPattern`, or `titleTagPattern` for a forked kit
+  layout."
+- **Evidence kind**: absence-search
+- **Evidence pointer**: src/config/schema.ts
+- **Evidence search scope**: no `checklistIdPattern` or `titleTagPattern` key
+  anywhere in src/config/schema.ts (config-file surface); the members exist only
+  on the programmatic override record `AdapterConventions`
+  (src/discovery/adapter.ts:187-188) and the adapter rows.
+- **Requirements check**: requirements-silent
+- **Reasoning**: calling the two grammars "configuration … keys" overclaims: they
+  have no config-file key, so a reader following the README's Configuration
+  section cannot set them there. docs/framework-adapters.md:34-38 states the
+  as-built truth ("neither has a config-file key, so `adapter.<member> ??
+  built-in default` is the whole resolution (017 C5.1)") — the README sentence
+  contradicted its own detail doc. The `overrides.adapters` re-point itself is
+  true, but only via the programmatic lane.
+- **Correction**: rewrite — the paragraph now says task-file names and base
+  directories are configuration keys while the two extra grammars "have no
+  config-file key — only the programmatic `overrides.adapters[\"spec-kitty\"]`
+  lane (deep-merged, arrays replace) re-points them over the built-in row", with
+  a pointer to docs/framework-adapters.md. (Landing: README.md Spec Kitty
+  section, 2026-11-10; evidence: src/config/schema.ts sweep + adapter.ts:187-188.)
+- **Guards**: GUARD-28
+
+### C-091 — docs/framework-adapters.md:19 — spec-superpower adapter row
+
+- **Verdict**: true
+- **Framework scope**: spec-superpower
+- **Claim**: row states plans-root base dir, path-only detection with the
+  dated-filename convention living in `taskFilePatterns`, date-stripped task-file
+  basename, sibling documents "none", agent hooks "—".
+- **Evidence kind**: source
+- **Evidence pointer**: src/discovery/adapters/spec-superpower.ts:14
+- **Requirements check**: requirements-agree
+- **Reasoning**: matches the adapter field-for-field: dated glob (:17), base dir
+  (:18), pathPrefixes-only detection (:20), `date-stripped-basename` (:22),
+  `siblingDocuments: []` (:29), no `agentHooksDirectory`/`agentHookTemplate`
+  (:32 comment), `frameworkSpecificExclusions: []` (:33).
+
+### C-092 — docs/framework-adapters.md:20 — spec-kitty adapter row
+
+- **Verdict**: true
+- **Framework scope**: spec-kitty
+- **Claim**: row states `kitty-specs/` base, path-only detection "(no sibling
+  requirement)", "immediate parent dir beneath `kitty-specs/` (the mission)", and
+  siblings "from config `siblingDocuments` (`spec.md`, `plan.md`, `research.md`)".
+- **Evidence kind**: source
+- **Evidence pointer**: src/discovery/adapters/spec-kitty.ts:28
+- **Requirements check**: requirements-agree
+- **Reasoning**: the adapter inherits the built-in defaults verbatim
+  (`siblingDocuments: [...builtInDefaults.siblingDocuments]`, :28 =
+  defaults.ts:47), matching the row's "from config" phrasing; feature rule and
+  detection as per C-088.
+
+### C-093 — docs/framework-adapters.md:28-31 — exclusion-entry grammar note
+
+- **Verdict**: true
+- **Framework scope**: spec-kitty
+- **Claim**: `spec-kitty` excludes `kitty-specs/*/tasks/`; a whole-segment `*`
+  means exactly one path segment (017 amendment 3), matching is
+  repository-root-relative, a matching directory skips its whole subtree, and
+  disabling the adapter removes the exclusion again (FR-011).
+- **Evidence kind**: source
+- **Evidence pointer**: src/discovery/adapters/spec-kitty.ts:30
+- **Requirements check**: requirements-agree
+- **Reasoning**: the exclusion literal is exactly `kitty-specs/*/tasks/` (:30);
+  the traversal grammar (whole-segment `*`, directory subtree skip) is pinned by
+  the discovery traverse tests (017 update), and adapter gating removes the
+  contributed exclusion with the row (registry built from enabled rows).
+
+### C-094 — docs/framework-adapters.md:38 — inert-members count "other five rows"
+
+- **Verdict**: false
+- **Framework scope**: all
+- **Claim**: the two 017 grammar members' "defaults stay inert for the other five
+  rows, which parse exactly as before (017 C5.3)".
+- **Evidence kind**: source
+- **Evidence pointer**: src/discovery/types.ts:20
+- **Requirements check**: requirements-agree
+- **Reasoning**: with seven built-in rows and only `spec-kitty` declaring the two
+  members, six rows inherit the inert defaults — kiro, spec-kit, open-spec, bmad,
+  spec-superpower, generic — not five; the count predates the seven-adapter
+  registry and is false as merged.
+- **Correction**: rewrite — "Their defaults stay inert for the other six rows"
+  (Landing: docs/framework-adapters.md override-lane note, 2026-11-10; evidence:
+  src/discovery/types.ts:20).
+- **Guards**: GUARD-26
+
+### C-095 — docs/framework-adapters.md:45-46 — frozen seven-key `builtInAdapters`
+
+- **Verdict**: true
+- **Framework scope**: all
+- **Claim**: `builtInAdapters` is "the frozen seven-key record (`kiro`, `spec-kit`,
+  `open-spec`, `bmad`, `spec-superpower`, `spec-kitty`, `generic`) of immutable
+  `FrameworkAdapter` values".
+- **Evidence kind**: source
+- **Evidence pointer**: src/discovery/types.ts:20
+- **Requirements check**: requirements-agree
+- **Reasoning**: the export is a deep-frozen record with exactly those seven keys
+  (surface snapshot tests re-pin the key set post-merge); immutability and the
+  key list are asserted by the discovery built-in adapter tests.
+
+### C-096 — docs/framework-adapters.md:48-55 — spec-superpower row note
+
+- **Verdict**: true
+- **Framework scope**: spec-superpower
+- **Claim**: the row "claims only date-prefixed plan files (taskFilePatterns:
+  `[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]-*.md`) beneath the plans root at any
+  depth", the quoted `Task\s+[0-9]+` heading grammar, "every
+  `- [ ] **Step N: …**` checkbox line matching the rollup pattern (mirrored body
+  content, never a task)", and `identityFileScope: true` composing the task-file
+  basename into the seed (A-018-2).
+- **Evidence kind**: source
+- **Evidence pointer**: src/discovery/adapters/spec-superpower.ts:17
+- **Requirements check**: requirements-agree
+- **Reasoning**: the quoted glob (:17), heading grammar (:23) and rollup pattern
+  (:25) match the doc character-for-character; `identityFileScope: true` (:31)
+  and the seed composition are pinned by the identity test (C-086).
+
+### C-097 — docs/discovery.md:23 — exclusion contribution note
+
+- **Verdict**: true
+- **Framework scope**: spec-kitty
+- **Claim**: framework-specific exclusion entries are skipped as well and
+  "`spec-kitty` contributes `kitty-specs/*/tasks/`".
+- **Evidence kind**: source
+- **Evidence pointer**: src/discovery/adapters/spec-kitty.ts:30
+- **Requirements check**: requirements-agree
+- **Reasoning**: same literal as C-093; docs/parsing.md carries no 017/018
+  framework-behavior sentences beyond the general grammar rules re-verified by
+  the pre-merge sweep.
+
+### C-098 — specs/requirements.md (R7/glossary, post-017/018) — seven identities
+
+- **Verdict**: true
+- **Framework scope**: all
+- **Claim**: the glossary/requirements now enumerate seven identities, state
+  "these seven built-ins are the only identities the sync surface admits", and
+  add the R7 detection rows for `spec-superpower` (plans root + dated basename)
+  and `spec-kitty` (path beneath `kitty-specs/`, no sibling requirement, mission
+  dir as Feature_Name, `kitty-specs/<mission>/tasks/` exclusion).
+- **Evidence kind**: source
+- **Evidence pointer**: src/domain/task.ts:8
+- **Requirements check**: requirements-agree
+- **Reasoning**: `FrameworkId` is exactly the seven-member union (:8); both
+  detection rows and the exclusion match the shipped adapter rows (C-088, C-091);
+  the custom-adapter restriction to discovery-only is unchanged (C-099).
+
+### C-099 — README.md:305-310 — custom-adapter scope note counts
+
+- **Verdict**: true
+- **Framework scope**: all
+- **Claim**: "For a layout none of the seven models, register a custom adapter…"
+  and "custom adapters extend **discovery**; the seven built-in …" sync-surface
+  scoping.
+- **Evidence kind**: source
+- **Evidence pointer**: src/domain/task.ts:8
+- **Requirements check**: requirements-agree
+- **Reasoning**: both counts are the accurate seven; custom adapters never reach
+  the sync surface (unchanged since the pre-merge sweep — the identity union
+  admits only the seven built-in literals).
+
+
 ## Coverage table (appendix)
 
 SC-001 coverage proof (contract: audit-record-format.md): every located
@@ -1373,9 +1713,46 @@ accounted for — SC-001 coverage 100% (79 claim entries; entries C-001…C-079)
   2026-11-05 amendment block and `preserveLocalTaskId` mentions in
   `specs/002-core-domain-contracts/**` — are **not** in the baseline and are excluded
   from evidence.
+- Extension entries (C-080…C-099) were verified at this branch tip with
+  `origin/main` merged in (merge commit `a1e59b4`, which carries the 017
+  `spec-kitty` and 018 `spec-superpower` adapters); their `src/` pointers were
+  re-verified against that committed tree, exactly as the originals.
 - The report's grouping bucket field is internally named `milestone` but its value is
   the `featureName` grouping key — cited in C-007's search scope so the distinction is
   on record.
+
+### Extension sweep after the main merge (017/018 frameworks, C-080…C-099)
+
+Post-merge re-audit of the two newly-merged framework sections and every new
+framework-behavior sentence the 017/018 merges introduced (verification date
+2026-11-10, merge commit `a1e59b4`). Same sentence-by-sentence rule as above.
+
+| Sentence (fragment) | Doc | Claim | Verdict |
+|---|---|---|---|
+| "seven built-in adapters (GitHub Spec Kit, AWS Kiro, …)" | README.md | C-080 | true |
+| "Six built-in adapters ship…" | README.md | C-081 | false → corrected |
+| spec-superpower adapter table row | README.md | C-082 | true |
+| spec-kitty feature-name cell "…else parent dir" | README.md | C-083 | ambiguous → corrected |
+| "kiro → open-spec → spec-kit → bmad → spec-superpower → spec-kitty → generic" | README.md | C-084 | true |
+| "one task per `Task N:` heading (levels 2–4)… mirrored verbatim" | README.md | C-085 | true |
+| "two plans sharing a name on different dates keep distinct deterministic identities" | README.md | C-086 | true |
+| "Files above the plans root and non-dated filenames are never claimed… no agent-hook scaffold" | README.md | C-087 | true |
+| "Spec Kitty keeps one mission per directory…" (layout + exclusion) | README.md | C-088 | true |
+| "Checklist lines carry their own id… stripped from derived task titles" | README.md | C-089 | true |
+| "both grammars are configuration or override keys" | README.md | C-090 | ambiguous → corrected |
+| spec-superpower adapter row | docs/framework-adapters.md | C-091 | true |
+| spec-kitty adapter row | docs/framework-adapters.md | C-092 | true |
+| "`spec-kitty` excludes `kitty-specs/*/tasks/`…" grammar note | docs/framework-adapters.md | C-093 | true |
+| "inert for the other five rows" | docs/framework-adapters.md | C-094 | false → corrected |
+| "frozen seven-key record" | docs/framework-adapters.md | C-095 | true |
+| "The `spec-superpower` row (feature 018) claims only date-prefixed plan files…" | docs/framework-adapters.md | C-096 | true |
+| "`spec-kitty` contributes `kitty-specs/*/tasks/`" | docs/discovery.md | C-097 | true |
+| seven-identity enumeration + R7 detection rows (post-017/018) | specs/requirements.md | C-098 | true |
+| "none of the seven models… the seven built-in…" | README.md | C-099 | true |
+
+docs/parsing.md carries no new framework-behavior sentences from the 017/018
+merges (grep for `spec-kitty`/`spec-superpower`/`017`/`018` finds none), so its
+pre-merge adjudication stands unchanged.
 
 ## Verification notes
 
@@ -1460,3 +1837,32 @@ are expected to turn these 14 failures green (US3-AS2).
 - Lint fix during close-out: guard-suite unused `allDocs` const removed
   (family-1 forbids run per-document via `offenders()`); caught by the
   release dry-run e2e lint stage, not a doc or behavior change.
+
+### Post-merge extension sweep (C-080…C-099) — 2026-11-10
+
+- Merge verification: `origin/main` merged conflict-free (`a1e59b4`); contract
+  tier green immediately after the merge (340/340, guard suite untouched — the
+  corrected pre-merge wording was not disproven by the incoming docs) and the
+  full suite followed at 1757/1757 (`/tmp/opencode/fulltest-merge.log`).
+- Evidence sweep over every framework-behavior sentence the 017/018 merges
+  introduced (README framework sections and adapter table, precedence chain,
+  docs/framework-adapters.md rows + notes, docs/discovery.md exclusion note,
+  requirements.md seven-identity text) → 20 new entries, 16 true, 2 false,
+  2 ambiguous; adjudications rest on the shipped adapter rows,
+  `conventions.ts`/`registry.ts`/`schema.ts`, and the 017/018 test suites
+  (pointers per entry).
+- Red-first guard extension (test-first per the contract): GUARD-25…GUARD-28
+  authored before the corrections; guard suite run showed `# pass 25 / # fail 4`
+  with exactly the four new guards red against the uncorrected docs
+  (GUARD-25 "Six built-in adapters ship" vs 7-row table; GUARD-26 "other five
+  rows"; GUARD-27 "else parent dir"; GUARD-28 "configuration or override
+  keys"). The four doc corrections then took the suite to 29/29 and the
+  contract tier to 344/344; diagnostics name guard id, `C-NNN` and the
+  offending document.
+- Record self-checks re-run after the append: GUARD-19/20/21 green on the
+  99-entry record (section count, verdict/check enums, Correction lines on all
+  false/ambiguous entries, every evidence pointer resolving in the committed
+  tree); header counter re-validated at 0 open verdicts.
+- Purity: the extension commit touches README.md, docs/framework-adapters.md,
+  CHANGELOG.md, this audit, `tasks.md`, and the guard suite only — zero
+  `src/` changes (diff vs `1fccd08` re-checked).

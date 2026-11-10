@@ -159,7 +159,7 @@ auth tiers, caching, SSE vs polling, deployment patterns:
 
 Framework layout is never hardcoded: discovery walks the repository, and each
 built-in adapter carries its framework's conventions — detection markers, base
-directories, feature-name rule, sibling documents. Six built-in adapters ship,
+directories, feature-name rule, sibling documents. Seven built-in adapters ship,
 all enabled by default through the `frameworkAdapters` config key:
 
 | Adapter id | Framework | Detected by | Base directories | Feature name from |
@@ -169,7 +169,7 @@ all enabled by default through the `frameworkAdapters` config key:
 | `open-spec` | OpenSpec | path contains `openspec/`/`open-spec/` **or** sibling `openspec.json`/`proposal.md` | `openspec/`, `open-spec/` | segment after `openspec/`, `changes/`, or `specs/` |
 | `bmad` | BMAD | path contains `bmad/`/`bmad-method/` **or** sibling `prd.md`/`architecture.md` | `bmad/`, `bmad-method/`, `docs/` | parent dir, else task-file basename |
 | `spec-superpower` | Spec Superpowers | path beneath `docs/superpowers/plans/` | `docs/superpowers/plans/` | date-stripped plan filename |
-| `spec-kitty` | Spec Kitty | path beneath `kitty-specs/` (no sibling requirement) | `kitty-specs/` | mission dir under `kitty-specs/`, else parent dir |
+| `spec-kitty` | Spec Kitty | path beneath `kitty-specs/` (no sibling requirement) | `kitty-specs/` | immediate parent dir beneath `kitty-specs/` (the mission) |
 | `generic` | any Markdown layout | fallback — never claims a file by marker | configured base dirs | parent dir under a base |
 
 When several adapters match one file, selection ranks the longest matching
@@ -280,9 +280,11 @@ Checklist lines carry their own id, printed without the `[]` Spec Kit uses —
 into phases rather than becoming tasks themselves. `[P]`, `[P1]`, and `[US1]`
 capability tags stay verbatim in the file and in the mirrored issue body but are
 stripped from derived task titles, so the issue title is the plain task text.
-Task-file names, base directories, and both grammars are configuration or
-override keys — `overrides.adapters["spec-kitty"]` re-points `baseDirectories`,
-`checklistIdPattern`, or `titleTagPattern` for a forked kit layout.
+Task-file names and base directories are configuration keys. The two extra
+grammars Spec Kitty adds (`checklistIdPattern`, `titleTagPattern`) have
+no config-file key — only the programmatic `overrides.adapters["spec-kitty"]` lane
+(deep-merged, arrays replace) re-points them over the built-in row (see
+[Framework adapters](docs/framework-adapters.md)).
 
 ### Generic Markdown (`generic`)
 
