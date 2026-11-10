@@ -35,6 +35,14 @@ correction.
 | GUARD-03 | C-003 | any surviving or reintroduced claim of native `[DEP:]`/`[Dep:]` dependency parsing |
 | GUARD-04 | C-006 | the `📋` marker-line claim (`📋 Task` phrasing anywhere in audited docs) |
 | GUARD-04b | C-007 | "map 1:1 to Linear milestones" / "One milestone per spec folder" phrasing |
+| GUARD-08 | C-008 | "delivery state (assignee, branch, PR, labels, status)" enumeration phrasing |
+| GUARD-09 | C-012 | "every per-adapter convention are configuration keys" overclaim phrasing |
+| GUARD-10 | C-014 | "Linear stays current as you commit" phrasing |
+| GUARD-11 | C-019 | heading-grammar example listing bare `Task 1.2` as a capturable id phrasing |
+
+Extension record (2026-11-10): GUARD-08…GUARD-11 added per the extension rule below
+(one guard keyed 1:1 to the `Correction` of each audit entry that reached a
+false/ambiguous verdict during the T004 README enumeration).
 
 ### Family 2 — required wording (drift guards)
 
