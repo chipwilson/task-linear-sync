@@ -15,6 +15,7 @@ import assert from "node:assert/strict";
 import { parseTaskFile } from "task-linear-sync/parsing";
 import type { ParseResult, TaskFileAdapter } from "task-linear-sync/parsing";
 import type { Task } from "task-linear-sync/domain";
+import { specKittyConventions } from "../../src/discovery/adapters/spec-kitty.js";
 
 import {
   bmadFixtureAdapter,
@@ -22,6 +23,7 @@ import {
   openSpecFixtureAdapter,
   kiroFixtureAdapter,
   genericFixtureAdapter,
+  specKittyFixtureAdapter,
   readFrameworkFixture,
   makeTestConfig,
 } from "../helpers/parsing-fixtures.js";
@@ -124,6 +126,62 @@ test("parsing corpus — repeat-parse deep-equality determinism (Principle IV)",
   const first = parseTaskFile("specs/auth/tasks.md", readFrameworkFixture("spec-kit"), specKitFixtureAdapter, cfg);
   const second = parseTaskFile("specs/auth/tasks.md", readFrameworkFixture("spec-kit"), specKitFixtureAdapter, cfg);
   assert.deepEqual(first, second);
+});
+
+test("parsing corpus — spec-kitty sixth identity (017 SC-002): subtasks only, WP grouping, template purity (C3.1–C3.6)", () => {
+  // Mirror pin: the helper's literal grammars equal the built-in row's members.
+  assert.equal(specKittyFixtureAdapter.headingGrammar, specKittyConventions.headingGrammar);
+  assert.equal(specKittyFixtureAdapter.phasePattern, specKittyConventions.phasePattern);
+  assert.equal(specKittyFixtureAdapter.summaryPattern, specKittyConventions.summaryPattern);
+  assert.equal(specKittyFixtureAdapter.checklistIdPattern, specKittyConventions.checklistIdPattern);
+  assert.equal(specKittyFixtureAdapter.titleTagPattern, specKittyConventions.titleTagPattern);
+
+  const result = parseTaskFile("kitty-specs/001-corpus/tasks.md", readFrameworkFixture("spec-kitty"), specKittyFixtureAdapter, cfg);
+  const { tasks } = result.file;
+
+  // SC-002 by count: exactly the three checkbox subtasks — nothing else.
+  assert.deepEqual(tasks.map((task) => task.lineNumber), [20, 21, 25]);
+  assert.equal(tasks.length, 3, "planned task set EQUALS the checkbox-subtask set");
+  assert.ok(tasks.every((task) => task.kind === "checklist"), "zero heading tasks (C3.1: WP/template/prose headings)");
+  assert.deepEqual(tasks.map((task) => task.localTaskId), ["T001", "T002", "T003"]);
+  assert.deepEqual(tasks.map((task) => task.title), ["[P] Create the auth module", "Wire the auth module into the app", "[US1] Ship the corpus mission"]);
+
+  // C3.6 grouping: each subtask carries its enclosing WPxx title; prose sections group nothing.
+  assert.deepEqual(tasks.map((task) => task.phase), [
+    "WP01: Create auth module",
+    "WP01: Create auth module",
+    "WP02: Ship the corpus mission",
+  ]);
+
+  // C3.1/C3.3: the `## Inputs` unfenced illustrative checkbox is an exclusion record, not a task.
+  assert.deepEqual(result.exclusions, [
+    { lineNumber: 16, kind: "checklist", reason: "summary-section", text: "- [ ] T099 Illustrative checkbox inside the Inputs section" },
+  ]);
+
+  // C3.2: front-matter lines are structure only — titles are pure subtask text.
+  assert.deepEqual(
+    tasks.map((task) => task.title),
+    ["[P] Create the auth module", "Wire the auth module into the app", "[US1] Ship the corpus mission"],
+  );
+  assert.equal(result.featureName, "001-corpus");
+  assert.deepEqual(result.conflictBlocks, []);
+  assert.deepEqual(result.warnings, []);
+
+  // Determinism across repeats (Principle IV).
+  const again = parseTaskFile("kitty-specs/001-corpus/tasks.md", readFrameworkFixture("spec-kitty"), specKittyFixtureAdapter, cfg);
+  assert.deepEqual(again, result);
+});
+
+test("parsing corpus — five-framework shared fixture unchanged by 017; spec-kitty claims none of its paths (SC-005)", () => {
+  // The five-member shared-template corpus is unchanged by 017 (SC-005).
+  assert.equal(CORPUS.length, 5);
+  assert.ok(!CORPUS.some((member) => member.adapter.id === "spec-kitty"));
+
+  // ...and the spec-kitty grammar claims no task-file pattern of its own on the shared
+  // five-framework paths (the kit's task roll-ups live only under `kitty-specs/`).
+  for (const member of CORPUS) {
+    assert.equal(specKittyFixtureAdapter.featureName(member.virtualPath), undefined, `spec-kitty derives no feature for ${member.virtualPath}`);
+  }
 });
 
 test("parsing corpus — conflict-flagging through the corpus pipeline (FR-009)", () => {

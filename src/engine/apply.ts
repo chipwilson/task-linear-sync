@@ -154,6 +154,8 @@ interface TaskFlow {
   readonly baseTitle: string;
   /** Base title before adapter tag stripping — the file-line rewrite material (017 C3.5/C3.8). */
   readonly rawBaseTitle: string;
+  /** 017 amendment 2: the selected adapter's local-id grammar for write-back rendering. */
+  readonly checklistIdPattern: string | undefined;
   readonly entry: Plan["entries"][number];
   /** Live matched issue (fresh deterministic match at apply time). */
   readonly issue: IssueView | undefined;
@@ -495,6 +497,8 @@ async function deriveFlows(
     baseTitle: string;
     /** Base title BEFORE adapter tag stripping — what repository file lines keep (017 C3.5/C3.8). */
     rawBaseTitle: string;
+    /** 017 amendment 2: the selected adapter's local-id grammar for write-back rendering. */
+    checklistIdPattern: string | undefined;
   }
   const fileHashes: Record<string, string> = {};
   const units: Unit[] = [];
@@ -520,6 +524,7 @@ async function deriveFlows(
         // tags here (017 C3.5); the file rewrite below keeps the RAW title instead.
         baseTitle: adapterDerivedTitle(rawBaseTitle, task, adapter, config),
         rawBaseTitle,
+        checklistIdPattern: adapter.checklistIdPattern,
       });
     }
   }
@@ -584,6 +589,7 @@ async function deriveFlows(
       specSection: unit.specSection,
       baseTitle: unit.baseTitle,
       rawBaseTitle: unit.rawBaseTitle,
+      checklistIdPattern: unit.checklistIdPattern,
       entry,
       issue,
       checkpoint: storeFile.checkpoints[unit.task.stableUuid],
@@ -1037,7 +1043,13 @@ async function landAssignedTaskLine(
   ];
   let rendered: string;
   try {
-    rendered = renderTaskLines(flow.filePath, content, assignments, context.config).content;
+    rendered = renderTaskLines(
+      flow.filePath,
+      content,
+      assignments,
+      context.config,
+      flow.checklistIdPattern === undefined ? {} : { checklistIdPattern: flow.checklistIdPattern },
+    ).content;
   } catch {
     return; // 004 refuses a conflict-block/frozen target — skipped, never forced.
   }
