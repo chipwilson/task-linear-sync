@@ -1425,3 +1425,38 @@ are expected to turn these 14 failures green (US3-AS2).
   `Open false/ambiguous verdicts: 0` (SC-001). Guard suite: 25 pass / 0 fail;
   the 016 `framework-support-consistency:` suite still green against the
   corrected README.
+
+### Close-out verification (T023–T026, quickstart steps 1–6) — 2026-11-10
+
+- Step 1 (T024): `npm test` (all tiers) — **1682 pass / 0 fail**. Diff purity
+  `git diff --stat 1fccd08...HEAD`: 11 files — README.md, CHANGELOG.md,
+  `specs/019-speckit-doc-truthfulness/**`,
+  `tests/contract/doc-truthfulness.test.ts`. Zero `src/` files, zero
+  pre-existing test files (SC-003).
+- Step 2: contract tier 340 pass / 0 fail; header `Open false/ambiguous
+  verdicts: 0`; six FR-002 suspect topics present (GUARD-22).
+- Step 3 (US3-AS1, scratch branch `scratch-019-restore`, discarded after):
+  re-inserting each recorded original wording produced exactly the named
+  guard failure — C-001 sentence → GUARD-01 only; `📋` marker sentence →
+  GUARD-04 only; "One milestone per spec folder" → GUARD-04b only; the
+  C-002 sentence → GUARD-02 plus its family-2 counterpart GUARD-06 (both
+  name C-002 — restoring the disproven claim necessarily breaks the
+  required-wording guard). Diagnostics named guard id, `C-NNN`, README.md.
+- Step 4: five spot-checks reproduced against `git show 1fccd08:<path>` and
+  the live dist demo (C-002/C-001/C-014/C-019 + demo re-run, plus the 016
+  cited test names observed green in the tier logs).
+- Step 5: reader-facing check on the corrected intro + Spec Kit section —
+  as-built outcome statable from docs alone; no `📋`/tags/edges/milestone
+  phrasing remains in any audited document (family-1 guards green).
+- Step 6 (T023): CHANGELOG `## [Unreleased]` carries the correction entry
+  (changelog.test.ts green); defects.md FU-001/FU-002/FU-003 with all
+  source claims resolving (GUARD-23).
+- T026 branch discipline: all six feature commits on
+  `019-speckit-doc-truthfulness`, none carrying attribution trailers; no
+  feature commit touches 017/018 files — those spec directories entered the
+  tree via the shared `017-019-feature-specs` ancestor that the audited
+  baseline `1fccd08` already contained (deviation noted under Environment
+  notes).
+- Lint fix during close-out: guard-suite unused `allDocs` const removed
+  (family-1 forbids run per-document via `offenders()`); caught by the
+  release dry-run e2e lint stage, not a doc or behavior change.

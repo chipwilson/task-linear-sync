@@ -125,10 +125,10 @@ among them). Test-name and failure-diagnostic format is normative: names start
 
 ## Phase 6: Polish & Cross-Cutting Concerns
 
-- [ ] T023 Add the correction entry under `## [Unreleased]` in CHANGELOG.md recording the doc-truthfulness corrections (what was claimed vs what is now stated, guards added) — US3-AS3 / FR-007 documentation duty; existing tests/contract/changelog.test.ts hygiene must still pass
-- [ ] T024 [US2] Run the full `npm test` (all tiers) green, then run `git diff --stat main...HEAD` (or against the merge base) and confirm the touched paths are ONLY README.md, CHANGELOG.md, docs/parsing.md (if corrected), specs/019-speckit-doc-truthfulness/**, and tests/contract/doc-truthfulness.test.ts — zero `src/` files, zero pre-existing test files (SC-003 / US3-AS2)
-- [ ] T025 Execute quickstart.md steps 1–6 end-to-end from specs/019-speckit-doc-truthfulness/quickstart.md (full-suite green, guard red-restoration on a scratch branch using recorded original wordings, five-entry evidence spot-check, reader-facing outcome check, changelog + defects checks) and confirm every step's stated expectations hold
-- [ ] T026 Confirm branch discipline: `git status` clean for feature files and every commit containing 019 specs/changes is on `019-speckit-doc-truthfulness`; 017/018 untracked artifacts are NOT committed on this branch; commit messages contain no attribution trailers (repo AGENTS.md)
+- [X] T023 Add the correction entry under `## [Unreleased]` in CHANGELOG.md recording the doc-truthfulness corrections (what was claimed vs what is now stated, guards added) — US3-AS3 / FR-007 documentation duty; existing tests/contract/changelog.test.ts hygiene must still pass
+- [X] T024 [US2] Run the full `npm test` (all tiers) green, then run `git diff --stat main...HEAD` (or against the merge base) and confirm the touched paths are ONLY README.md, CHANGELOG.md, docs/parsing.md (if corrected), specs/019-speckit-doc-truthfulness/**, and tests/contract/doc-truthfulness.test.ts — zero `src/` files, zero pre-existing test files (SC-003 / US3-AS2)
+- [X] T025 Execute quickstart.md steps 1–6 end-to-end from specs/019-speckit-doc-truthfulness/quickstart.md (full-suite green, guard red-restoration on a scratch branch using recorded original wordings, five-entry evidence spot-check, reader-facing outcome check, changelog + defects checks) and confirm every step's stated expectations hold
+- [X] T026 Confirm branch discipline: `git status` clean for feature files and every commit containing 019 specs/changes is on `019-speckit-doc-truthfulness`; 017/018 untracked artifacts are NOT committed on this branch; commit messages contain no attribution trailers (repo AGENTS.md)
 
 ---
 

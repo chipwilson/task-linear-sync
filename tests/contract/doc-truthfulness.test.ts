@@ -34,7 +34,6 @@ const AUDITED: ReadonlyArray<readonly [string, string]> = [
 ];
 const readme = AUDITED[0]![1];
 const requirements = AUDITED[4]![1];
-const allDocs = AUDITED.map(([, text]) => text).join("\n");
 
 const auditPath = "specs/019-speckit-doc-truthfulness/audit.md";
 const defectsPath = "specs/019-speckit-doc-truthfulness/defects.md";
