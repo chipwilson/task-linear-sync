@@ -109,7 +109,7 @@
 - [X] T027 [P] CHANGELOG.md: Unreleased entry for the new built-in identity, the three amendments (A-018-0/1/2), and the docs duty
 - [X] T028 [P] FR-012 refusal pins: add `spec-superpower` cases to tests/unit/agent-hooks.test.ts (`agentHookScaffold("spec-superpower", bin)` ⇒ `undefined`) and tests/integration/queue-hooks-install.test.ts (install ⇒ `{ status: "refused" }` with zero writes); confirm the consistency scaffold table remains `["generic", "kiro"]`
 - [X] T029 Extend tests/e2e/discovery-user-stories.test.ts with the US1/US3 walkthrough over the fixture repo (plan-level, read-only surfaces)
-- [ ] T030 Run the full validation: `npm test` (all tiers + coverage gate + defaults scan; consistency suite now green), `node scripts/release.mjs --dry-run` (distributed-defaults scan: zero org literals), and quickstart.md §1–§5 end to end; record results
+- [X] T030 Run the full validation: `npm test` (all tiers + coverage gate + defaults scan; consistency suite now green), `node scripts/release.mjs --dry-run` (distributed-defaults scan: zero org literals), and quickstart.md §1–§5 end to end; record results
 
 ---
 
@@ -179,3 +179,27 @@ After Phase 2: Dev A takes US1→T017, Dev B drafts T018 (US2), Dev C drafts T02
 - The intermediate RED of `framework-support-consistency.test.ts` between T002 and T024/T025 is by design (test-first); do not "fix" it by weakening the suite.
 - [P] tasks = different files, no dependencies. Verify each test fails before implementing it.
 - Field values (grammars, globs, id/date rules) are quoted verbatim from data-model.md §2 — do not improvise variants; FR-011 forbids new `ResolvedConfig` keys and org-specific literals.
+
+---
+
+## Validation record (2026-11-10, branch `018-spec-superpower-adapter`)
+
+- `npm test` (clean build, all tiers + coverage gate + distributed-defaults scan):
+  **1695 pass / 0 fail**; coverage 81.67% stmts / 80.69% branch / 81.21% lines
+  (thresholds 80/80/80); `framework-support-consistency` 7/7 — the deliberate RED
+  between the union widening and the docs rows closed as planned (SC-006).
+- `node scripts/release.mjs --dry-run`: **WOULD_PUBLISH — release gate passed**
+  (build, scan, test, pack stages green; distributed defaults carry zero org literals).
+- quickstart.md §1–§5: §1 registry/consumption — the green consistency suite pins the
+  row, `DEFAULT_PRECEDENCE`, and the README/glossary enumerations; §2 parsing —
+  `tests/unit/parsing-spec-superpower.test.ts` (6/6); §3 discovery —
+  `tests/integration/discovery-spec-superpower.test.ts` (14/14, incl. the scratch.md
+  override) plus a CLI inventory smoke against the fixture (3 plans under built-in
+  defaults; zero files with the framework removed from `frameworks`); §4 identity —
+  `tests/unit/identity-spec-superpower.test.ts` (6/6) incl. the pinned 005 v1 SC-005
+  regression; §5 sync/drift — `tests/integration/sync-spec-superpower-drift.test.ts`
+  (4/4: verbatim mirror, one-write drift, byte-exact round trip, screening refusal).
+- Notes: cross-file step collisions yield "attempts cross-match, no unique match,
+  creates" (identity evidence suppresses title-only matching); the framework ships
+  without a template, so `--template` is refused for it (exit 4) — US1/US3 runs use
+  default field mapping (`tests/e2e/user-journey-spec-superpower.test.ts`, 2/2).
