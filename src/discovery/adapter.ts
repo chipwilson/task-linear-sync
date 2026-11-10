@@ -126,9 +126,10 @@ export interface AdapterRegistry {
  * (3) alphabetical. Precedence default = ["kiro","open-spec","spec-kit","bmad","spec-superpower",
  * "generic"] — the
  * spec's fixed marker precedence, overridable via overrides.precedence. Zero matches → generic
- * (via: "fallback"). overrides.selection short-circuits (via: "explicit").
+ * (via: "fallback") only while the basename still matches generic's effective patterns;
+ * otherwise unclaimed (`null`, A-018-1). overrides.selection short-circuits (via: "explicit").
  */
-export declare function selectAdapter(filePath: string, ctx: DetectionContext, registry: AdapterRegistry): DetectionRecord;
+export declare function selectAdapter(filePath: string, ctx: DetectionContext, registry: AdapterRegistry): DetectionRecord | null;
 
 /**
  * Build the registry from the frozen config + optional programmatic overrides (highest

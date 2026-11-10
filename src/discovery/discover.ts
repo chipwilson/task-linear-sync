@@ -62,9 +62,11 @@ function siblingDocumentsFor(
     .map((name) => (dir === "" ? name : `${dir}/${name}`));
 }
 
-/** Fixed key insertion order keeps the serialized result byte-identical across runs. */
-function toDiscoveredFile(candidate: WalkCandidate, registry: AdapterRegistry, ctx: DetectionContext): DiscoveredFile {
+/** Fixed key insertion order keeps the serialized result byte-identical across runs.
+ * Returns `null` for unclaimed candidates (A-018-1): discovery omits them, no diagnostic. */
+function toDiscoveredFile(candidate: WalkCandidate, registry: AdapterRegistry, ctx: DetectionContext): DiscoveredFile | null {
   const detection = selectAdapter(candidate.filePath, ctx, registry);
+  if (detection === null) return null; // A-018-1 — basename matched no enabled rule
   const adapter = registry.enabledAdapters.find((candidateAdapter) => candidateAdapter.id === detection.adapterId);
   const featureName = adapter?.featureName(candidate.filePath);
   const siblingDocuments =
@@ -106,7 +108,8 @@ export async function discoverTaskFiles(options: DiscoverOptions): Promise<Disco
       siblingFileNames: walk.regularFileNames.get(candidate.dir) ?? [],
       specsBaseDirectories: registry.config.specsBaseDirectories,
     };
-    files.push(toDiscoveredFile(candidate, registry, ctx));
+    const discovered = toDiscoveredFile(candidate, registry, ctx);
+    if (discovered !== null) files.push(discovered);
   }
   files.sort((a, b) => (a.filePath < b.filePath ? -1 : a.filePath > b.filePath ? 1 : 0));
 

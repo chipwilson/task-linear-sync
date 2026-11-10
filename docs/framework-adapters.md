@@ -42,10 +42,13 @@ enabled adapter whose `detect` returns a match becomes a candidate; the winner i
    material, which makes `.kiro/specs/` (12 chars) beat `specs/` (6) — the Kiro layout is
    robust against spec-kit's substring. A siblings-only match contributes `""` (rank 0).
 2. **Precedence index** — the fixed default list `["kiro", "open-spec", "spec-kit", "bmad",
-   "generic"]`, overridable via `overrides.precedence`.
+   "spec-superpower", "generic"]`, overridable via `overrides.precedence`.
 3. **Alphabetical** adapter id as the final tie-break.
 
-Zero matches fall back to `generic` (`detection.via: "fallback"`). An explicit
+Zero matches fall back to `generic` (`detection.via: "fallback"`) **only** while the file's
+basename still matches the enabled `generic` adapter's effective `taskFilePatterns`;
+otherwise the file is unclaimed, `selectAdapter` returns `null`, and discovery omits it
+without a diagnostic (018 amendment A-018-1). An explicit
 `overrides.selection` (fixed id or predicate) short-circuits detection entirely
 (`via: "explicit"`); an id outside the enabled pool raises `SelectionOverrideError`. The
 full result set of matched adapter ids is recorded, sorted alphabetically, on every

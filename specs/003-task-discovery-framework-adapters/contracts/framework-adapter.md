@@ -84,13 +84,18 @@ export interface DetectionRecord {
 
 /**
  * Selection (data-model §4). Rank: (1) longest matchedPattern, (2) index in precedence list,
- * (3) alphabetical. Precedence default = ["kiro","open-spec","spec-kit","bmad","generic"] — the
- * spec's fixed marker precedence, overridable via overrides.precedence. Zero matches → generic
- * (via: "fallback"). overrides.selection short-circuits (via: "explicit").
+ * (3) alphabetical. Precedence default = ["kiro","open-spec","spec-kit","bmad",
+ * "spec-superpower","generic"] — the spec's fixed marker precedence, overridable via
+ * overrides.precedence (order amended by 018 A-018-1). Zero matches → generic (via:
+ * "fallback") ONLY when the basename still matches the enabled generic adapter's effective
+ * taskFilePatterns; otherwise the file is unclaimed and returned as `null`, and discovery
+ * omits it without a diagnostic (018 amendment A-018-1). Generic entirely disabled with
+ * zero matches still raises the typed selection error. overrides.selection short-circuits
+ * (via: "explicit").
  */
 export function selectAdapter(
   filePath: string, ctx: DetectionContext, registry: AdapterRegistry,
-): DetectionRecord;
+): DetectionRecord | null;
 
 export interface AdapterRegistry {
   readonly enabledAdapters: readonly FrameworkAdapter[];
@@ -226,7 +231,8 @@ export function frameworkMetadataFragment(
   (12 chars) beating a `specs/` substring; spec-kit requires BOTH path and sibling (a `specs/`
   file with no `spec.md`/`plan.md` sibling falls through to generic); open-spec `pathContains`
   vs bmad sibling; alphabetical tie-break on equal length; explicit-selection and precedence-list
-  overrides; zero-match generic fallback (FR-008, US2 AC1, SC-004).
+  overrides; zero-match generic fallback (FR-008, US2 AC1, SC-004), narrowed by 018 A-018-1:
+  zero-match basenames outside generic's effective patterns are unclaimed (`null`).
 - **Generic purity + Kiro** (unit, `tests/unit/discovery-adapters-builtin.test.ts`): generic
   `frameworkSpecificExclusions.length === 0`; kiro `Feature_Name` = feature dir, `agentHookTemplate
   === "kiro-json"`, `agentHooksDirectory === ".kiro/hooks/"` (FR-010, US2 AC2/AC3).

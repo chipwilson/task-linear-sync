@@ -65,6 +65,20 @@ the same change as the contract doc + module + snapshot trio (three-artifact rul
   `tests/contract/snapshots/frozen-surface.json` · no migration: the member is additive,
   existing records and seeds are unchanged
 
+- 2026-11-10 · discovery (003 contract) · `selectAdapter` zero-match rule +
+  `DEFAULT_PRECEDENCE` · zero matches → unconditional `generic` fallback; precedence
+  `kiro → open-spec → spec-kit → bmad → generic` → zero matches → `generic` ONLY when the
+  basename still matches generic's effective `taskFilePatterns`, else unclaimed (`null`,
+  omitted from `DiscoveryResult.files`, no diagnostic); precedence `kiro → open-spec →
+  spec-kit → bmad → spec-superpower → generic` · A-018-1 (feature 018): a date-named plan
+  outside the configured plans root must never enter the sync through the catch-all
+  (spec-superpower-adapter.md Rule 2, US1-AC4); amends
+  `specs/003-task-discovery-framework-adapters/contracts/framework-adapter.md` and
+  `docs/framework-adapters.md` in the same change · migration: pre-existing candidates are
+  unaffected (every built-in row's patterns include `tasks.md`/`TASKS.md`); only files that
+  matched NO enabled rule while their basename also missed generic's patterns — previously
+  claimed noise — change behavior
+
 - 2026-11-10 · parsing (004 contract) · `TaskFileAdapter.identityFileScope` · absent →
   optional whitelisted member consumed at the `parseTaskFile` seed call site · A-018-2
   (feature 018): plans sharing a derived feature name need file-scoped seed inputs to keep
