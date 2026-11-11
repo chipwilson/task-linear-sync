@@ -6,4 +6,4 @@
  * `--version` output derive from here. `npm run prebuild` rewrites this file;
  * tests/contract/version-drift.test.ts refuses drift.
  */
-export const PACKAGE_VERSION = "0.2.0";
+export const PACKAGE_VERSION = "0.3.0";

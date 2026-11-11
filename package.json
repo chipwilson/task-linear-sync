@@ -1,6 +1,6 @@
 {
   "name": "task-linear-sync",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Core domain contracts, configuration model, and run-state lifecycle for task-linear-sync (Wave-1 foundation). Zero runtime dependencies. Release and publishing policy (access, provenance, overrides): docs/release-process.md.",
   "type": "module",
   "license": "MIT",
