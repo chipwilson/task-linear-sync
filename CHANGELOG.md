@@ -7,6 +7,14 @@ this preview — lives in [docs/versioning.md](docs/versioning.md).
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-11-11
+
+Two more built-in framework identities ship in this release — `spec-kitty`
+and `spec-superpower` — alongside the docs consolidation (016) and the
+documentation-truthfulness audit and guard suite (019) that made the README,
+`specs/requirements.md`, and the adapter registry state only what the code
+actually ships.
+
 - Feature 018 — `spec-superpower` ships as the sixth built-in, default-enabled
   framework identity: dated plan files beneath the plans root
   (`docs/superpowers/plans/`) are discovered and claimed, one task per

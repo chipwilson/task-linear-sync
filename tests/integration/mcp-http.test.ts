@@ -23,6 +23,7 @@ import test from "node:test";
 
 import { buildCliWorld, hashTree } from "../helpers/cli-harness.js";
 import { createAgentToolServer } from "../../src/mcp/create.js";
+import { PACKAGE_VERSION } from "../../src/version.generated.js";
 import { McpConfigError } from "../../src/mcp/errors.js";
 import type { Clock, StateStore } from "../../src/state/index.js";
 import { MCP_TEST_TOKEN, withHttpServer, withMcpServer } from "../helpers/mcp-harness.js";
@@ -91,7 +92,8 @@ test("http: announces the bound port on stderr exactly once and serves a full se
         assert.deepEqual(asRecord(init.body).result, {
           protocolVersion: "2025-06-18", // version-less initialize ⇒ server default (014)
           capabilities: { tools: {} },
-          serverInfo: { name: "task-linear-sync-mcp", version: "0.2.0" },
+          // DERIVED, never hardcoded: serverInfo.version tracks package.json (015 R4).
+          serverInfo: { name: "task-linear-sync-mcp", version: PACKAGE_VERSION },
         });
         assert.ok(!init.raw.includes(boundPort), "the bound port never rides a protocol message");
 
