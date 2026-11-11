@@ -74,8 +74,12 @@ workflow-dispatched publish; none of it is a repository change:
    npm configures trusted publishers on an existing package, and the name
    `task-linear-sync` is unregistered today. So the FIRST version publishes via
    the documented `NPM_TOKEN` fallback: set that repository secret (npm
-   automation or granular token with publish rights), dispatch the release, then
-   delete the secret. Subsequent releases take the secret-less OIDC path.
+   automation or granular token with publish rights) and dispatch the release
+   **with `allow_unattested` checked** — a token-authenticated publish can never
+   carry provenance (npm mints attestations only over OIDC), so the capability
+   probe sees the token and refuses `PROVENANCE_UNAVAILABLE`; the override is
+   the documented way through, recorded per the section above. Then delete the
+   secret. Subsequent releases take the secret-less OIDC path.
 3. **npm Trusted Publisher**: on npmjs.com → the package → Settings → Trusted
    publisher → GitHub Actions, configure: owner chipwilson, repository
    task-linear-sync, workflow filename release.yml, environment name release,

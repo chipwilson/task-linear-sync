@@ -191,25 +191,39 @@ export function defaultExecutors(ctx, opts) {
     },
     publish: () => {
       // Capability probe BEFORE contacting the registry (research R2/FR-006).
+      // The token fallback IS the "Trusted Publishing unconfigured" path
+      // (docs/release-process.md, One-time setup step 2) — and npm cannot attest a
+      // token-authenticated publish: provenance requires OIDC, which npm only uses
+      // when no token exists. So a PRESENT NPM_TOKEN means attestation is
+      // structurally unavailable even on an Actions runner, and publishing under
+      // it is an --allow-unattested operation by construction.
+      const tokenPresent = process.env.NPM_TOKEN !== undefined && process.env.NPM_TOKEN !== "";
       const provenanceCapable =
-        (process.env.CI !== undefined || process.env.GITHUB_ACTIONS !== undefined) &&
-        (opts.trustedPublishing === true || process.env.GITHUB_ACTIONS !== undefined); // Actions runners can mint OIDC tokens; npm auto-detects trusted publishing when no token exists
-      if (!provenanceCapable && !opts.allowUnattested) throw new Refuse("PROVENANCE_UNAVAILABLE", "attestation capability not detected; publish needs Trusted Publishing or the documented --allow-unattested override");
-      if (!provenanceCapable && opts.allowUnattested) (opts.log ?? (() => {}))("WARNING: publishing WITHOUT attestation under --allow-unattested (documented override — record the reason)");
+        !tokenPresent && (opts.trustedPublishing === true || process.env.CI !== undefined || process.env.GITHUB_ACTIONS !== undefined);
+      const attested = provenanceCapable && !opts.allowUnattested; // docs: --allow-unattested drops ONLY the --provenance flag
+      if (!provenanceCapable && !opts.allowUnattested) throw new Refuse("PROVENANCE_UNAVAILABLE", "attestation capability not detected (the NPM_TOKEN fallback cannot attest); publish needs Trusted Publishing configured or the documented --allow-unattested override");
+      if (!attested) (opts.log ?? (() => {}))("WARNING: publishing WITHOUT attestation under --allow-unattested (documented override — record the reason)");
       // Publish THE VERIFIED TARBALL (stage 7/8 artifact), never whatever cwd
       // happens to resolve to — what archive-verify approved is what ships.
-      const args = ["publish", ctx.tarball, ...(provenanceCapable ? ["--provenance"] : []), "--access", "public", "--tag", "latest"];
+      const args = ["publish", ctx.tarball, ...(attested ? ["--provenance"] : []), "--access", "public", "--tag", "latest"];
       const publishEnv = { ...process.env };
-      if (process.env.NPM_TOKEN !== undefined && process.env.NPM_TOKEN !== "") {
+      if (tokenPresent) {
         // fallback store path (research R2): token reaches npm via the environment
         // only — never argv (visible in ps) and never a log line (value never echoed).
         publishEnv["NPM_CONFIG_//registry.npmjs.org/:_authToken"] = process.env.NPM_TOKEN;
       }
       const r = sh("npm", args, { capture: true, env: publishEnv });
       if (r.status !== 0) {
-        const out = `${r.stdout ?? ""}${r.stderr ?? ""}`;
-        if (/cannot publish over|existing package version|forbidden.*version/i.test(out)) throw new Refuse("PUBLISH_REJECTED", "the registry already has this version — cut a new version instead (nothing partial was published)");
-        throw new Refuse("PUBLISH_AMBIGUOUS", "registry transport may have completed — reconcile against the registry before any retry, do not blindly republish");
+        // Carry npm's own words into the verdict (names only, values masked —
+        // belt & braces beyond npm's log redaction), so a refused publish is
+        // diagnosable from the CI log alone. npm errors ride stderr while
+        // stdout carries pack notices — stderr first, notices dropped, or the
+        // excerpt shows a tarball listing instead of the reason.
+        const combined = `${r.stderr ?? ""}${r.stdout ?? ""}`;
+        const out = tokenPresent ? combined.split(process.env.NPM_TOKEN).join("[redacted]") : combined;
+        const detail = out.split("\n").map((l) => l.trim()).filter((l) => l !== "" && !/^npm notice\b/.test(l)).slice(0, 6).join(" | ");
+        if (/cannot publish over|existing package version|forbidden.*version/i.test(out)) throw new Refuse("PUBLISH_REJECTED", `the registry already has this version — cut a new version instead (nothing partial was published); npm said: ${detail}`);
+        throw new Refuse("PUBLISH_AMBIGUOUS", `registry transport may have completed — reconcile against the registry before any retry, do not blindly republish; npm said: ${detail}`);
       }
     },
   };
