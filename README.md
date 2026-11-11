@@ -3,10 +3,13 @@
 Keeps Spec-Driven Development task files in sync with **Linear** issues, so the
 plan you author with your AI agent and the tickets your team tracks stay one
 artifact. A `tasks.md` file stays the human-editable source of truth; Linear
-issues carry the delivery state (assignee, branch, PR, labels, status) and
-comments. A persistent `📋 Task [T###]` marker line keeps the mapping alive even
-when task headings are reworded, and task-file *sections* map 1:1 to Linear
-milestones.
+issues carry your team's delivery state — assignee, branch, PR, labels, and
+workflow status — plus comments, while the sync itself mirrors task titles
+and bodies. Reworded headings cannot break the mapping: the visible `[KEY-N]`
+reference token written back on the task line and the deterministic anchor in
+the issue's sync-attachment metadata keep each task paired — no in-file marker
+exists. Reports group tasks by project and feature;
+the tool never creates or assigns Linear milestones.
 
 Works with any Spec-Driven Development framework that keeps work in
 `tasks.md`-style checklists — seven built-in adapters (GitHub Spec Kit, AWS
@@ -156,7 +159,7 @@ auth tiers, caching, SSE vs polling, deployment patterns:
 
 Framework layout is never hardcoded: discovery walks the repository, and each
 built-in adapter carries its framework's conventions — detection markers, base
-directories, feature-name rule, sibling documents. Six built-in adapters ship,
+directories, feature-name rule, sibling documents. Seven built-in adapters ship,
 all enabled by default through the `frameworkAdapters` config key:
 
 | Adapter id | Framework | Detected by | Base directories | Feature name from |
@@ -166,16 +169,18 @@ all enabled by default through the `frameworkAdapters` config key:
 | `open-spec` | OpenSpec | path contains `openspec/`/`open-spec/` **or** sibling `openspec.json`/`proposal.md` | `openspec/`, `open-spec/` | segment after `openspec/`, `changes/`, or `specs/` |
 | `bmad` | BMAD | path contains `bmad/`/`bmad-method/` **or** sibling `prd.md`/`architecture.md` | `bmad/`, `bmad-method/`, `docs/` | parent dir, else task-file basename |
 | `spec-superpower` | Spec Superpowers | path beneath `docs/superpowers/plans/` | `docs/superpowers/plans/` | date-stripped plan filename |
-| `spec-kitty` | Spec Kitty | path beneath `kitty-specs/` (no sibling requirement) | `kitty-specs/` | mission dir under `kitty-specs/`, else parent dir |
+| `spec-kitty` | Spec Kitty | path beneath `kitty-specs/` (no sibling requirement) | `kitty-specs/` | immediate parent dir beneath `kitty-specs/` (the mission) |
 | `generic` | any Markdown layout | fallback — never claims a file by marker | configured base dirs | parent dir under a base |
 
 When several adapters match one file, selection ranks the longest matching
 path pattern first, then the fixed precedence
 `kiro` → `open-spec` → `spec-kit` → `bmad` → `spec-superpower` → `spec-kitty` → `generic`,
 then alphabetical tie-break; a file no adapter claims falls back to `generic`.
-Task-file names (default `tasks.md`, `TASKS.md`), base directories, and every
-per-adapter convention are configuration keys — widen `taskFilePatterns` /
-`specsBaseDirectories` in your config file instead of forking the tool. Full
+Task-file names (default `tasks.md`, `TASKS.md`) and base directories are
+configuration keys — widen `taskFilePatterns` / `specsBaseDirectories` in your
+config file instead of forking the tool; per-adapter detection markers,
+sibling-document sets, and feature-name rules are fixed conventions in the
+built-in adapter modules. Full
 adapter contract: [docs/framework-adapters.md](docs/framework-adapters.md).
 
 ### GitHub Spec Kit (`spec-kit`)
@@ -186,23 +191,33 @@ stray `specs/` file without those markers resolves to `generic`. Feature names
 come from the feature directory, and `spec.md`, `plan.md`, and
 `requirements.md` siblings are attached when present.
 
-Tasks land at `specs/<feature>/tasks.md` and use T001-style ids — this is the
-out-of-the-box convention, no configuration needed. Spec Kit runs
+Tasks land at `specs/<feature>/tasks.md` — the out-of-the-box layout, no
+configuration needed. T001-style ids stay Spec Kit's visible convention and
+always ride along in the issue title; what the tool *captures* as a machine
+local id follows the identifier grammar: headings capture their leading id
+token (`## T001 …` → `T001`), while a checkbox line needs the grammar's
+separator punctuation after the id (`- [ ] T001: …` → `T001`), so plain
+`- [ ] T001 …` lines sync without a local id and fall back to the stable
+ordinal-based identity. Spec Kit runs
 `/speckit.specify → /speckit.plan → /speckit.tasks` before any code is
 written, which is exactly where the sync belongs:
 
 1. Run `/speckit.tasks`, then `task-linear-sync install-hooks` (one time) and
-   start the worker — Linear stays current as you commit. For a first-time
-   bulk apply use `plan` + `bootstrap --plan <id> --apply --confirm <key>`;
-   day-to-day changes go through `sync` with the same gate. One milestone per
-   spec folder, one issue per T-task, with `[P]/[US<n>]` tags and
-   "Preceded by" edges recorded on the issue.
+   start the worker — Linear stays current on each push and after each merge
+   (the installer manages the `pre-push` and `post-merge` hooks by default).
+   For a first-time bulk apply use `plan` + `bootstrap --plan <id> --apply
+   --confirm <key>`; day-to-day changes go through `sync` with the same gate.
+   Each task becomes one issue: the description mirrors the task body,
+   a visible `[KEY-N]` reference token is written back on the task line, and
+   the durable mapping state lives in the issue's sync-attachment metadata —
+   the sync manages no issue tags, dependency edges, or milestones.
 2. Gate the pull request with the [CI step](#ci-fail-the-pull-request-on-sync-drift)
    — it fails the build only on unmapped high-confidence tasks, unresolved
    conflict blocks, or spec drift.
-3. Re-running `/speckit.tasks` is safe: the `📋 Task [T###]` marker and the
-   idempotency guards mean regenerated files re-match existing issues instead
-   of duplicating them.
+3. Re-running `/speckit.tasks` is safe: stable task identity is anchored in
+   the sync attachment (plus the visible `[KEY-N]` token where present) and
+   the idempotency guards mean regenerated files re-match existing issues
+   instead of duplicating them.
 
 ### AWS Kiro (`kiro`)
 
@@ -265,9 +280,11 @@ Checklist lines carry their own id, printed without the `[]` Spec Kit uses —
 into phases rather than becoming tasks themselves. `[P]`, `[P1]`, and `[US1]`
 capability tags stay verbatim in the file and in the mirrored issue body but are
 stripped from derived task titles, so the issue title is the plain task text.
-Task-file names, base directories, and both grammars are configuration or
-override keys — `overrides.adapters["spec-kitty"]` re-points `baseDirectories`,
-`checklistIdPattern`, or `titleTagPattern` for a forked kit layout.
+Task-file names and base directories are configuration keys. The two extra
+grammars Spec Kitty adds (`checklistIdPattern`, `titleTagPattern`) have
+no config-file key — only the programmatic `overrides.adapters["spec-kitty"]` lane
+(deep-merged, arrays replace) re-points them over the built-in row (see
+[Framework adapters](docs/framework-adapters.md)).
 
 ### Generic Markdown (`generic`)
 
@@ -277,9 +294,10 @@ convention, an SDD tool with no fixed layout (add its task-file names to
 `generic` never claims a file by marker: it is the fallback when no adapter
 matches, and an explicit choice (`frameworkAdapters`, or a selection
 override) when you want it everywhere. The heading grammar is the broad
-built-in one (`T001`, `TASK-1`, `Task 1.2`, …), no framework title prefixes
-are stripped, and no framework-specific exclusions apply. Its agent-hook
-scaffold (`install-agent-hook --framework generic`) lands in
+built-in one — a single leading id token before the title (`T001`, `TASK-1`,
+`1.2`, …; in `## Task 1.2 …` only the token `Task` is captured), no framework
+title prefixes are stripped, and no framework-specific exclusions apply. Its
+agent-hook scaffold (`install-agent-hook --framework generic`) lands in
 `.task-linear-sync/hooks/`.
 
 ### Your own framework (`customAdapters`)

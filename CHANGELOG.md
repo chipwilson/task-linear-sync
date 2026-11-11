@@ -54,6 +54,27 @@ this preview — lives in [docs/versioning.md](docs/versioning.md).
   `specs/requirements.md` Purpose and the `Supported_Framework` glossary
   align with the same boundary; a new contract suite pins README ⇄
   requirements ⇄ adapter-registry agreement so the three cannot drift.
+- Docs: documentation-truthfulness audit of every framework-behavior claim
+  across README.md, the framework docs, and requirements.md — 99
+  evidence-backed entries in `specs/019-speckit-doc-truthfulness/audit.md`.
+  The README Spec Kit section no longer promises issue tags, dependency
+  edges, per-folder milestones, or sync on every commit (the managed hooks
+  are `pre-push` + `post-merge` by default); mapping durability is now told
+  as the visible `[KEY-N]` reference token plus the issue's sync-attachment
+  anchor — no in-file marker line. The delivery-state enumeration reads as
+  your team's Linear state, the "every convention is a configuration key"
+  overclaim is narrowed to `taskFilePatterns` / `specsBaseDirectories`, and
+  the heading-grammar examples match the shipped single-token capture (a
+  plain `- [ ] T001 …` checkbox line syncs with the ordinal identity
+  fallback — routed as follow-up FU-001). The sweep was then extended over
+  the merged 017/018 frameworks: the shipped-adapter count and the
+  `spec-kitty` feature-name derivation now match the seven-adapter registry,
+  the `checklistIdPattern` / `titleTagPattern` overclaim is narrowed to the
+  programmatic `overrides.adapters` lane (neither has a config-file key),
+  and a stale "other five rows" count is corrected. A new `doc-truthfulness`
+  guard suite (29 checks) pins the corrected wording, preserves
+  unimplemented requirement mandates until FU-002/FU-003 land, and
+  self-checks the audit record itself.
 
 ## [0.2.0] - 2026-11-06
 
