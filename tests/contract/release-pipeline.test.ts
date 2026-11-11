@@ -289,6 +289,65 @@ test("publish classification: transport failure → PUBLISH_AMBIGUOUS (dead loca
   );
 });
 
+test("publish classification: NPM_TOKEN fallback is structurally unattestable → PROVENANCE_UNAVAILABLE, registry never contacted", () => {
+  // The first release goes out through the token fallback (docs/release-process.md,
+  // One-time setup step 2), but a token-authenticated publish can never carry
+  // provenance — so the fail-closed gate must refuse BEFORE npm reaches a registry.
+  withEnv({ CI: null, GITHUB_ACTIONS: "true", NPM_TOKEN: "SENTINEL-TOKEN-VALUE-9182" }, () => {
+    const exec = rel.defaultExecutors({ tarball: join(scratch, "nonexistent-never-touched.tgz") }, {});
+    assert.equal(publishErrorCode(() => exec.publish()!), "PROVENANCE_UNAVAILABLE");
+  });
+});
+
+test("first release through the token path: --allow-unattested drops --provenance, warns LOUD, verdict carries npm's reason without the token value", async () => {
+  const http = await import("node:http");
+  const { spawn } = await import("node:child_process");
+  const server = http.createServer((_req, res) => {
+    res.writeHead(403, { "content-type": "application/json" });
+    res.end(JSON.stringify({ error: "cannot publish over previously published version" }));
+  });
+  await new Promise<void>((r) => server.listen(0, "127.0.0.1", r));
+  const port = (server.address() as { port: number }).port;
+  const tarball = buildFaultTarball("publish-rejected");
+  try {
+    const childEnv: Record<string, string | undefined> = { ...process.env };
+    delete childEnv.CI;
+    childEnv.GITHUB_ACTIONS = "true"; // simulate the Actions runner on the first-release token fallback
+    childEnv.NPM_TOKEN = "sentinel-first-release-token-value-7311";
+    childEnv.npm_config_registry = `http://127.0.0.1:${port}/`;
+    childEnv[`npm_config_//127.0.0.1:${port}/:_authToken`] = "fake-token-for-local-classification-only";
+    childEnv.npm_config_fetch_retry_retries = "0";
+    const child = spawn(
+      process.execPath,
+      [
+        "--input-type=module",
+        "-e",
+        `const rel = await import(${JSON.stringify(new URL("../../../scripts/release.mjs", import.meta.url).href)});
+         const warns = [];
+         const exec = rel.defaultExecutors({ tarball: ${JSON.stringify(tarball)} }, { allowUnattested: true, log: (l) => warns.push(l) });
+         try { exec.publish(); console.log("RESULT SUCCESS"); }
+         catch (e) { console.log("RESULT " + (e && e.code)); console.log("MSG " + String(e && e.message)); console.log("WARNS " + warns.join(" | ")); }`,
+      ],
+      { env: childEnv },
+    );
+    const out = await new Promise<string>((r) => {
+      let acc = "";
+      child.stdout?.on("data", (d: Buffer) => (acc += d.toString()));
+      child.stderr?.on("data", (d: Buffer) => (acc += d.toString()));
+      child.on("close", () => r(acc));
+    });
+    // A request REACHED the fake registry and was classified REJECTED: had --provenance
+    // still been passed, npm would have failed client-side before transport (this child
+    // has no OIDC endpoint) and the classification would have been AMBIGUOUS.
+    assert.match(out, /RESULT PUBLISH_REJECTED/, `child said: ${out.slice(-1500)}`);
+    assert.match(out, /WARNS .*WITHOUT attestation/, "--allow-unattested is LOUD on the runner token path too");
+    assert.match(out, /MSG .*(npm error|403)/i, "npm's own reason rides the refusal (CI log is diagnosable)");
+    assert.ok(!out.includes("sentinel-first-release-token-value-7311"), "credential VALUE never rides the failure log");
+  } finally {
+    await new Promise<void>((r) => server.close(() => r()));
+  }
+});
+
 test("publish classification: registry refuses an existing version → PUBLISH_REJECTED (local fake registry)", async () => {
   const http = await import("node:http");
   const { spawn } = await import("node:child_process");
