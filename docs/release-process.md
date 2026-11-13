@@ -75,13 +75,22 @@ workflow-dispatched publish; none of it is a repository change:
 2. **The package must exist before Trusted Publishing can be configured** —
    npm configures trusted publishers on an existing package, and the name
    `task-linear-sync` is unregistered today. So the FIRST version publishes via
-   the documented `NPM_TOKEN` fallback: set that repository secret (npm
-   automation or granular token with publish rights) and dispatch the release
+   the documented `NPM_TOKEN` fallback: set that repository secret to a npm
+   **Granular Access Token** and dispatch the release
    **with `allow_unattested` checked** — a token-authenticated publish can never
    carry provenance (npm mints attestations only over OIDC), so the capability
    probe sees the token and refuses `PROVENANCE_UNAVAILABLE`; the override is
    the documented way through, recorded per the section above. Then delete the
    secret. Subsequent releases take the secret-less OIDC path.
+   The GAT must be created with exactly (each omission produced a distinct
+   real refusal during the v0.3.0 first release): permission **Read And
+   publish** — "Read and stage" only submits for approval and 403s a direct
+   publish; scope **All packages** — "Selected packages" can never create a
+   package that does not exist yet; **Bypass 2FA** checked — without it npm
+   intercepts the unattended publish with an interactive OTP prompt (`EOTP`),
+   and the flag cannot be added to an existing token; **no IP allowlist** —
+   GitHub-hosted runners' IPs cannot be pre-approved. (Classic "automation"
+   tokens were removed by npm in December 2025; they are no longer creatable.)
 3. **npm Trusted Publisher**: on npmjs.com → the package → Settings → Trusted
    publisher → GitHub Actions, configure: owner chipwilson, repository
    task-linear-sync, workflow filename release.yml, environment name release,
@@ -109,10 +118,14 @@ workflow-shape test.
 3. Tag: `git tag vX.Y.Z && git push --tags`.
 4. Run the Release workflow with `tag=vX.Y.Z`; approve the `release`
    environment prompt.
-5. A rejected duplicate version means a versioning mistake
-   (`PUBLISH_REJECTED`) — cut a new version; a transport interruption means
-   reconcile against the registry first (`PUBLISH_AMBIGUOUS`) — never blindly
-   retry.
+5. A rejected publish's verdict code names the repair. `PUBLISH_REJECTED` is a
+   versioning mistake (the registry already has that version) — cut a new
+   version. `PUBLISH_FORBIDDEN` (credentials refused, E403) and
+   `PUBLISH_2FA_REQUIRED` (OTP interception, EOTP) are PRE-WRITE refusals —
+   nothing reached the registry: fix the token or account policy per the
+   one-time setup above, update the secret, and re-dispatch. Only
+   `PUBLISH_AMBIGUOUS` (transport interruption) means reconcile against the
+   registry first — never blindly retry.
 
 Versioning policy (what `stable` means, the 0.x posture, the 1.0.0 condition):
 [docs/versioning.md](versioning.md).

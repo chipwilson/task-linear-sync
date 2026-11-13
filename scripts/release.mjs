@@ -99,6 +99,26 @@ export function parseArgs(argv) {
   return out;
 }
 
+/**
+ * Classify a failed `npm publish` from its (already token-masked) output. Four
+ * classes, learned the hard way during the first releases:
+ *   - the registry already has that version → a versioning mistake;
+ *   - the registry demands an interactive OTP → the token lacks Bypass 2FA or
+ *     the account forbids automated publishing; NOTHING WAS WRITTEN;
+ *   - the registry refused the credentials outright (401/403 scope/permissions);
+ *     NOTHING WAS WRITTEN;
+ *   - everything else may be a transport that completed → reconcile first.
+ * Only the last class is ambiguous; the credential classes must never tell an
+ * operator to reconcile when fixing the token and retrying is unconditionally safe.
+ * @param {string} out combined npm stdout+stderr of the failed publish
+ */
+export function classifyPublishFailure(out) {
+  if (/cannot publish over|existing package version|forbidden.*version/i.test(out)) return "PUBLISH_REJECTED";
+  if (/EOTP|one-time password/i.test(out)) return "PUBLISH_2FA_REQUIRED";
+  if (/E40[13]|40[13] Forbidden|40[13] Unauthorized|may not perform that action/i.test(out)) return "PUBLISH_FORBIDDEN";
+  return "PUBLISH_AMBIGUOUS";
+}
+
 function manifest() {
   return JSON.parse(readFileSync(join(repoRoot, "package.json"), "utf8"));
 }
@@ -224,8 +244,14 @@ export function defaultExecutors(ctx, opts) {
         const combined = `${r.stderr ?? ""}${r.stdout ?? ""}`;
         const out = tokenPresent ? combined.split(process.env.NPM_TOKEN).join("[redacted]") : combined;
         const detail = out.split("\n").map((l) => l.trim()).filter((l) => l !== "" && !/^npm notice\b/.test(l)).slice(0, 6).join(" | ");
-        if (/cannot publish over|existing package version|forbidden.*version/i.test(out)) throw new Refuse("PUBLISH_REJECTED", `the registry already has this version — cut a new version instead (nothing partial was published); npm said: ${detail}`);
-        throw new Refuse("PUBLISH_AMBIGUOUS", `registry transport may have completed — reconcile against the registry before any retry, do not blindly republish; npm said: ${detail}`);
+        const code = classifyPublishFailure(out);
+        const guidance = {
+          PUBLISH_REJECTED: "the registry already has this version — cut a new version instead (nothing partial was published)",
+          PUBLISH_2FA_REQUIRED: "the registry intercepted the publish for an interactive 2FA code — the token lacks Bypass 2FA or the account policy forbids automated publishing; nothing was written: fix the token/policy, update NPM_TOKEN, retry",
+          PUBLISH_FORBIDDEN: "the registry refused these credentials (package scope / publish permission); nothing was written: fix the token, update NPM_TOKEN, retry",
+          PUBLISH_AMBIGUOUS: "registry transport may have completed — reconcile against the registry before any retry, do not blindly republish",
+        }[code];
+        throw new Refuse(code, `${guidance}; npm said: ${detail}`);
       }
     },
   };

@@ -36,7 +36,11 @@ implemented catalog matches the data-model table exactly (names + order). Semant
    Zero secrets, zero env values (names only), zero organization identifiers.
 6. `publish` classification (edge cases): existing-version rejection →
    `REFUSED:PUBLISH_REJECTED` (reported as versioning mistake — nothing partial);
-   transport interruption after request dispatch → `REFUSED:PUBLISH_AMBIGUOUS` with
+   registry demands an interactive OTP (EOTP) → `REFUSED:PUBLISH_2FA_REQUIRED`;
+   registry refuses the credentials outright (E401/E403) → `REFUSED:PUBLISH_FORBIDDEN`;
+   both credential classes are PRE-WRITE refusals: they state nothing was written
+   and that fixing the token/policy then retrying is safe (never reconcile-first).
+   Transport interruption after request dispatch → `REFUSED:PUBLISH_AMBIGUOUS` with
    reconcile-don't-retry guidance; attestation unavailable and no override →
    `REFUSED:PROVENANCE_UNAVAILABLE` **before** contacting the registry.
 
