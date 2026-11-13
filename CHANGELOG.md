@@ -7,6 +7,25 @@ this preview — lives in [docs/versioning.md](docs/versioning.md).
 
 ## [Unreleased]
 
+## [0.3.1] - 2026-11-13
+
+Release-pipeline only — the publish stage now classifies registry refusals
+deterministically, a taxonomy earned during the v0.3.0 first-publish
+sequence. No CLI or library behavior changes.
+
+- **Publish-failure taxonomy** — credential refusals (E401/E403 →
+  `PUBLISH_FORBIDDEN`) and interactive-OTP interceptions (EOTP →
+  `PUBLISH_2FA_REQUIRED`) are now reported as pre-write refusals: nothing
+  reached the registry, so fixing the token then retrying is safe. Only
+  genuine transport interruption keeps `PUBLISH_AMBIGUOUS` with its
+  reconcile-before-retry guidance; existing-version collisions remain
+  `PUBLISH_REJECTED`.
+- **First-release token guidance** (`docs/release-process.md`) — npm removed
+  classic automation tokens in December 2025; the one-time setup now
+  specifies the exact Granular Access Token shape (Read And publish, All
+  packages, Bypass 2FA, no IP allowlist), each requirement tied to the real
+  refusal it prevents, and every publish verdict code routes to its repair.
+
 ## [0.3.0] - 2026-11-11
 
 Two more built-in framework identities ship in this release — `spec-kitty`
