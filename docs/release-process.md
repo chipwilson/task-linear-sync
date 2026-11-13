@@ -20,8 +20,10 @@ publish — breakage cannot first appear at release time.
 archive-verify → defaults-scan → publish`
 
 A failing stage ends the run; nothing after it executes, so `publish` is
-unreachable unless every earlier check passed. The last stdout line of every
-run is a single JSON verdict object (`WOULD_PUBLISH`, `PUBLISHED`, or a
+unreachable unless every earlier check passed. The tool stages (`lint`,
+`typecheck`, `build-clean`, `test-full`) stream their tool output live into the
+run log — a failed stage is diagnosable from the CI log alone. The last stdout
+line of every run is a single JSON verdict object (`WOULD_PUBLISH`, `PUBLISHED`, or a
 `REFUSED`/`STAGE_FAILED` verdict with the stage and reason code). Release mode
 also preflights before stage 1: clean tree, HEAD at the tag, and
 tag version === `package.json.version` (both values named on mismatch).
