@@ -55,11 +55,14 @@ test(
       );
       assert.equal(copy.status, 0, `tree copy failed: ${copy.stderr}`);
 
+      const dryEnv: Record<string, string | undefined> = { ...process.env, TLS_RELEASE_NESTED: "1" };
+      delete dryEnv.NPM_TOKEN; // rehearsal is credential-free (docs/release-process.md): a stray
+      delete dryEnv.NODE_AUTH_TOKEN; // token in the env would (rightly) MODE_CONFLICT the dry-run
       const run = spawnSync(process.execPath, ["scripts/release.mjs", "--dry-run"], {
         cwd: repo,
         encoding: "utf8",
         timeout: 25 * 60_000,
-        env: { ...process.env, TLS_RELEASE_NESTED: "1" },
+        env: dryEnv,
         stdio: ["ignore", "pipe", "pipe"],
       });
       const stdout = String(run.stdout ?? "");
