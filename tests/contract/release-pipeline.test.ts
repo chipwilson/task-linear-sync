@@ -309,8 +309,12 @@ test("publish classification: no attestation capability → PROVENANCE_UNAVAILAB
 
 test("publish classification: transport failure → PUBLISH_AMBIGUOUS (dead local registry port)", () => {
   const tarball = buildFaultTarball("publish-ambiguous");
+  // NPM_TOKEN pinned ABSENT: a release dispatch injects it into the job env, and
+  // the token fallback is structurally unattestable (PROVENANCE_UNAVAILABLE) —
+  // this test exercises the no-token OIDC-shape transport leg, so it must not
+  // inherit whichever credentials the surrounding suite process happens to have.
   withEnv(
-    { CI: null, GITHUB_ACTIONS: "true", npm_config_registry: "http://127.0.0.1:9/", npm_config_fetch_retry_retries: "0" },
+    { CI: null, GITHUB_ACTIONS: "true", NPM_TOKEN: null, npm_config_registry: "http://127.0.0.1:9/", npm_config_fetch_retry_retries: "0" },
     () => {
       const exec = rel.defaultExecutors({ tarball }, {});
       assert.equal(publishErrorCode(() => exec.publish()!), "PUBLISH_AMBIGUOUS");
@@ -393,6 +397,8 @@ test("publish classification: registry refuses an existing version → PUBLISH_R
     const childEnv: Record<string, string | undefined> = { ...process.env };
     delete childEnv.CI;
     delete childEnv.GITHUB_ACTIONS;
+    delete childEnv.NPM_TOKEN; // hermetic: the suite never observes real publish credentials
+    delete childEnv.NODE_AUTH_TOKEN;
     childEnv.npm_config_registry = `http://127.0.0.1:${port}/`;
     childEnv[`npm_config_//127.0.0.1:${port}/:_authToken`] = "fake-token-for-local-classification-only";
     childEnv.npm_config_fetch_retry_retries = "0";

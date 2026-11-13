@@ -146,7 +146,14 @@ export function defaultExecutors(ctx, opts) {
       rmSync(join(repoRoot, "dist"), { recursive: true, force: true }); // no stale/partial cache ships
       npm(["run", "build"]);
     },
-    "test-full": () => npm(["test"], { env: { ...process.env, TLS_RELEASE_NESTED: "1" } }), // guard: the e2e dry-run test self-skips when nested (no recursion)
+    "test-full": () => {
+      // The rehearsal is credential-free by construction (docs/release-process.md):
+      // a release dispatch injects NPM_TOKEN into the job env, but the suite must
+      // never depend on — or be perturbed by — publish credentials being present.
+      const testEnv = { ...process.env, TLS_RELEASE_NESTED: "1" }; // guard: the e2e dry-run test self-skips when nested (no recursion)
+      for (const name of CREDENTIAL_ENV_NAMES) delete testEnv[name];
+      return npm(["test"], { env: testEnv });
+    },
     pack: () => {
       ctx.workdir = mkdtempSync(join(tmpdir(), "release-pack-"));
       const r = sh("npm", ["pack", "--json", "--pack-destination", ctx.workdir], { capture: true });
