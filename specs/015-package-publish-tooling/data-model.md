@@ -64,6 +64,8 @@ Machine-readable; the stage summary names the stage, the code names the cause.
 | `DEFAULTS_SCAN:<count>` | defaults-scan | findings in archive contents (FR-005) |
 | `PROVENANCE_UNAVAILABLE` | publish | no attestation path and no operator override (FR-006) |
 | `PUBLISH_REJECTED` | publish | registry rejection (already-published → versioning mistake) |
+| `PUBLISH_2FA_REQUIRED` | publish | registry demanded an interactive OTP (EOTP) — pre-write refusal: fix token/policy, retry |
+| `PUBLISH_FORBIDDEN` | publish | credentials refused (E401/E403) — pre-write refusal: fix the token, retry |
 | `PUBLISH_AMBIGUOUS` | publish | interrupted mid-call; reconcile, do not retry blindly |
 
 ## 4. Archive Manifest (allow-list)

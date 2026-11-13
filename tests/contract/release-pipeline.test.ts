@@ -59,6 +59,7 @@ interface ReleaseModule {
     ctx?: Record<string, unknown>;
   }): ReleaseRun;
   defaultExecutors(ctx: Record<string, unknown>, opts: object): Record<string, (ctx?: Record<string, unknown>) => void>;
+  classifyPublishFailure(out: string): string;
 }
 const rel = (await import(new URL("../../../scripts/release.mjs", import.meta.url).href)) as unknown as ReleaseModule;
 const scan = (await import(new URL("../../../scripts/lib/secret-scan.mjs", import.meta.url).href)) as unknown as {
@@ -423,6 +424,86 @@ test("publish classification: registry refuses an existing version → PUBLISH_R
     });
     assert.match(out, /RESULT PUBLISH_REJECTED/, `child said: ${out.slice(-1500)}`);
     assert.match(out, /WARNS .*WITHOUT attestation/, "--allow-unattested is LOUD, never silent");
+  } finally {
+    await new Promise<void>((r) => server.close(() => r()));
+  }
+});
+
+test("classifyPublishFailure: the four recorded real npm outputs each land in their class", () => {
+  // Verbatim shapes from the v0.3.0 first-release dispatches (2026-11-13), in
+  // the order they were hit: attestation → permissions → 2FA → success. The
+  // credential classes must never borrow AMBIGUOUS's reconcile wording.
+  assert.equal(
+    rel.classifyPublishFailure(
+      "npm error code E403\n" +
+        "npm error 403 403 Forbidden - PUT https://registry.npmjs.org/task-linear-sync - You may not perform that action with these credentials.\n" +
+        "npm error 403 In most cases, you or one of your dependencies are requesting a package version that is forbidden by your security policy, or on a server you do not have access to.",
+    ),
+    "PUBLISH_FORBIDDEN",
+    "the generic 403 security-policy line must NOT be mistaken for a version conflict",
+  );
+  assert.equal(
+    rel.classifyPublishFailure(
+      "npm error code EOTP\nnpm error This operation requires a one-time password.\nnpm error Open this URL in your browser to authenticate:\nnpm error   https://www.npmjs.com/auth/cli/xxxxxxxx",
+    ),
+    "PUBLISH_2FA_REQUIRED",
+  );
+  assert.equal(
+    rel.classifyPublishFailure(
+      "npm error code E409\nnpm error 409 Conflict - PUT https://registry.npmjs.org/task-linear-sync - cannot publish over the previously published versions: 0.3.0.",
+    ),
+    "PUBLISH_REJECTED",
+  );
+  assert.equal(
+    rel.classifyPublishFailure(
+      "npm error code ECONNREFUSED\nnpm error syscall connect\nnpm error request to https://registry.npmjs.org/task-linear-sync failed, reason: connect ECONNREFUSED 127.0.0.1:9",
+    ),
+    "PUBLISH_AMBIGUOUS",
+  );
+});
+
+test("publish classification: credentials refused (403) → PUBLISH_FORBIDDEN, guidance says retry-after-fix (local fake registry)", async () => {
+  // Exactly what the 2026-11-13 dispatch met: a scoped token PUT to a NEW
+  // package. Nothing was written, so the verdict must NOT say "reconcile".
+  const http = await import("node:http");
+  const { spawn } = await import("node:child_process");
+  const server = http.createServer((_req, res) => {
+    res.writeHead(403, { "content-type": "application/json" });
+    res.end(JSON.stringify({ error: "You may not perform that action with these credentials." }));
+  });
+  await new Promise<void>((r) => server.listen(0, "127.0.0.1", r));
+  const port = (server.address() as { port: number }).port;
+  const tarball = buildFaultTarball("publish-forbidden");
+  try {
+    const childEnv: Record<string, string | undefined> = { ...process.env };
+    delete childEnv.CI;
+    delete childEnv.GITHUB_ACTIONS;
+    delete childEnv.NPM_TOKEN;
+    delete childEnv.NODE_AUTH_TOKEN;
+    childEnv.npm_config_registry = `http://127.0.0.1:${port}/`;
+    childEnv[`npm_config_//127.0.0.1:${port}/:_authToken`] = "fake-token-for-local-classification-only";
+    childEnv.npm_config_fetch_retry_retries = "0";
+    const child = spawn(
+      process.execPath,
+      [
+        "--input-type=module",
+        "-e",
+        `const rel = await import(${JSON.stringify(new URL("../../../scripts/release.mjs", import.meta.url).href)});
+         try { exec_publish(${JSON.stringify(tarball)}); }
+         catch (e) { console.log("RESULT " + (e && e.code)); console.log("MSG " + String(e && e.message)); }
+         function exec_publish(t) { const exec = rel.defaultExecutors({ tarball: t }, { allowUnattested: true, log: () => {} }); exec.publish(); }`,
+      ],
+      { env: childEnv },
+    );
+    const out = await new Promise<string>((r) => {
+      let acc = "";
+      child.stdout?.on("data", (d: Buffer) => (acc += d.toString()));
+      child.stderr?.on("data", (d: Buffer) => (acc += d.toString()));
+      child.on("close", () => r(acc));
+    });
+    assert.match(out, /RESULT PUBLISH_FORBIDDEN/, `child said: ${out.slice(-1500)}`);
+    assert.match(out, /MSG .*nothing was written/, "guidance states the retry-safe fact");
+    assert.ok(!/MSG .*reconcile/.test(out), "a refused credential is NOT transport-ambiguous — never says reconcile");
   } finally {
     await new Promise<void>((r) => server.close(() => r()));
   }
