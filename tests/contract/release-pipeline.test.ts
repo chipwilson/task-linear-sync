@@ -18,7 +18,7 @@
  */
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { chmodSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
@@ -211,6 +211,35 @@ test("stage failure ends the run: later stages never execute", () => {
   assert.equal(r.exitCode, 1);
   assert.deepEqual(seen, ["install-locked", "lint", "typecheck"]);
   assert.ok(lines.some((l) => l.startsWith("FAILED:STAGE_FAILED:typecheck")));
+});
+
+test("tool stages stream output live: the failing tool's stdout+stderr reach the log BEFORE the refusal", () => {
+  // v0.3.0 lesson: runOrThrow captured tool output and threw it away after four
+  // banner lines — a failed test-full leg left the CI log without the failing
+  // test. A PATH-shimmed failing npm must stream through to the parent log.
+  const fakeBin = mkdtempSync(join(tmpdir(), "u12-fake-npm-"));
+  const shim = join(fakeBin, "npm");
+  writeFileSync(shim, "#!/bin/sh\necho SENTINEL-STREAMED-STDOUT-7742\necho SENTINEL-STREAMED-STDERR-7742 >&2\nexit 1\n");
+  chmodSync(shim, 0o755);
+  const child = spawnSync(
+    process.execPath,
+    [
+      "--input-type=module",
+      "-e",
+      `const rel = await import(${JSON.stringify(new URL("../../../scripts/release.mjs", import.meta.url).href)});
+       const exec = rel.defaultExecutors({}, {});
+       try { exec["lint"](); console.log("RESULT SUCCESS"); }
+       catch (e) { console.log("RESULT " + e.code + " " + e.message); }`,
+    ],
+    { env: { ...process.env, PATH: `${fakeBin}:${process.env.PATH}` }, encoding: "utf8" },
+  );
+  const out = String(child.stdout ?? "");
+  const err = String(child.stderr ?? "");
+  assert.ok(out.includes("SENTINEL-STREAMED-STDOUT-7742"), "tool stdout rides the live stream, never swallowed");
+  assert.ok(err.includes("SENTINEL-STREAMED-STDERR-7742"), "tool stderr rides the live stream, never swallowed");
+  const resultAt = out.indexOf("RESULT ");
+  assert.ok(resultAt > out.indexOf("SENTINEL-STREAMED-STDOUT-7742"), "streamed output lands BEFORE the refusal line");
+  assert.match(out, /RESULT STAGE STAGE: exit 1 — the tool output was streamed live above this line/);
 });
 
 test("verdict JSON is secret-safe: sentinel env values never leak (log + JSON)", () => {

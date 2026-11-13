@@ -54,17 +54,12 @@ function sh(cmd, args, opts = {}) {
 }
 
 function runOrThrow(label, cmd, args, opts = {}) {
-  const r = sh(cmd, args, { ...opts, capture: true });
-  if (r.status !== 0) {
-    // Tools disagree about streams (eslint → stdout, npm errors → stderr):
-    // show the first non-empty lines of both so CI logs carry the real cause.
-    const detail = [String(r.stdout ?? ""), String(r.stderr ?? "")]
-      .flatMap((s) => s.split("\n"))
-      .filter((l) => l.trim() !== "")
-      .slice(0, 4)
-      .join(" | ");
-    throw new Refuse(label, `exit ${r.status}: ${detail}`);
-  }
+  // Tool output streams LIVE (stdio inherit), it is not captured and discarded:
+  // a failed lint/typecheck/build/test leg previously surfaced only four banner
+  // lines, leaving the CI log without the failing test (v0.3.0, stage test-full).
+  // The live stream IS the diagnosis; the verdict stays a one-line machine code.
+  const r = sh(cmd, args, opts);
+  if (r.status !== 0) throw new Refuse(label, `exit ${r.status} — the tool output was streamed live above this line`);
   return r;
 }
 
