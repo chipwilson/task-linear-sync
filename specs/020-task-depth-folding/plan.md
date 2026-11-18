@@ -6,10 +6,14 @@
 
 ## Summary
 
-Add an optional configuration key `maxTaskIssueDepth` (1..64; absent =
-unlimited) that caps how deep in the task tree tasks become their own Linear
-issues. Tasks below the cap are **folded**: they stop being tasks and stay as
-verbatim body content of the nearest surviving ancestor — which their
+Add an optional configuration key `maxTaskIssueDepth` (1..64) whose
+**built-in default `1` ships in `builtInDefaults`** — the default posture is
+a flat board — with explicit `64` as the practically-unlimited escape hatch
+restoring pre-feature behavior (Maintainer Ruling 2026-11-18; reverses
+research R1). The key caps how deep in the task tree tasks become their own
+Linear issues; at the parsing entry an absent value resolves to the built-in
+default 1. Tasks below the cap are **folded**: they stop being tasks and stay
+as verbatim body content of the nearest surviving ancestor — which their
 `Task_Body` already contains — recorded in parsing exclusions with a new
 `depth-folded` reason. The change lands in the pure parsing lane plus the
 frozen configuration schema (contract amendment); matching, engine, plan,
@@ -33,9 +37,9 @@ contract-amendment record ship in the same change (Documentation duty).
 
 **Performance Goals**: parse-lane depth computation is O(tasks) per file (parent chains are already built); no measurable change to the existing parsing performance tier
 
-**Constraints**: parsing purity (no I/O/clock/network); determinism byte-for-byte (Principle IV); frozen 002 contract surface extended only via dated amendment; absent default must reproduce pre-feature bytes exactly on every fixture (SC-001)
+**Constraints**: parsing purity (no I/O/clock/network); determinism byte-for-byte (Principle IV); frozen 002 contract surface extended only via dated amendment; SC-001 fidelity is measured at explicit `maxTaskIssueDepth: 64`, never at absence (Maintainer Ruling 2026-11-18); the added `builtInDefaults` value is a benign integer — the distributed-defaults scan is verified green, not an unchanged snapshot
 
-**Scale/Scope**: 1 optional config key, 1 depth computation in `src/parsing`, 1 new exclusion-reason value, 1 typed config-validation error; ~7 documentation files; ~5–7 test files updated/added
+**Scale/Scope**: 1 optional config key plus its `builtInDefaults` entry (default 1), 1 depth computation in `src/parsing`, 1 new exclusion-reason value, 1 typed config-validation error; ~7 documentation files; ~5–7 new/updated test files plus a ~15–20 existing test-file triage (legacy fixtures pinned at explicit `64`, snapshots amended deliberately)
 
 ## Constitution Check
 
@@ -45,8 +49,8 @@ contract-amendment record ship in the same change (Documentation duty).
 |---|---|---|
 | I. Safety First | PASS | Folding only *removes* mutations (fewer issues created). Read-only lanes stay read-only; refusal path for invalid values mutates nothing; no new write path. |
 | II. Durable Identity | PASS (with documented risk) | No seed layout change. Ordinal-seeded tasks may shift identity when the cap is toggled on a previously synced file — accepted, documented (R6), and softened because visible reference tokens keep re-matching at high confidence; durable-identity storage mechanism unchanged. |
-| III. Intelligent Defaults, Overridable Configuration | PASS | New value ships a sensible default posture (absent = unlimited = today's frozen behavior, following the `stateDirectory` / `historyLogMaxBytes` absent-default precedent), fully overridable in every layer; zero org literals introduced. |
-| IV. Determinism and Idempotency | PASS | Pure function of (content, conventions, cap); SC-001 requires byte-identical default behavior; SC-005 scenarios re-run twice for byte equality. |
+| III. Intelligent Defaults, Overridable Configuration | PASS | The value ships a built-in default of **1** in `builtInDefaults` — the flat board is the intelligent default per the Maintainer Ruling 2026-11-18 — and the default applies whenever the consumer does not override it; overridable through the frozen layering (file → programmatic, scalar replace); the default is a benign integer, zero org literals. |
+| IV. Determinism and Idempotency | PASS | Pure function of (content, conventions, cap); SC-001 requires byte-identical pre-feature behavior at explicit `64`; SC-005 scenarios re-run twice for byte equality. |
 | V. One Engine, Additive Surfaces | PASS | Validation lives at the parsing entry all surfaces share (`parseTaskFile`), so CLI/engine/worker/MCP/CI refuse identically; no surface-specific path. |
 | VI. Test-First and Quality Gates | PASS | FR-009 + contracts/test-matrix define per-story tests across unit/integration/e2e incl. snapshot amendments; no real network/credentials. |
 | Additional constraints | PASS | No Linear-port change (no parent-order change for surviving tasks), no credential surface, no new dependencies, no org literals. |
@@ -63,8 +67,16 @@ amendment to `specs/requirements.md` (018 A-018-x precedent), and a
 **Post-design re-check (after Phase 0/1): PASS.** The design kept the
 fold in the pure parsing lane (Principles I/IV/V), introduced no defaults
 carrying literals and no required-from-consumer values beyond governance
-allowance (III), and every contract rule C1–C10 names its test gate (VI).
+allowance, and every contract rule C1–C10 names its test gate (VI).
 No complexity-tracking entries were needed.
+
+**Re-check after Maintainer Ruling 2026-11-18: PASS.** Principle III is
+now satisfied the ruling's way: the feature ships built-in default `1`
+(flat board) in `builtInDefaults` — the documented default applied when the
+consumer does not override — rather than the earlier absent-by-default
+posture; the value is a benign integer (defaults scan verified green), the
+key stays overridable in every layer, and SC-001 fidelity moved to explicit
+`64`.
 
 ## Project Structure
 
@@ -87,6 +99,7 @@ specs/020-task-depth-folding/
 ```text
 src/
 ├── config/            # schema.ts: + optional maxTaskIssueDepth on ResolvedConfig (+ ConfigOverrides twin)
+│                      # defaults.ts: + maxTaskIssueDepth: 1 in builtInDefaults (ruling 2026-11-18)
 ├── parsing/           # extract.ts: depth fold + exclusion reason; taskfile.ts: depth-aware uuid/index maps;
 │                      # depth.ts (new): pure depth computation + typed config validation error
 ├── engine/            # untouched (folded tasks never reach the pipeline)
@@ -119,3 +132,28 @@ keeps `extract.ts`'s scan focused on grammar.
 | Violation | Why Needed | Simpler Alternative Rejected Because |
 |---|---|---|
 | — | — | — |
+
+## Design History
+
+- **2026-11-18 — Maintainer Ruling; research R1 reversed (binding).** The
+  original R1 posture was `maxTaskIssueDepth` absent-by-default, absent =
+  unlimited, `builtInDefaults` untouched. Per the Maintainer Ruling
+  2026-11-18 (tasks.md *Binding Posture*): the intelligent default is
+  **1** — `builtInDefaults` carries `maxTaskIssueDepth: 1`, an absent key
+  resolves to it at the parsing entry (Principle III — the documented
+  default applied, not a magic sentinel), so the default posture is a flat
+  board; range stays 1..64 and the pre-feature behavior is the explicit
+  `64` practically-unlimited escape hatch; SC-001 byte fidelity is
+  asserted at explicit `64`, never at absence. Per the constitution
+  Governance section, every 020 artifact was amended to this posture in
+  Phase 2 before any source task ran (silent deviation is not permitted);
+  research.md R1 is rewritten as a documented reversal.
+- **Constitution compliance review of the amended artifacts (2026-11-18):
+  PASS** — III (built-in default `1` shipped, applied when the consumer
+  does not override, overridable through the frozen layering, zero org
+  literals); IV (folding stays a pure function of content + conventions +
+  cap; pre-feature byte identity asserted at explicit `64`); V (one refusal
+  choke point at the shared `parseTaskFile` entry, so every surface behaves
+  identically); VI (every contract rule C1–C10 names its test gate,
+  including the defaults-scan verify-green check and the `64`-pinned
+  legacy-suite triage).

@@ -30,29 +30,43 @@ method requires: source pointers, not recollection.
   `specs/requirements.md` inline: 018 `A-018-1/A-018-2` tags.
 - Absent-by-default typed keys precedent: `stateDirectory`,
   `historyLogMaxBytes`, `syncAttachmentSubtitle`, `agentHooksDirectory`
-  (`src/config/schema.ts`).
+  (`src/config/schema.ts`). (Precedent stands for those keys; per the
+  Maintainer Ruling 2026-11-18 `maxTaskIssueDepth` does NOT follow it — it
+  ships a built-in default, see reversed R1.)
 - Lane-entry config validation precedent: `src/matching/config-check.ts`
   (named problems at lane entry); `loadConfig()` is deliberately merge-only
   (`src/config/load.ts`), identity validation is a separate explicit gate.
 
-## R1 — Key name, type, and default posture
+## R1 — Key name, type, and default posture (REVERSED)
 
-- **Decision**: `maxTaskIssueDepth?: number` on `ResolvedConfig` (and the
-  `ConfigOverrides` twin), integer range **1..64**, **absent by default** —
-  absent means unlimited, i.e. byte-identical pre-feature behavior.
-- **Rationale**: absent-as-default follows the established absent-by-default
-  typed keys and guarantees SC-001 (default drift is structurally impossible:
-  `builtInDefaults` is not touched, so `defaults-scan` and every snapshot of
-  defaults stay frozen). It is honest about the posture — there is no magic
-  sentinel number. 1..64 mirrors the 014 bounded-key posture.
+- **Decision** — **Maintainer Ruling 2026-11-18, documented reversal**:
+  `maxTaskIssueDepth?: number` on `ResolvedConfig` (and the
+  `ConfigOverrides` twin), integer range **1..64**, **built-in default 1**
+  carried by `builtInDefaults` (`src/config/defaults.ts:34`, Grammar block
+  lines 49–55). An absent value resolves to that built-in default at the
+  parsing entry, so the default posture is a flat board; the pre-feature
+  (effectively unlimited) behavior is reached by explicitly configuring
+  `64` (practically-unlimited escape hatch — every existing fixture is far
+  shallower).
+- **Reversal rationale**: the ruling adopts the previously-rejected
+  "value in `builtInDefaults`" option, at value `1`, honestly — it is a
+  documented default applied when the consumer does not override (Principle
+  III), not a magic sentinel number. SC-001 moves accordingly: pre-feature
+  byte fidelity is asserted at explicit `64`, never at absence. 1..64 still
+  mirrors the 014 bounded-key posture.
+- **Original decision (superseded 2026-11-18)**: absent by default, absent
+  = unlimited, `builtInDefaults` untouched so default drift was
+  structurally impossible. The maintainer reversed it: that posture traded
+  Principle III's ship-a-sensible-default duty for a structurally frozen
+  defaults snapshot; the intelligent default is 1.
 - **Alternatives considered**:
   - `maxIssueTaskDepth` (earlier shorthand) — rejected: reads as "depth of an
     issue's tasks"; the cap is on *task tree depth at which tasks get issues*.
   - Enum `subIssueMode: "issues" | "fold-into-parent"` — rejected: loses the
     two-level board (US2); a depth cap subsumes the boolean case (`1`).
-  - Large default like `64` shipped in `builtInDefaults` — rejected: touches
-    the release-scan target and would make "today's behavior" and "capped at
-    64" observably equivalent-but-different intents; absent is truthful.
+  - Shipping the large default `64` in `builtInDefaults` — rejected (and
+    stays rejected): `64` is the escape hatch consumers opt into, not the
+    default; the intelligent default is `1` per the ruling.
 
 ## R2 — Depth semantics
 
@@ -96,7 +110,8 @@ method requires: source pointers, not recollection.
 ## R4 — Validation point and failure shape
 
 - **Decision**: a pure, typed validation helper (e.g. `validateTaskDepthConfig`)
-  runs at the `parseTaskFile` entry for every lane; an absent value passes; a
+  runs at the `parseTaskFile` entry for every lane; an absent value resolves
+  to the built-in default `1`; a
   present-but-invalid value (non-integer, < 1, > 64) throws a named
   configuration error carrying the key name and the offending value. The CLI
   maps it to exit code 3 (configuration) — verify the existing error-mapping
@@ -165,12 +180,17 @@ method requires: source pointers, not recollection.
 ## R9 — Frozen-surface and snapshot amendments (exact list)
 
 - `src/config/schema.ts`: + `readonly maxTaskIssueDepth?: number` (ResolvedConfig).
-- `src/parsing/extract.ts`: reason union + `"depth-folded"`; if the new typed
-  error class is exported from the parsing surface, `parsing-surface` snapshot
-  updates deliberately (`UPDATE_PARSING_SNAPSHOT=1 npm run test:contract`).
+- `src/parsing/extract.ts`: reason union + `"depth-folded"`; the new typed
+  error class IS exported from the parsing surface, so the
+  `parsing-surface` snapshot is amended deliberately (`UPDATE_PARSING_SNAPSHOT=1 npm run test:contract`).
 - `tests/types/`: config-shape and exclusion-union type pins extended.
-- `builtInDefaults` NOT touched ⇒ `defaults-scan` and defaults snapshots
-  unchanged (verified posture of R1).
+- `src/config/defaults.ts`: `builtInDefaults` (Grammar block lines 49–55)
+  IS touched — `maxTaskIssueDepth: 1` is added (reversed R1 ships the
+  default; the key is never absent post-`loadConfig` for the effective
+  value). `defaults-scan` is **verified green**, not unchanged: the added
+  value is a benign integer and the release scan still passes.
+- `tests/contract/snapshots/frozen-surface.json`: amended deliberately for
+  the new default (`UPDATE_FROZEN_SNAPSHOT=1 npm run test:contract`).
 - Amendment records: `specs/002-core-domain-contracts/contracts/configuration.md`
   (dated amendment), `specs/requirements.md` (inline `A-020-1/A-020-2`),
   `docs/contract-amendments.md` entry.
@@ -178,7 +198,9 @@ method requires: source pointers, not recollection.
 ## R10 — Documentation placement
 
 - **Decision**: configuration-reference: new row in the Grammar table (it is
-  task-detection semantics) + addition to the "defaults to absent" list;
+  task-detection semantics) with default `1`, NOT added to the "defaults to
+  absent" list — it ships a built-in default per the ruling, and a pointer
+  note under that list explains why;
   configuration.md: cross-reference line; parsing.md: fold rule + reason
   table row; README: one sentence in the adapter-selection paragraph pointing
   at the key; CHANGELOG + contract-amendments records.

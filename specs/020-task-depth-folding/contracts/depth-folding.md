@@ -6,12 +6,17 @@ binding on every lane (CLI, programmatic API, worker, MCP, CI action) because
 all lanes parse through `parseTaskFile`.
 
 **C1 — Key and default posture.** `ResolvedConfig` carries
-`maxTaskIssueDepth?: number`; absent means unlimited and MUST produce
-byte-identical parsing output to the pre-feature build (I1). The key merges as
-a scalar through the frozen layering (defaults → file → programmatic) and is
-never present in `builtInDefaults`.
-*Gate:* unit config round-trip/merge tests; the untouched existing
-parsing/engine fixture suites pass unmodified (SC-001).
+`maxTaskIssueDepth?: number` whose **built-in default is `1`**, carried by
+`builtInDefaults` (flat board; Maintainer Ruling 2026-11-18). An absent key
+resolves to that built-in default, so the effective value is never absent
+post-`loadConfig`; the key merges as a scalar through the frozen layering
+(defaults → file → programmatic). Byte-identical parsing output to the
+pre-feature build (I1) is gated at **explicit `maxTaskIssueDepth: 64`**,
+never at absence.
+*Gate:* unit config round-trip/merge tests (default `1` applied, file and
+programmatic layers override, explicit `64` resolves); the existing
+parsing/engine fixture suites, pinned at explicit `64` in their fixtures,
+pass (SC-001).
 
 **C2 — Depth definition.** Depth is computed over the full draft tree before
 folding: heading tasks are depth 1; a checklist task is 1 + depth(nearest
@@ -25,7 +30,7 @@ nesting, orphan-under-heading, tab-indent widths).
 Folding removes the draft from `TaskFile.tasks` before uuid assignment;
 monotone inheritance folds whole subtrees. Corollary: at cap 1, zero surviving
 tasks carry `parentUuid`, so the engine creates zero Linear sub-issues.
-*Gate:* unit fold matrix (caps absent/1/2/64; deep chains; subtree
+*Gate:* unit fold matrix (caps undefined(→1)/1/2/3/64; deep chains; subtree
 inheritance); integration plan assertion "no parented entries at cap 1".
 
 **C4 — Verbatim body, span invariance.** For any surviving task, the
@@ -33,8 +38,9 @@ inheritance); integration plan assertion "no parented entries at cap 1".
 are present in the nearest surviving ancestor's body verbatim and in source
 order. Folded lines are never assigned, never rewritten, and never receive an
 issue reference token (I4).
-*Gate:* parsing golden pair (same fixture parsed at caps 1/2/absent —
-surviving extents byte-equal; parent description contains folded lines);
+*Gate:* parsing golden pair (same fixture parsed at caps 1/2/64 — absence
+resolves to 1, so it needs no separate run; surviving extents byte-equal;
+parent description contains folded lines);
 integration description-content check over the fake port.
 
 **C5 — Exclusion recording.** Every folded draft yields exactly one
@@ -47,7 +53,8 @@ folding.
 over-cap line, rollup line at depth 5); exclusion-union type pin in
 `tests/types/parsing.test-d.ts`.
 
-**C6 — Validation and refusal.** At the `parseTaskFile` entry: absent passes;
+**C6 — Validation and refusal.** At the `parseTaskFile` entry: absent passes
+validation and resolves to cap `1` (the built-in default);
 integers 1..64 pass; every other value throws `TaskDepthConfigError` naming
 `maxTaskIssueDepth` and the offending value with reason
 `not-an-integer | below-minimum | above-maximum`; zero parsing, zero
@@ -78,11 +85,13 @@ list ordering.
 *Gate:* e2e double-run byte-diff scenario (extends the existing determinism
 world).
 
-**C10 — Surface posture.** The only frozen-surface deltas are the optional
-`ResolvedConfig` field and the extended exclusion `reason` union; the typed
-error class is exported from the parsing surface (snapshot updated
-deliberately). No new config validation runs inside `loadConfig`; the three
+**C10 — Surface posture.** The frozen-surface deltas are: the optional
+`ResolvedConfig` field, the extended exclusion `reason` union, the
+`builtInDefaults` value `maxTaskIssueDepth: 1`, and the typed
+`TaskDepthConfigError` export from the parsing surface (parsing-surface and
+frozen-surface snapshots amended deliberately). No new config validation runs
+inside `loadConfig`; the three
 config-file failure categories are unchanged.
 *Gate:* `tests/contract/parsing-surface.test.ts` + snapshot;
-`tests/contract/frozen-surface.test.ts` review; `defaults-scan` unchanged and
-green.
+`tests/contract/frozen-surface.test.ts` review; `defaults-scan` verified
+green (the added default is a benign integer).

@@ -8,6 +8,15 @@
 
 **Input**: User description: "Configurable depth cap for Linear task creation (`maxTaskIssueDepth`): tasks nested deeper than the configured depth are folded verbatim into the parent issue's mirrored Task_Body instead of becoming their own Linear sub-issues"
 
+> **Maintainer Ruling 2026-11-18**: the intelligent default for
+> `maxTaskIssueDepth` is **1** — a built-in default carried by
+> `builtInDefaults`; an absent key resolves to it, so the default posture is
+> a flat board (zero Linear sub-issues). The pre-feature, effectively
+> unlimited behavior is reached by explicitly configuring **`64`** (range
+> stays 1..64). Pre-feature byte fidelity (SC-001) is asserted at explicit
+> `64`, never at absence. This ruling reverses research R1; every 020
+> artifact is amended to match (see the *Design History* note in plan.md).
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Flat board: no sub-issues at all (Priority: P1)
@@ -34,9 +43,11 @@ issue description containing the nested lines verbatim.
    only depth-1 tasks (top-level checklists and all heading tasks) are synced,
    no planned issue carries a parent link, and every folded line appears
    verbatim inside the nearest surviving ancestor task's mirrored body.
-2. **Given** the same repository, **When** the key is absent (default),
-   **Then** behavior is byte-for-byte identical to today (nested tasks become
-   parented issues) — the default changes nothing.
+2. **Given** the same repository, **When** the key is absent, **Then** it
+   resolves to the built-in default 1 and the board is flat (no nested task
+   becomes its own issue); **When** the configuration instead sets
+   `maxTaskIssueDepth: 64` explicitly, **Then** behavior is byte-for-byte
+   identical to today (nested tasks become parented issues).
 3. **Given** a depth-2 checklist line, **When** it is folded, **Then** it is
    recorded as a recognized-but-excluded line with a distinct "folded" reason,
    and its file line is never rewritten with an issue reference token.
@@ -125,10 +136,11 @@ issues with zero archive operations.
 ### Functional Requirements
 
 - **FR-001**: System MUST expose an optional configuration key
-  `maxTaskIssueDepth` (positive integer, range 1..64) that caps the task-tree
-  depth at which tasks become their own Linear issues; when absent the
-  effective cap is unlimited and behavior is identical to the pre-feature
-  behavior.
+  `maxTaskIssueDepth` (integer, range 1..64) with a **built-in default of 1**
+  that caps the task-tree depth at which tasks become their own Linear
+  issues; when the key is absent it MUST resolve to the built-in default 1
+  (the flat board is the default posture), and the pre-feature, effectively
+  unlimited behavior MUST be reachable by explicitly configuring `64`.
 - **FR-002**: System MUST compute each task's depth as 1 + the depth of its
   nearest task ancestor (heading tasks are always depth 1; a checklist task's
   parent is the indent-stack parent or the enclosing heading task, per the
@@ -150,12 +162,15 @@ issues with zero archive operations.
   previously created issues; issues that stop corresponding to a task surface
   through the existing unmapped-issue reporting, unchanged.
 - **FR-007**: System MUST preserve determinism: identical inputs and cap
-  produce byte-identical parse results and plans; the absent-cap default MUST
-  produce byte-identical results to the pre-feature build for every existing
-  fixture.
+  produce byte-identical parse results and plans; the absent key MUST
+  resolve to the built-in default 1, and the effective cap `64` MUST
+  produce byte-identical results to the pre-feature build for every
+  existing fixture.
 - **FR-008**: Documentation MUST be updated in the same change (constitution
-  Documentation duty): the configuration reference (new key row + absent-by-
-  default list), the configuration model doc, the parsing doc (fold semantics
+  Documentation duty): the configuration reference (new key row with default
+  1, plus a pointer note that the key is NOT in the absent-by-default list
+  because it ships a built-in default), the configuration model doc, the
+  parsing doc (fold semantics
   + new exclusion reason), the README (one pointer sentence), the changelog,
   and the contract-amendment record; all examples use placeholder identifiers.
 - **FR-009**: Every acceptance criterion in this spec MUST be enforced by at
@@ -166,7 +181,9 @@ issues with zero archive operations.
 ### Key Entities
 
 - **Task Depth Cap (`maxTaskIssueDepth`)**: optional config value; 1..64;
-  governs how deep in the task tree tasks receive their own issues.
+  built-in default **1** (flat board; explicit `64` is the practically-
+  unlimited escape hatch); governs how deep in the task tree tasks receive
+  their own issues.
 - **Task Depth**: derived per task from the parent chain; heading tasks are 1;
   checklist tasks are 1 + nearest task ancestor's depth.
 - **Folded Task**: a task whose depth exceeds the cap; demoted to body content
@@ -179,8 +196,10 @@ issues with zero archive operations.
 
 ### Measurable Outcomes
 
-- **SC-001**: With the key absent, every existing test suite and fixture
-  produces identical output to the pre-feature build (zero behavioral drift).
+- **SC-001**: With `maxTaskIssueDepth: 64` configured explicitly (never at
+  absence — Maintainer Ruling 2026-11-18), every existing test suite and
+  fixture produces identical output to the pre-feature build (zero
+  behavioral drift).
 - **SC-002**: With `maxTaskIssueDepth: 1`, a plan built over a nested-fixture
   repository contains zero parented plan entries, and 100% of folded lines are
   present verbatim in their nearest surviving ancestor's mirrored body.

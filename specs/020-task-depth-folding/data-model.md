@@ -12,12 +12,13 @@ types are imported, amendments are dated and labeled).
 | Location | `ResolvedConfig.maxTaskIssueDepth` and the `ConfigOverrides` deep-partial twin (`src/config/schema.ts`) |
 | Type | `number` (integer) |
 | Valid range | `1 .. 64` inclusive |
-| Default | **absent** — effective cap = unlimited (pre-feature behavior, byte-identical) |
+| Default | **`1`** — flat board; built-in default carried by `builtInDefaults` (Maintainer Ruling 2026-11-18); explicit `64` is the effectively-unlimited escape hatch |
 | Merge semantics | Scalar: replaced wholesale by any higher layer (file → programmatic); `null` = value, `undefined` = absent (frozen 002 merge rules — no new rules) |
-| In `builtInDefaults` | **Not present** (release-scan target untouched; SC-001 holds structurally) |
+| In `builtInDefaults` | **Present** — `maxTaskIssueDepth: 1` (benign integer; `defaults-scan` verified green) |
 | Diagnostics | Errors name only the key and the numeric value — screening-safe |
 
-Validation (lane-entry, pure): absent passes; present values must be
+Validation (lane-entry, pure): an absent value resolves to the built-in
+default `1`; present values must be
 integers within range. Any violation throws `TaskDepthConfigError` (below) at
 the `parseTaskFile` entry, so every lane refuses identically.
 
@@ -93,8 +94,10 @@ content lines ─ extractTasks ─► draft tree (parents, kinds)     [grammar e
 
 ## 7. Invariants
 
-- **I1 — Default fidelity.** Key absent ⇒ `parseTaskFile` output is
-  byte-identical to the pre-feature build for every input (SC-001).
+- **I1 — Default fidelity at `64`.** Effective cap `64` — configured
+  explicitly; an absent key resolves to the built-in default `1`, never to
+  `64` — ⇒ `parseTaskFile` output is byte-identical to the pre-feature build
+  for every input (SC-001, Maintainer Ruling 2026-11-18).
 - **I2 — Cap adherence.** No surviving task has depth > cap. At cap 1 no
   surviving task carries `parentUuid` ⇒ the engine creates zero Linear
   sub-issues (the "flat board" guarantee).
@@ -115,7 +118,7 @@ content lines ─ extractTasks ─► draft tree (parents, kinds)     [grammar e
 
 | Transition | Task-set effect | Pre-existing issues | Identity effect |
 |---|---|---|---|
-| absent → cap | deeper drafts fold | none (fresh posture) | ordinal-seeded tasks may shift if the file was synced before; local-id and reference-token tasks stable |
+| absent ⇒ `1` (built-in default applies) | every depth-2+ draft folds (flat board) | pre-feature child issues from earlier unlimited syncs surface ONCE in the unmapped-issue report; zero archive/delete | ordinal-seeded tasks shift versus an earlier unlimited sync; local-id and reference-token tasks stable |
 | cap `a` → stricter `b` | tasks in `(b, a]` fold | their issues appear ONCE in the unmapped-issue report; **zero** archive/delete operations | tokens on now-folded lines remain as inert text |
 | cap `a` → looser `b` | newly in-range drafts become tasks | none | same ordinal-shift caveat |
 
@@ -126,9 +129,12 @@ before the first sync; prefer local ids).
 
 | Input | Outcome |
 |---|---|
-| absent | pass (unlimited) |
+| absent | resolves to the built-in default `1` (effective cap 1) |
 | `1` … `64` (integer) | pass |
 | `0`, negative | throw `TaskDepthConfigError` (`below-minimum`) |
 | non-integer, `NaN`, `Infinity` | throw (`not-an-integer`) |
 | `> 64` | throw (`above-maximum`) |
 | non-number in the config file layer | throw (`not-an-integer`) — the typed merge tolerates it structurally; the lane-entry check rejects it semantically |
+
+Every throw above raises `TaskDepthConfigError` (§5); absence is never a
+rejection — it resolves to the built-in default `1`.

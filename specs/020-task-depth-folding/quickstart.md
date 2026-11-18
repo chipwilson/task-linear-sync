@@ -38,7 +38,7 @@ const content = [
   "",
 ].join("\n");
 
-for (const cap of [undefined, 1, 2]) {
+for (const cap of [undefined, 1, 2, 3, 64]) {
   const config = loadConfig(cap === undefined ? {} : { overrides: { maxTaskIssueDepth: cap } });
   const r = parseTaskFile("specs/demo/tasks.md", content, builtInAdapters["generic"], config);
   console.log(`cap=${String(cap)} tasks=${r.file.tasks.length} ` +
@@ -47,35 +47,55 @@ for (const cap of [undefined, 1, 2]) {
 }
 ```
 
-Expected (after implementation):
+Expected (after implementation; `cap=undefined` resolves to the built-in
+default `1`, and the two middle rows are marked *verify by measurement* —
+measured numbers land in `quickstart-verification.md`):
 
 ```text
-cap=undefined tasks=5 parented=3 folded=0
+cap=undefined tasks=2 parented=0 folded=3
 cap=1 tasks=2 parented=0 folded=3
-cap=2 tasks=4 parented=3 folded=1
+cap=2 tasks=4 parented=2 folded=1
+cap=3 tasks=5 parented=3 folded=0
+cap=64 tasks=5 parented=3 folded=0
 ```
 
-- `cap=undefined` reproduces today exactly: all five lines are tasks; the
-  two-deep checklists and the heading-orphan carry `parentUuid`.
-- `cap=1`: only `T001` and `T100` survive; zero parented tasks (rule C3 flat-
+- `cap=undefined`: the key is absent, so the built-in default `1` applies —
+  the flat board: only `T001` and `T100` survive, zero parented tasks, three
+  lines folded (same row as `cap=1`).
+- `cap=1`: identical to `cap=undefined`; zero parented tasks (rule C3 flat-
   board corollary); three lines folded (rule C5).
-- `cap=2`: `T001a` and `T100a` survive parented; only `T001a-i` folds.
+- `cap=2` (*verify by measurement*): surviving parented tasks are `T001a`
+  and `T100a` (2), only `T001a-i` folds — the previously listed
+  `parented=3` was an off-by-one.
+- `cap=3` (*verify by measurement*): nothing folds beyond cap 2 — `T001a-i`
+  is depth 3 and survives at cap 3 (rule C3 folds iff `depth > cap`) — so
+  this row equals `cap=64` on this three-level fixture.
+- `cap=64` reproduces today exactly (the practically-unlimited escape
+  hatch): all five lines are tasks; the two-deep checklists and the
+  heading-orphan carry `parentUuid`; zero folded.
 - At every cap, `T001`'s `Task_Body` span is identical and its body text
   contains the folded lines verbatim (rule C4 / invariant I3) — verify by
-  printing the `taskBody` span for `T001` across the three runs.
+  printing the `taskBody` span for `T001` across the five runs
+  (caps `undefined`/`1`/`2`/`3`/`64`).
 
-## Scenario 2 — Default fidelity (SC-001, rule C1)
+## Scenario 2 — Legacy fidelity at `64` (SC-001, rule C1)
 
-The pre-feature suites must pass untouched:
+The pre-feature suites must pass with `maxTaskIssueDepth: 64` pinned. The
+pinning lives in the fixtures themselves (parsing goldens, config fixtures,
+engine worlds, CLI worlds) — that triage is part of this feature's test
+work, not a prerequisite state:
 
 ```bash
 npm run test:unit
 npm run test:contract
 ```
 
-Expected: all green with the existing parsing goldens unmodified — the key is
-absent from `builtInDefaults`, so unchanged behavior is structural, not
-aspirational.
+Expected: all green with the existing parsing goldens byte-unchanged — at
+explicit cap `64` the effective cap exceeds every fixture's depth, so
+output equals the pre-feature build exactly. The shipped default is `1`,
+so tests that assert `defaults.ts` content or the default posture are
+amended deliberately (`maxTaskIssueDepth === 1`), and nested-behavior
+expectations stay green only via the `64` pin.
 
 ## Scenario 3 — Feature tests (rules C1–C10)
 
