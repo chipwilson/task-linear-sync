@@ -7,6 +7,16 @@ this preview — lives in [docs/versioning.md](docs/versioning.md).
 
 ## [Unreleased]
 
+- **Configuration reference** (`docs/configuration-reference.md`) — a new
+  exhaustive catalogue of every configuration parameter (the complete
+  `ResolvedConfig`, the additive `queue` group, and the `mcp` launch keys)
+  with its intelligent default, validation bounds, and notes; linked from
+  the README's Documentation list. Documentation only — no behavior change.
+- **README token-default correction** — the history-page and MCP HTTP bearer
+  defaults are the tool-id-derived names `TASK_LINEAR_SYNC_WEB_TOKEN` /
+  `TASK_LINEAR_SYNC_MCP_TOKEN` (`src/config/defaults.ts`), not the shorthand
+  previously printed.
+
 ## [0.3.1] - 2026-11-13
 
 Release-pipeline only — the publish stage now classifies registry refusals

@@ -119,5 +119,7 @@ is `<platform-base>/<stateDirAppSegment>/<sha16(canonical repo root)>` — platf
 with `StatePlacementError`; there is no in-tree fallback (SC-003). Directories are created
 `0700`, every state file written via temp-file + rename at `0600`.
 
-Full per-key tables: `specs/002-core-domain-contracts/data-model.md` §17;
-defaults source: `src/config/defaults.ts` (release-scan target).
+Full per-key catalogue with every intelligent default:
+[configuration-reference.md](./configuration-reference.md); grouped data-model
+view: `specs/002-core-domain-contracts/data-model.md` §17; defaults source:
+`src/config/defaults.ts` (release-scan target).
