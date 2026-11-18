@@ -390,14 +390,15 @@ Exit codes: `0` success · `1` unexpected · `2` usage · `3` configuration ·
 One token drives everything Linear-facing: `LINEAR_ACCESS_TOKEN` (the
 *variable name* is configuration, the value is never read from a file and
 never appears in any output). The history page and the MCP HTTP transport
-each take their own bearer token for their own endpoints (`TLS_WEB_TOKEN`
-and `TLS_MCP_TOKEN` by default — names likewise configurable, so CI
-conventions can override them).
+each take their own bearer token for their own endpoints
+(`TASK_LINEAR_SYNC_WEB_TOKEN` and `TASK_LINEAR_SYNC_MCP_TOKEN` by default —
+names derived from `toolId` and likewise configurable, so CI conventions can
+override them).
 
 ## Documentation
 
 - [CLI reference](docs/cli.md)
-- [Configuration file & precedence](docs/configuration.md)
+- [Configuration file & precedence](docs/configuration.md) · [Every key & default](docs/configuration-reference.md)
 - [Queue & git hooks](docs/queue-hooks.md)
 - [Agent tools (MCP)](docs/agent-tools.md)
 - [Sync-History web component](docs/history-server.md)
