@@ -78,6 +78,16 @@ posture; the value is a benign integer (defaults scan verified green), the
 key stays overridable in every layer, and SC-001 fidelity moved to explicit
 `64`.
 
+**Final implementation compliance line (2026-11-19): PASS.** III — default
+`1` shipped in `builtInDefaults` and overridable through the frozen
+layering (unit-tested file → programmatic); IV — byte fidelity at explicit
+`64` proven against the pre-change baseline (`fidelity-diff-evidence.txt`,
+6/6 files identical) and double-run determinism measured (C9); VI — every
+contract rule C1–C10 landed its named test gate across unit/contract/
+integration/e2e/types (full suite green with the default flipped; depth
+configurations 1, 2, and 3 exercised). No stale absent-default wording
+remains in this plan or the sibling artifacts.
+
 ## Project Structure
 
 ### Documentation (this feature)

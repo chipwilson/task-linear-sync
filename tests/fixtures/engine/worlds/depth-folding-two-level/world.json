@@ -1,0 +1,72 @@
+{
+  "$comment": "Schema authority: tests/helpers/engine-harness.ts header docblock. Placeholders only (Principle III).",
+  "name": "depth-folding-two-level",
+  "clock": "2026-01-01T00:00:00.000Z",
+  "teams": [
+    {
+      "key": "TEAM-A",
+      "id": "ac000000-0000-4000-8000-000000000101",
+      "projects": [
+        {
+          "id": "proj-alpha",
+          "name": "Project Alpha"
+        }
+      ],
+      "workflowStates": [
+        {
+          "id": "ac000000-0000-4000-8000-000000000201",
+          "name": "Backlog",
+          "type": "backlog"
+        },
+        {
+          "id": "ac000000-0000-4000-8000-000000000202",
+          "name": "Todo",
+          "type": "todo"
+        },
+        {
+          "id": "ac000000-0000-4000-8000-000000000203",
+          "name": "Done",
+          "type": "completed"
+        }
+      ]
+    }
+  ],
+  "issues": [],
+  "attachments": [],
+  "config": {
+    "teams": {
+      "TEAM-A": {
+        "projects": [
+          "proj-alpha"
+        ],
+        "workflowStates": {
+          "backlog": "Backlog",
+          "todo": "Todo",
+          "done": "Done",
+          "completedTypes": [
+            "completed"
+          ],
+          "ignoredTypes": [
+            "canceled",
+            "duplicate"
+          ]
+        }
+      }
+    },
+    "projectByPath": [
+      {
+        "prefix": "specs/two-level-demo",
+        "teamKey": "TEAM-A",
+        "project": "proj-alpha"
+      }
+    ],
+    "defaultTeamKey": "TEAM-A",
+    "defaultProject": "proj-alpha",
+    "confirmationKey": "ACME",
+    "descriptionNormalizationProfile": "default",
+    "maxTaskIssueDepth": 2
+  },
+  "metadata": {
+    "scenario": "US2 two-level board (020): cap pinned to 2. Task 1.1 (depth 1) carries sub-task 1.1.1 (depth 2) with a fully folded subtree — detail line 1.1.1.1 (depth 3) and its own child 1.1.1.1.1 (depth 4). At cap 2 the two depth-3/4 lines fold into 1.1.1's mirrored description (whole, verbatim, source order); the 1.1.1 create carries parentId = the freshly created 1.1 issue (parent-before-child). Heading task-free world; task 1.2 is a flat control. T028 drives US2 AC1/AC2."
+  }
+}

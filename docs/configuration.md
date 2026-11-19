@@ -7,6 +7,11 @@
 built-in defaults  →  JSON config file  →  programmatic overrides
 ```
 
+Per-key truth — every key's default, bounds, and refusal point — lives in
+[configuration-reference.md](./configuration-reference.md); `maxTaskIssueDepth`, for
+instance, is refused at the parsing entry (`TaskDepthConfigError`), never inside
+`loadConfig()`, which stays merge-only.
+
 - **Objects merge recursively**; keys absent from higher layers are retained.
 - **Arrays and scalars replace wholesale** — never concatenated or element-merged.
 - `null` is a value (it replaces); `undefined` means "absent" (ignored).

@@ -81,6 +81,7 @@ Regex sources are compiled by the parser/renderer lane (004/005).
 | `rollupPattern` | regex source | `\b(?:parent\|roll-?up)\b` | Lines mentioning a parent/roll-up are rollup labels, not tasks. |
 | `flatChecklistMarkers` | string[] | `["- [ ]", "- [x]", "- [X]", "* [ ]", "* [x]", "* [X]"]` | Checkbox markers recognized as task lines (both bullet styles, both case spellings of checked). |
 | `tabWidth` | integer | `2` | Column width used when normalizing indentation. |
+| `maxTaskIssueDepth` | integer | `1` (flat board; set `64` for effectively unlimited) | 1..64, named refusal at the parsing entry (`TaskDepthConfigError` names the key and the offending value; CLI exit 3) — an out-of-range value is never silently clamped or ignored. Default `1`: only depth-1 tasks (top-level checklists and all heading tasks) become issues; deeper checklists fold verbatim into the nearest surviving ancestor's body. `64` restores the pre-020 behavior; validation is shared by every lane at `parseTaskFile`, never inside `loadConfig` (merge-only) — 020 amendment A-020-1. |
 
 ## Routing identities — deliberately **no defaults**
 
@@ -247,6 +248,10 @@ The three tool-owned names re-derive from `toolId` automatically.
 identities, whose empty values fail validation. Absent means "platform-
 computed", "adapter-supplied", or "feature not configured", never a silent
 guess.
+
+`maxTaskIssueDepth` is deliberately **not** in this list: like the 014
+resource bounds, it ships a built-in default (`1`) rather than defaulting to
+absent — see the Grammar table.
 
 ## See also
 

@@ -16,6 +16,16 @@ this preview — lives in [docs/versioning.md](docs/versioning.md).
   defaults are the tool-id-derived names `TASK_LINEAR_SYNC_WEB_TOKEN` /
   `TASK_LINEAR_SYNC_MCP_TOKEN` (`src/config/defaults.ts`), not the shorthand
   previously printed.
+- **Task-depth folding** (`src/parsing/depth.ts`) — the new optional config key
+  `maxTaskIssueDepth` (integer, 1–64) caps how deep in the task tree tasks
+  become their own Linear issues. The built-in default is `1` — a flat board:
+  only depth-1 tasks become issues and deeper nested checklist lines fold
+  verbatim into the nearest surviving ancestor issue's mirrored description,
+  recorded under the new `depth-folded` parsing exclusion reason; an invalid
+  value is refused at the parsing entry with a named diagnostic (CLI exit 3).
+  Behavior change for existing consumers: pre-feature behavior — sub-issues
+  at every depth — is restored by explicitly setting
+  `maxTaskIssueDepth: 64` (effectively unlimited).
 
 ## [0.3.1] - 2026-11-13
 

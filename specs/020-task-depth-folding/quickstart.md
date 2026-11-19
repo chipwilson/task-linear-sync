@@ -48,8 +48,7 @@ for (const cap of [undefined, 1, 2, 3, 64]) {
 ```
 
 Expected (after implementation; `cap=undefined` resolves to the built-in
-default `1`, and the two middle rows are marked *verify by measurement* —
-measured numbers land in `quickstart-verification.md`):
+default `1`; all rows MEASURED — see `quickstart-verification.md`):
 
 ```text
 cap=undefined tasks=2 parented=0 folded=3
@@ -64,10 +63,10 @@ cap=64 tasks=5 parented=3 folded=0
   lines folded (same row as `cap=1`).
 - `cap=1`: identical to `cap=undefined`; zero parented tasks (rule C3 flat-
   board corollary); three lines folded (rule C5).
-- `cap=2` (*verify by measurement*): surviving parented tasks are `T001a`
+- `cap=2` (measured): surviving parented tasks are `T001a`
   and `T100a` (2), only `T001a-i` folds — the previously listed
   `parented=3` was an off-by-one.
-- `cap=3` (*verify by measurement*): nothing folds beyond cap 2 — `T001a-i`
+- `cap=3` (measured): nothing folds beyond cap 2 — `T001a-i`
   is depth 3 and survives at cap 3 (rule C3 folds iff `depth > cap`) — so
   this row equals `cap=64` on this three-level fixture.
 - `cap=64` reproduces today exactly (the practically-unlimited escape
@@ -124,15 +123,19 @@ node <repo>/dist/cli/main.js inventory; echo "exit=$?"
 
 Expected: one diagnostic naming `maxTaskIssueDepth` and the value `0`
 (reason `below-minimum`), `exit=3` (configuration), zero state written into
-the repo. Repeat with `65`, `1.5`, and `"1"` — same refusal family; with `1`
-or `2`, `inventory` succeeds and reports the folded task counts.
+the repo. Repeat with `65`, `1.5`, and `"1"` — same refusal family; with `1`,
+`2`, `3`, or `64`, `inventory` succeeds and reports the folded task counts.
 
 ## Scenario 5 — Determinism (C9 / I6)
 
+Measured correction (T046): the frozen command surface has no
+`inventory --json` (`--json` is a usage error there; `check` is the JSON plan
+lane), so determinism runs on the plain `inventory` output:
+
 ```bash
-node <repo>/dist/cli/main.js inventory --json > run1.json
-node <repo>/dist/cli/main.js inventory --json > run2.json
-cmp run1.json run2.json && echo byte-identical
+node <repo>/dist/cli/main.js inventory > run1.out
+node <repo>/dist/cli/main.js inventory > run2.out
+cmp run1.out run2.out && echo byte-identical
 ```
 
 Expected: `byte-identical`, exclusions (including `depth-folded` records)

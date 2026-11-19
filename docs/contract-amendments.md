@@ -198,3 +198,67 @@ together in the same change, and the gate that pins it.
   `*` before this feature, so a custom entry that carried a literal `*` in a segment now
   needs that segment spelled without the wildcard to keep matching literally
 
+## Feature 020 amendments — task-depth folding
+
+The `maxTaskIssueDepth` cap (records A-020-1/A-020-2/A-020-3, authored in
+`specs/020-task-depth-folding/contracts/configuration-amendment.md`) touches four surfaces
+at once. Each entry is recorded together with the module + contract-doc + snapshot moves it
+licenses, and all four carry the same honest posture: the shipped built-in default `1` — a
+flat board — is a **behavior change for existing consumers**, and `maxTaskIssueDepth: 64`
+restores the pre-020, effectively unlimited behavior byte-for-byte (0.x breaking-ish
+lineage; no schema break, and the behavior change is called out in the CHANGELOG).
+
+- 2026-11-18 · config (002 contract) · `ResolvedConfig.maxTaskIssueDepth` (Grammar group)
+  + `builtInDefaults.maxTaskIssueDepth` · absent → optional key, integers `1..64`, built-in
+  default `1` · A-020-1 (feature 020): the intelligent default is a **flat board** — only
+  depth-1 tasks become issues (Maintainer Ruling 2026-11-18); the added default is a benign
+  integer, so the distributed-defaults scan stays green; layering, merge semantics, and the
+  three config-file failure categories are unchanged, and `loadConfig` stays merge-only —
+  the range guard lives at the parsing entry (see the `depth.ts` entry) · artifacts: the
+  `configuration.md` dated amendment (2026-11-18 block), `src/config/{schema,defaults}.ts`,
+  the regenerated `tests/contract/snapshots/frozen-surface.json`
+  (`UPDATE_FROZEN_SNAPSHOT=1`) · gate: `tests/contract/frozen-surface.test.ts` and
+  `tests/contract/defaults-scan.test.ts` (verify green) plus the config-schema
+  optional-key/merge pins · migration: **behavior change** — consumers relying on nested
+  sub-issues set `maxTaskIssueDepth: 64`, the escape hatch pinned to reproduce pre-feature
+  output byte-for-byte (C1 fidelity gate); every other consumer opts into the flat-board
+  default
+
+- 2026-11-18 · parsing (004 contract) · `ExclusionRecord.reason` · `"summary-section" |
+  "rollup"` → `"summary-section" | "rollup" | "depth-folded"` · A-020-2 (feature 020): a
+  task over the cap becomes recognized-but-excluded content and each folded line earns
+  exactly one `depth-folded` exclusion, ascending with the grammar exclusions, which were
+  decided upstream and win over folding (C3/C5) · artifacts: `src/parsing/extract.ts` and
+  `src/parsing/taskfile.ts`, the amended parsing-surface snapshot
+  (`UPDATE_PARSING_SNAPSHOT=1`) · gate: `tests/contract/parsing-surface.test.ts` and the
+  fold-exclusion unit matrix · migration: additive union member — existing reason values
+  keep their meaning; consumers switching exhaustively over `reason` must handle the new
+  member, and consumers who want no folding at all set `maxTaskIssueDepth: 64`
+
+- 2026-11-18 · parsing (004 contract) · new module `src/parsing/depth.ts` + barrel export
+  `TaskDepthConfigError` from `task-linear-sync/parsing` · absent → `MIN_TASK_DEPTH` (`1`)
+  / `MAX_TASK_DEPTH` (`64`) / `DEFAULT_TASK_DEPTH_CAP` (`1`), `TaskDepthFailureReason`,
+  `TaskDepthConfigError`, `validateTaskDepthCap`, `computeDepthByLine`, `DepthFoldResult`,
+  `foldDraftsOverCap`; the barrel re-exports only the error class · A-020-1/A-020-2
+  (feature 020): pure depth/fold/validation module; the cap is validated at the
+  `parseTaskFile` entry BEFORE any parsing work so every lane refuses identically
+  (C2/C3/C6) — non-integer, `NaN`/`Infinity`, or non-number values refuse as
+  `not-an-integer`, `< 1` as `below-minimum`, `> 64` as `above-maximum`, and the diagnostic
+  names only the key and the offending value · artifacts: `src/parsing/depth.ts`,
+  `src/parsing/taskfile.ts`, `src/parsing/index.ts`,
+  `specs/020-task-depth-folding/contracts/depth-folding.md`, the regenerated
+  parsing-surface snapshot (`UPDATE_PARSING_SNAPSHOT=1`) · migration: purely additive
+  exports, no existing name changes; existing consumers gain no new refusal path unless
+  they set an invalid cap, and nested-issue consumers restore pre-020 behavior with `64`
+
+- 2026-11-18 · cli (009 contract) · `exitCodeForError` exit-3 name list ·
+  `ConfigFileError` / `MissingIdentityError` / `StatePlacementError` /
+  `TrackerConfigError` → those plus `TaskDepthConfigError` mapped to
+  `CONFIGURATION_ERROR` (3) · C6 (feature 020): an invalid `maxTaskIssueDepth` is a
+  configuration failure, recognized by the stable error `name` like every other class on
+  the list · artifacts: `src/cli/exit-codes.ts`; the same-change documentation duty
+  extends the `docs/cli.md` exit-code table row 3 with the new mapped error name · gate:
+  the 020 e2e CLI pin (invalid cap refuses with exit 3 before any parse output) ·
+  migration: the new name fires only for the key this feature adds — consumers setting
+  `maxTaskIssueDepth: 64` keep pre-020 behavior and never reach the new exit-3 path
+

@@ -1,0 +1,71 @@
+{
+  "$comment": "Schema authority: tests/helpers/engine-harness.ts header docblock (this world is also driven through writeDriver). Placeholders only (Principle III). Deliberately NO maxTaskIssueDepth key: the default cap 1 applies (folded board), and the e2e scenarios inject per-run cap values through the scratch repository's task-linear-sync.json config FILE layer (quickstart Scenario 4) — invalid values pass the typed config merge structurally and refuse at the parsing entry.",
+  "name": "depth-folding",
+  "clock": "2026-01-01T00:00:00.000Z",
+  "teams": [
+    {
+      "key": "TEAM-A",
+      "id": "ac000000-0000-4000-8000-000000000101",
+      "projects": [
+        {
+          "id": "proj-alpha",
+          "name": "Project Alpha"
+        }
+      ],
+      "workflowStates": [
+        {
+          "id": "ac000000-0000-4000-8000-000000000201",
+          "name": "Backlog",
+          "type": "backlog"
+        },
+        {
+          "id": "ac000000-0000-4000-8000-000000000202",
+          "name": "Todo",
+          "type": "todo"
+        },
+        {
+          "id": "ac000000-0000-4000-8000-000000000203",
+          "name": "Done",
+          "type": "completed"
+        }
+      ]
+    }
+  ],
+  "issues": [],
+  "attachments": [],
+  "config": {
+    "teams": {
+      "TEAM-A": {
+        "projects": [
+          "proj-alpha"
+        ],
+        "workflowStates": {
+          "backlog": "Backlog",
+          "todo": "Todo",
+          "done": "Done",
+          "completedTypes": [
+            "completed"
+          ],
+          "ignoredTypes": [
+            "canceled",
+            "duplicate"
+          ]
+        }
+      }
+    },
+    "projectByPath": [
+      {
+        "prefix": "specs/demo",
+        "teamKey": "TEAM-A",
+        "project": "proj-alpha"
+      }
+    ],
+    "defaultTeamKey": "TEAM-A",
+    "defaultProject": "proj-alpha",
+    "confirmationKey": "ACME",
+    "descriptionNormalizationProfile": "default"
+  },
+  "metadata": {
+    "scenario": "020 US3 CLI lane: a four-level nested task file over the real dist/cli/main.js (scratch repo + config-file cap values: 0/-1/1.5/65/\"1\" refuse exit 3 with one named diagnostic and zero writes; 1/2/3/64 succeed and the per-cap task totals 1/2/3/4 expose the fold) plus byte-deterministic double runs (C6/C9, SC-004)."
+  }
+}

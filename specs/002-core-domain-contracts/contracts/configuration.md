@@ -96,6 +96,37 @@ Semantics are normative on the owning surfaces per
 cache LRU bound and admission caps (history), session-cookie `Secure` attribute, and the
 MCP plan-reference store TTL/capacity lifecycle.
 
+## Amendment 2026-11-18 — maxTaskIssueDepth (feature 020)
+
+One additive optional key in the parsing/sync-semantics group plus one built-in default.
+Interface field and default only: existing values untouched; explicit `64` keeps the
+pre-amendment observable behavior byte-for-byte.
+
+```ts
+export interface ResolvedConfig {
+  // …existing fields unchanged…
+  readonly maxTaskIssueDepth?: number; // int 1..64, built-in default 1 (flat board)
+}
+```
+
+`ConfigOverrides` carries the key automatically through its `DeepPartial` twin. Valid
+values are integers `1..64`; the built-in default is `1` — a **flat board**, only
+depth-1 tasks become issues — carried in `builtInDefaults` (a benign integer, so the
+distributed-defaults scan stays green), and an absent value resolves to that default.
+Explicit `64` restores the pre-amendment, effectively unlimited behavior byte-for-byte
+(the escape hatch). The range guard is lane-entry validation at the parsing entry, every
+surface, BEFORE any parsing work: a present value that is not an integer or falls outside
+`1..64` raises a typed named failure identifying `maxTaskIssueDepth` and the offending
+value (reason `not-an-integer`, `below-minimum`, or `above-maximum`); nothing is parsed,
+mutated, or written. `loadConfig` stays merge-only; layering, merge semantics, and the
+three config-file failure categories are unchanged. Semantics are normative on the owning
+parsing surface per
+[`specs/020-task-depth-folding/contracts/depth-folding.md`](../020-task-depth-folding/contracts/depth-folding.md)
+(depth/fold rule, `depth-folded` exclusion reason, refusal posture). The frozen-surface
+and parsing-surface snapshots are amended deliberately (the new key and its default, the
+extended exclusion-reason union, the new error export). Credential posture unchanged: the
+key is not a credential and names none.
+
 ## Test obligations (mapped in quickstart)
 
 - Precedence matrix fixtures (defaults-only / file-only / all-three, overlapping and

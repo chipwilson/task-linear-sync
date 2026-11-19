@@ -1,0 +1,72 @@
+{
+  "$comment": "Schema authority: tests/helpers/engine-harness.ts header docblock. Placeholders only (Principle III).",
+  "name": "depth-folding-flat",
+  "clock": "2026-01-01T00:00:00.000Z",
+  "teams": [
+    {
+      "key": "TEAM-A",
+      "id": "ac000000-0000-4000-8000-000000000101",
+      "projects": [
+        {
+          "id": "proj-alpha",
+          "name": "Project Alpha"
+        }
+      ],
+      "workflowStates": [
+        {
+          "id": "ac000000-0000-4000-8000-000000000201",
+          "name": "Backlog",
+          "type": "backlog"
+        },
+        {
+          "id": "ac000000-0000-4000-8000-000000000202",
+          "name": "Todo",
+          "type": "todo"
+        },
+        {
+          "id": "ac000000-0000-4000-8000-000000000203",
+          "name": "Done",
+          "type": "completed"
+        }
+      ]
+    }
+  ],
+  "issues": [],
+  "attachments": [],
+  "config": {
+    "teams": {
+      "TEAM-A": {
+        "projects": [
+          "proj-alpha"
+        ],
+        "workflowStates": {
+          "backlog": "Backlog",
+          "todo": "Todo",
+          "done": "Done",
+          "completedTypes": [
+            "completed"
+          ],
+          "ignoredTypes": [
+            "canceled",
+            "duplicate"
+          ]
+        }
+      }
+    },
+    "projectByPath": [
+      {
+        "prefix": "specs/flat-demo",
+        "teamKey": "TEAM-A",
+        "project": "proj-alpha"
+      }
+    ],
+    "defaultTeamKey": "TEAM-A",
+    "defaultProject": "proj-alpha",
+    "confirmationKey": "ACME",
+    "descriptionNormalizationProfile": "default",
+    "maxTaskIssueDepth": 1
+  },
+  "metadata": {
+    "scenario": "US1 flat board (020): cap pinned to 1 (explicitly, though it equals the built-in default). Task 1.1 carries a depth-2 and a depth-3 nested checklist; heading task 9.0 has a checklist orphaned directly under it (depth 2). All three nested lines fold into their nearest surviving ancestor's mirrored description — the plan has zero parented entries and every create carries no parentId."
+  }
+}

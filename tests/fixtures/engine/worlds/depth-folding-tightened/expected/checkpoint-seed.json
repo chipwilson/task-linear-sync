@@ -1,0 +1,20 @@
+{
+  "dd837e71-fa46-5c11-8bff-31fb37eb5a8e": {
+    "taskUuid": "dd837e71-fa46-5c11-8bff-31fb37eb5a8e",
+    "issueId": "ac000000-0000-4000-8000-000000000307",
+    "checked": false,
+    "title": "Parent rehearsal root",
+    "issueUpdatedAt": "2026-01-01T00:00:01.000Z",
+    "issueStateType": "todo",
+    "descriptionContentHash": "b00314773774b624a7c20f6362a5663f491fb6423449c0d0baacdca76de290dc"
+  },
+  "70c4cdec-4df4-5dbe-8cfb-40df2949555e": {
+    "taskUuid": "70c4cdec-4df4-5dbe-8cfb-40df2949555e",
+    "issueId": "ac000000-0000-4000-8000-000000000303",
+    "checked": false,
+    "title": "Child task previously synced",
+    "issueUpdatedAt": "2026-01-01T00:00:01.000Z",
+    "issueStateType": "todo",
+    "descriptionContentHash": "86e2b254d52db82423dd58cf0ab16ffe0c26c19650a1681bc966e67d718be3bf"
+  }
+}
