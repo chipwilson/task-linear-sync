@@ -105,7 +105,8 @@
     "defaultTeamKey": "TEAM-A",
     "defaultProject": "proj-alpha",
     "confirmationKey": "ACME",
-    "descriptionNormalizationProfile": "default"
+    "descriptionNormalizationProfile": "default",
+    "maxTaskIssueDepth": 64
   },
   "metadata": {
     "scenario": "Same task tree as rollback-full; harness armInterrupt crashes the rollback at an exact port-call index, journal resume completes it (quickstart 2.4, FR-014)."

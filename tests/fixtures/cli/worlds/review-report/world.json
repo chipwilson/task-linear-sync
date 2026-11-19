@@ -112,7 +112,8 @@
     "defaultTeamKey": "TEAM-A",
     "defaultProject": "proj-alpha",
     "confirmationKey": "ACME",
-    "descriptionNormalizationProfile": "default"
+    "descriptionNormalizationProfile": "default",
+    "maxTaskIssueDepth": 64
   },
   "metadata": {
     "scenario": "009 review-report world: multi-project/multi-milestone groups, unmapped parent mapped by descendant (ACME-90) vs mapped-sibling-only parent (ACME-92), one unresolved-conflict task, SC-001 sentinels, SECRET-shaped project name for output screening."

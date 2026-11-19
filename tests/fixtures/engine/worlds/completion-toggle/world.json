@@ -122,7 +122,8 @@
     "defaultTeamKey": "TEAM-A",
     "defaultProject": "proj-alpha",
     "confirmationKey": "ACME",
-    "descriptionNormalizationProfile": "default"
+    "descriptionNormalizationProfile": "default",
+    "maxTaskIssueDepth": 64
   },
   "metadata": {
     "scenario": "Newly checked ⇒ Done; newly unchecked ⇒ Backlog; descriptions identical to baseline ⇒ no description conflict (FR-006, US1 AC5)."

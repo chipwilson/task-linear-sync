@@ -103,7 +103,8 @@
     "defaultTeamKey": "TEAM-A",
     "defaultProject": "proj-alpha",
     "confirmationKey": "ACME",
-    "descriptionNormalizationProfile": "default"
+    "descriptionNormalizationProfile": "default",
+    "maxTaskIssueDepth": 64
   },
   "metadata": {
     "scenario": "T039 security posture: both sections moved (spec-changed, overwrite-linear). Task 1.1's added paragraph carries a fabricated high-entropy api_key= sentinel (blocking secret-token ⇒ that op alone fails unsent); task 1.2's added paragraph carries an email (redacted) plus a review-term (annotated) so the clean op still lands screened."

@@ -21,6 +21,7 @@ import { scanConflictBlocks, frozenLineSet, blocksIntersecting } from "./conflic
 import type { ConflictBlock } from "./conflict.js";
 import { extractTasks } from "./extract.js";
 import type { ExclusionRecord } from "./extract.js";
+import { validateTaskDepthCap, foldDraftsOverCap } from "./depth.js";
 import { deriveExtents } from "./extent.js";
 import { collectDuplicateWarnings } from "./warnings.js";
 import type { ParseWarning } from "./warnings.js";
@@ -51,10 +52,31 @@ export function parseTaskFile(
   adapter: TaskFileAdapter,
   config: ResolvedConfig,
 ): ParseResult {
+  // 020 C6: an invalid cap refuses BEFORE any parsing work — every lane shares this
+  // entry, so refusal is mutation-free everywhere (CLI maps the name to exit 3).
+  const depthCap = validateTaskDepthCap(config.maxTaskIssueDepth);
   const lines = splitLines(content, config.tabWidth);
   const conflictBlocks = scanConflictBlocks(lines);
   const frozen = frozenLineSet(conflictBlocks);
-  const { drafts, exclusions } = extractTasks(lines, frozen, adapter, config);
+  const { drafts: allDrafts, exclusions: grammarExclusions } = extractTasks(lines, frozen, adapter, config);
+
+  // 020 C3/C5: prune over-cap drafts BEFORE uuid/index/extent building. A folded draft
+  // is no longer a task: its line stays verbatim body content of the nearest surviving
+  // ancestor (spans are cap-invariant — I3), and it earns exactly one ascending
+  // `depth-folded` exclusion. Grammar exclusions (fence/conflict/summary/rollup) were
+  // decided upstream and win over folding (precedence, C5).
+  const { surviving: drafts, folded } = foldDraftsOverCap(allDrafts, depthCap);
+  const exclusions: ExclusionRecord[] = [...grammarExclusions];
+  for (const draft of folded) {
+    exclusions.push({
+      lineNumber: draft.lineNumber,
+      kind: "checklist", // headings are depth 1 — only checklist drafts can fold
+      reason: "depth-folded",
+      text: lines[draft.lineNumber - 1]?.text ?? "",
+    });
+  }
+  exclusions.sort((a, b) => a.lineNumber - b.lineNumber); // deterministic ascending order
+
   const extents = deriveExtents(drafts, lines, frozen);
   const featureName = adapter.featureName(filePath);
 
@@ -93,7 +115,12 @@ export function parseTaskFile(
       title: draft.title,
       ...(draft.checked !== undefined ? { checked: draft.checked } : {}), // present iff checklist
       ...(parentIndex !== undefined ? { parentUuid: uuids[parentIndex] } : {}),
-      childUuids: draft.children.map((child) => uuids[indexByLine.get(child.lineNumber) ?? 0]),
+      // Surviving drafts' child lists may still reference folded drafts (020): those are
+      // not tasks, so they receive no uuid and appear in no link map (C3/C8).
+      childUuids: draft.children.flatMap((child) => {
+        const childIndex = indexByLine.get(child.lineNumber);
+        return childIndex === undefined ? [] : [uuids[childIndex]];
+      }),
       ...(draft.issueRef !== undefined ? { issueRef: draft.issueRef } : {}),
       taskBody,
       unresolvedConflict: blocksIntersecting(taskBody.startLine, taskBody.endLine, conflictBlocks),

@@ -103,7 +103,8 @@
     "defaultTeamKey": "TEAM-A",
     "defaultProject": "proj-alpha",
     "confirmationKey": "ACME",
-    "descriptionNormalizationProfile": "default"
+    "descriptionNormalizationProfile": "default",
+    "maxTaskIssueDepth": 64
   },
   "metadata": {
     "scenario": "No checkpoints ⇒ bootstrap; identical-after-normalization match, meaningful-diff match, and an unmatched create candidate."

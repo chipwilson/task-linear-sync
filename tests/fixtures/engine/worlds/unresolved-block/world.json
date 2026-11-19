@@ -122,7 +122,8 @@
     "defaultTeamKey": "TEAM-A",
     "defaultProject": "proj-alpha",
     "confirmationKey": "ACME",
-    "descriptionNormalizationProfile": "default"
+    "descriptionNormalizationProfile": "default",
+    "maxTaskIssueDepth": 64
   },
   "metadata": {
     "scenario": "Section already holds a git-style conflict block ⇒ frozen: skip-unresolved, byte-stable, checkpoint untouched (FR-007)."

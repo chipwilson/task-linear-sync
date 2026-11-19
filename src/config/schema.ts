@@ -107,6 +107,10 @@ export interface ResolvedConfig {
   readonly rollupPattern: string;
   readonly flatChecklistMarkers: readonly string[];
   readonly tabWidth: number;
+  /** Task-depth fold cap (020 amendment A-020-1): int 1..64; built-in default 1 — flat
+   * board; set 64 for effectively unlimited (pre-020 behavior). Validated at the parsing
+   * entry by every lane, never inside `loadConfig` (merge-only). */
+  readonly maxTaskIssueDepth?: number;
 
   // ── Routing (CONSUMER-REQUIRED — no defaults exist; validation-required, FR-007) ──
   readonly teams: Readonly<Record<string, TeamIdentity>>;

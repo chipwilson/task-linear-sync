@@ -92,7 +92,8 @@
     "defaultTeamKey": "TEAM-A",
     "defaultProject": "proj-alpha",
     "confirmationKey": "ACME",
-    "descriptionNormalizationProfile": "default"
+    "descriptionNormalizationProfile": "default",
+    "maxTaskIssueDepth": 64
   },
   "metadata": {
     "scenario": "Create attempt for 2.1 throws (harness createFailures) and findIssuesByAttachmentUrl('https://sync.example.invalid/task-linear-sync/191a3e7a-54fb-5af1-8b16-04195dee8ec5') finds ZERO seeded matches ⇒ intent indeterminate; child 2.1.1 creation aborts (FR-012); healthy 2.2 still lands its update."

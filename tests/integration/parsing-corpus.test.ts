@@ -28,7 +28,7 @@ import {
   makeTestConfig,
 } from "../helpers/parsing-fixtures.js";
 
-const cfg = makeTestConfig();
+const cfg = makeTestConfig({ maxTaskIssueDepth: 64 }); // 020: pin pre-feature cap — the shared fixture has nested checklist lines
 
 /** The shared expectation: the same tasks.md template is parsed by every framework. */
 interface ExpectedTask {

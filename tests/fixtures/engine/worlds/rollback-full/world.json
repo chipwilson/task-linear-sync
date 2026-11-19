@@ -105,7 +105,8 @@
     "defaultTeamKey": "TEAM-A",
     "defaultProject": "proj-alpha",
     "confirmationKey": "ACME",
-    "descriptionNormalizationProfile": "default"
+    "descriptionNormalizationProfile": "default",
+    "maxTaskIssueDepth": 64
   },
   "metadata": {
     "scenario": "Sync-mode apply (root spec-changed overwrite-linear + nested creates Gamma-then-Beta per FR-011) then total-restoration rollback (SC-003, quickstart 2.1/2.3/2.6)."

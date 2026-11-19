@@ -7,6 +7,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 
 import { ConfigFileError, MissingIdentityError } from "task-linear-sync/config";
+import { TaskDepthConfigError } from "task-linear-sync/parsing";
 import { StatePlacementError, ReportScreeningError } from "task-linear-sync/state";
 import { EngineError, EngineFailError, IntegrityError, JournalError } from "task-linear-sync/engine";
 import type { GateFailure, GateFailureCode } from "task-linear-sync/gates";
@@ -31,6 +32,8 @@ test("configuration errors map to 3", () => {
   assert.equal(exitCodeForError(new ConfigFileError("invalid-json", "/repo/task-linear-sync.json")), 3);
   assert.equal(exitCodeForError(new MissingIdentityError(["toolId"])), 3);
   assert.equal(exitCodeForError(new StatePlacementError("inside the repo")), 3);
+  // 020 C6: an invalid maxTaskIssueDepth is a configuration failure (exit 3).
+  assert.equal(exitCodeForError(new TaskDepthConfigError(0, "below-minimum")), 3);
   // Credential-preflight diagnostics surface as the tracker's named config error.
   const preflight = Object.assign(new Error("credential env var TASK_LINEAR_SYNC_API_KEY is not set"), {
     name: "TrackerConfigError",
@@ -93,6 +96,7 @@ test("the mapping is a pure function — same error value ⇒ same code, and onl
     new ConfigFileError("missing", "p"),
     new MissingIdentityError(["a"]),
     new StatePlacementError("s"),
+    new TaskDepthConfigError(65, "above-maximum"),
     new GateRefusalError([refusal("LOCK_HELD")]),
     new GateRefusalError([refusal("MANIFEST_EXPIRED")]),
     new EngineError("engine"),
