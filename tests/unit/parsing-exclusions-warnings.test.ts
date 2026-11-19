@@ -14,7 +14,9 @@ import { parseTaskFile } from "task-linear-sync/parsing";
 
 import { genericFixtureAdapter, readFixture, makeTestConfig } from "../helpers/parsing-fixtures.js";
 
-const cfg = makeTestConfig();
+// 020: pre-feature nesting fidelity (explicit 64 escape hatch) — the task-line tables
+// include heading-orphan checklists (depth 2), which the default cap of 1 would fold.
+const cfg = makeTestConfig({ maxTaskIssueDepth: 64 });
 const PATH = "specs/auth/tasks.md";
 
 function parse(fixture: string) {

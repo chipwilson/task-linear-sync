@@ -1,0 +1,114 @@
+{
+  "$comment": "Schema authority: tests/helpers/engine-harness.ts header docblock. Placeholders only (Principle III).",
+  "name": "depth-folding-tightened",
+  "clock": "2026-01-01T00:00:00.000Z",
+  "teams": [
+    {
+      "key": "TEAM-A",
+      "id": "ac000000-0000-4000-8000-000000000101",
+      "projects": [
+        {
+          "id": "proj-alpha",
+          "name": "Project Alpha"
+        }
+      ],
+      "workflowStates": [
+        {
+          "id": "ac000000-0000-4000-8000-000000000201",
+          "name": "Backlog",
+          "type": "backlog"
+        },
+        {
+          "id": "ac000000-0000-4000-8000-000000000202",
+          "name": "Todo",
+          "type": "todo"
+        },
+        {
+          "id": "ac000000-0000-4000-8000-000000000203",
+          "name": "Done",
+          "type": "completed"
+        }
+      ]
+    }
+  ],
+  "issues": [
+    {
+      "id": "ac000000-0000-4000-8000-000000000307",
+      "key": "ACME-7",
+      "teamKey": "TEAM-A",
+      "projectId": "proj-alpha",
+      "title": "Parent rehearsal root",
+      "description": "  Parent root body — mirrored on the tracker copy, unchanged since the last sync.\n\n  - [ ] 1.1.1: Child task previously synced\n    Child body paragraph — folds into the parent body when the cap tightens to 1.\n",
+      "stateType": "todo",
+      "updatedAt": "2026-01-01T00:00:01.000Z"
+    },
+    {
+      "id": "ac000000-0000-4000-8000-000000000303",
+      "key": "ACME-3",
+      "teamKey": "TEAM-A",
+      "projectId": "proj-alpha",
+      "title": "Child task previously synced",
+      "description": "    Child body paragraph — folds into the parent body when the cap tightens to 1.\n",
+      "stateType": "todo",
+      "updatedAt": "2026-01-01T00:00:01.000Z"
+    }
+  ],
+  "attachments": [
+    {
+      "issueId": "ac000000-0000-4000-8000-000000000307",
+      "id": "att-1",
+      "url": "https://sync.example.invalid/task-linear-sync/dd837e71-fa46-5c11-8bff-31fb37eb5a8e",
+      "title": "task-linear-sync sync state",
+      "metadata": {
+        "__task-linear-sync": "{\"cursors\":{\"lastSyncAt\":\"2026-01-01T00:00:01.000Z\"},\"descriptionContentHash\":\"b00314773774b624a7c20f6362a5663f491fb6423449c0d0baacdca76de290dc\",\"frameworkMetadata\":{\"featureName\":\"sync-demo\",\"filePath\":\"specs/sync-demo/tasks.md\",\"frameworkId\":\"generic\",\"localTaskId\":\"1.1\"},\"history\":[{\"at\":\"2026-01-01T00:00:01.000Z\",\"description\":\"Placeholder match event seeded by the fixture.\",\"kind\":\"matched\"}],\"taskUuid\":\"dd837e71-fa46-5c11-8bff-31fb37eb5a8e\"}",
+        "taskUuid": "dd837e71-fa46-5c11-8bff-31fb37eb5a8e"
+      }
+    },
+    {
+      "issueId": "ac000000-0000-4000-8000-000000000303",
+      "id": "att-2",
+      "url": "https://sync.example.invalid/task-linear-sync/70c4cdec-4df4-5dbe-8cfb-40df2949555e",
+      "title": "task-linear-sync sync state",
+      "metadata": {
+        "__task-linear-sync": "{\"cursors\":{\"lastSyncAt\":\"2026-01-01T00:00:01.000Z\"},\"descriptionContentHash\":\"86e2b254d52db82423dd58cf0ab16ffe0c26c19650a1681bc966e67d718be3bf\",\"frameworkMetadata\":{\"featureName\":\"sync-demo\",\"filePath\":\"specs/sync-demo/tasks.md\",\"frameworkId\":\"generic\",\"localTaskId\":\"1.1.1\"},\"history\":[{\"at\":\"2026-01-01T00:00:01.000Z\",\"description\":\"Placeholder match event seeded by the fixture.\",\"kind\":\"matched\"}],\"taskUuid\":\"70c4cdec-4df4-5dbe-8cfb-40df2949555e\"}",
+        "taskUuid": "70c4cdec-4df4-5dbe-8cfb-40df2949555e"
+      }
+    }
+  ],
+  "config": {
+    "teams": {
+      "TEAM-A": {
+        "projects": [
+          "proj-alpha"
+        ],
+        "workflowStates": {
+          "backlog": "Backlog",
+          "todo": "Todo",
+          "done": "Done",
+          "completedTypes": [
+            "completed"
+          ],
+          "ignoredTypes": [
+            "canceled",
+            "duplicate"
+          ]
+        }
+      }
+    },
+    "projectByPath": [
+      {
+        "prefix": "specs/sync-demo",
+        "teamKey": "TEAM-A",
+        "project": "proj-alpha"
+      }
+    ],
+    "defaultTeamKey": "TEAM-A",
+    "defaultProject": "proj-alpha",
+    "confirmationKey": "ACME",
+    "descriptionNormalizationProfile": "default",
+    "maxTaskIssueDepth": 1
+  },
+  "metadata": {
+    "scenario": "Cap tightened to 1 AFTER the depth-2 child (local id 1.1.1, issue ACME-3, page-0 canonical anchor + seeded checkpoint) was synced: the child line folds, the child issue surfaces once under unmapped, zero archive/delete mutations (020 C7/SC-003, US3 AC1/AC2)."
+  }
+}

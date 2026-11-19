@@ -103,7 +103,8 @@
     "defaultTeamKey": "TEAM-A",
     "defaultProject": "proj-alpha",
     "confirmationKey": "ACME",
-    "descriptionNormalizationProfile": "default"
+    "descriptionNormalizationProfile": "default",
+    "maxTaskIssueDepth": 64
   },
   "metadata": {
     "scenario": "Only the task section moved (new paragraph) ⇒ spec-changed ⇒ built-in sync action overwrite-linear."

@@ -44,6 +44,7 @@ test("config precedence: programmatic overrides beat file beats defaults (consti
   assert.equal(c.minimumMatchMargin, 15);
   assert.equal(c.confidenceFloors.medium, 55, "file override of nested default");
   assert.equal(c.confidenceFloors.plausible, 20);
+  assert.equal(c.maxTaskIssueDepth, 64, "file wins over built-in default 1 (020 flat-board posture)");
 });
 
 test("config layering with overlapping and disjoint keys merges per R3/R17.3", () => {

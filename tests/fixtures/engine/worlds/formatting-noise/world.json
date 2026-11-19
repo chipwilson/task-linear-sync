@@ -103,7 +103,8 @@
     "defaultTeamKey": "TEAM-A",
     "defaultProject": "proj-alpha",
     "confirmationKey": "ACME",
-    "descriptionNormalizationProfile": "default"
+    "descriptionNormalizationProfile": "default",
+    "maxTaskIssueDepth": 64
   },
   "metadata": {
     "scenario": "Round-trip formatting drift (R5 noise classes) only — zero conflicts, zero rewrites (SC-002)."

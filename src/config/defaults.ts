@@ -53,6 +53,10 @@ export const builtInDefaults: ResolvedConfig = {
   rollupPattern: "\\b(?:parent|roll-?up)\\b",
   flatChecklistMarkers: ["- [ ]", "- [x]", "- [X]", "* [ ]", "* [x]", "* [X]"],
   tabWidth: 2,
+  // 020 amendment A-020-1 (Maintainer Ruling 2026-11-18): the intelligent default is a
+  // flat board — only depth-1 tasks become issues; set 64 for effectively unlimited
+  // (the pre-020 behavior). Benign integer: the release scan never sees a string leaf.
+  maxTaskIssueDepth: 1,
 
   // ── Routing: CONSUMER-REQUIRED — empty placeholders that always fail validation (FR-007) ──
   teams: {},

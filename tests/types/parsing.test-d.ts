@@ -7,6 +7,7 @@
  */
 import type {
   CleanTitleOptions,
+  ExclusionRecord,
   LineAssignment,
   ParseResult,
   RenderResult,
@@ -14,6 +15,7 @@ import type {
 } from "task-linear-sync/parsing";
 import { parseTaskFile, renderTaskLines, deriveStableUuid } from "task-linear-sync/parsing";
 import type * as parsing from "task-linear-sync/parsing";
+import type { ConfigOverrides } from "task-linear-sync/config";
 import type { ResolvedConfig, Task } from "task-linear-sync";
 
 declare const cfg: ResolvedConfig;
@@ -121,3 +123,35 @@ void badClean;
 
 type DeriveReturnsString = ReturnType<typeof deriveStableUuid> extends string ? true : false;
 const _deriveString: DeriveReturnsString extends true ? true : false = true;
+
+// ── 6. 020 task-depth fold: maxTaskIssueDepth config surface + amended exclusion vocabulary ──
+
+// (a) The resolved key reads as number | undefined (optional grammar-section member, 020
+// A-020-1 — validated at the parsing entry, never inside loadConfig).
+type DepthCapIsOptionalNumber = [ResolvedConfig["maxTaskIssueDepth"]] extends [number | undefined]
+  ? [number | undefined] extends [ResolvedConfig["maxTaskIssueDepth"]]
+    ? true
+    : false
+  : false;
+const _depthCapOptionalNumber: DepthCapIsOptionalNumber extends true ? true : false = true;
+
+// (b) A depth override is assignable to the deep-partial ConfigOverrides twin.
+const depthOverride: ConfigOverrides = { maxTaskIssueDepth: 2 };
+void depthOverride;
+
+// @ts-expect-error — maxTaskIssueDepth is an integer cap (int 1..64), never a string
+const badDepthOverride: ConfigOverrides = { maxTaskIssueDepth: "2" };
+void badDepthOverride;
+
+// (c/d) ExclusionRecord["reason"] is EXACTLY the three-member 020-amended union (A-020-2):
+// assignability both ways — no fourth reason may join, none may vanish.
+type ReasonUnionIsExact = [ExclusionRecord["reason"]] extends ["summary-section" | "rollup" | "depth-folded"]
+  ? ["summary-section" | "rollup" | "depth-folded"] extends [ExclusionRecord["reason"]]
+    ? true
+    : false
+  : false;
+const _reasonUnionExact: ReasonUnionIsExact extends true ? true : false = true;
+
+// @ts-expect-error — "depth-folded" spellings are exact: a near-miss reason is a compile error
+const badReason: ExclusionRecord["reason"] = "depth-fold";
+void badReason;

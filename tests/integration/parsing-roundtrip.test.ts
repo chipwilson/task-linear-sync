@@ -15,7 +15,7 @@ import type { LineAssignment, TaskFileAdapter } from "task-linear-sync/parsing";
 
 import { genericFixtureAdapter, specKittyFixtureAdapter, readFrameworkFixture, makeTestConfig } from "../helpers/parsing-fixtures.js";
 
-const cfg = makeTestConfig();
+const cfg = makeTestConfig({ maxTaskIssueDepth: 64 }); // 020: pin pre-feature cap — generated/framework fixtures contain nested checklist lines
 const VIRTUAL_PATH = "specs/generated/tasks.md";
 
 /** mulberry32 — deterministic seeded PRNG (no wall-clock, no unseeded randomness). */

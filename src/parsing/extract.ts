@@ -18,7 +18,7 @@ import type { ContentLine } from "./content.js";
 export interface ExclusionRecord {
   readonly lineNumber: number;
   readonly kind: "heading" | "checklist";
-  readonly reason: "summary-section" | "rollup";
+  readonly reason: "summary-section" | "rollup" | "depth-folded"; // "depth-folded" — 020 amendment A-020-2
   readonly text: string;
 }
 

@@ -21,6 +21,17 @@
     "stripLeadingLocalId",
     "visualIndentWidth"
   ],
+  "parsing/depth": [
+    "DEFAULT_TASK_DEPTH_CAP",
+    "DepthFoldResult",
+    "MAX_TASK_DEPTH",
+    "MIN_TASK_DEPTH",
+    "TaskDepthConfigError",
+    "TaskDepthFailureReason",
+    "computeDepthByLine",
+    "foldDraftsOverCap",
+    "validateTaskDepthCap"
+  ],
   "parsing/extract": [
     "ExclusionRecord",
     "ExtractOutput",
@@ -50,6 +61,7 @@
     "RenderOptions",
     "RenderResult",
     "RenderedLineChange",
+    "TaskDepthConfigError",
     "TaskFileAdapter",
     "blocksIntersecting",
     "cleanTitle",

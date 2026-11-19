@@ -116,7 +116,8 @@
     "defaultProject": "proj-alpha",
     "confirmationKey": "ACME",
     "descriptionNormalizationProfile": "default",
-    "historyLogMaxEntries": 3
+    "historyLogMaxEntries": 3,
+    "maxTaskIssueDepth": 64
   },
   "metadata": {
     "scenario": "historyLogMaxEntries pinned to 3; page-0 chains seeded AT threshold — the landing events roll deterministic continuation pages (1.1 page 1, 1.2 page 2 after the getAttachmentByUrl walk, quickstart 2.5, FR-010)."

@@ -12,7 +12,9 @@ import type { ParseResult } from "task-linear-sync/parsing";
 
 import { genericFixtureAdapter, readFixture, makeTestConfig } from "../helpers/parsing-fixtures.js";
 
-const cfg = makeTestConfig();
+// 020: pre-feature nesting fidelity (explicit 64 escape hatch) — extents are asserted
+// over nested checklist children, which the default cap of 1 would fold away.
+const cfg = makeTestConfig({ maxTaskIssueDepth: 64 });
 const PATH = "specs/auth/tasks.md";
 
 function extents(fixture: string): Map<number, { startLine: number; endLine: number }> {

@@ -30,6 +30,9 @@ export type { ParseWarning } from "./warnings.js";
 export type { ParseResult } from "./taskfile.js";
 export { parseTaskFile } from "./taskfile.js";
 
+// ── Task-depth fold (020): typed lane-entry refusal for `maxTaskIssueDepth` (C6/C10) ─
+export { TaskDepthConfigError } from "./depth.js";
+
 // ── Title cleaning + in-place line rendering (US2: FR-011…FR-013) ─────────────────
 export type { CleanTitleOptions } from "./title.js";
 export { cleanTitle } from "./title.js";

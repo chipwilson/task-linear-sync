@@ -180,7 +180,10 @@ Task-file names (default `tasks.md`, `TASKS.md`) and base directories are
 configuration keys — widen `taskFilePatterns` / `specsBaseDirectories` in your
 config file instead of forking the tool; per-adapter detection markers,
 sibling-document sets, and feature-name rules are fixed conventions in the
-built-in adapter modules. Full
+built-in adapter modules. How deeply nested checklists become their own issues
+is configurable via `maxTaskIssueDepth` (default `1` — a flat board; `64` for
+effectively unlimited), documented in
+[docs/configuration-reference.md](docs/configuration-reference.md). Full
 adapter contract: [docs/framework-adapters.md](docs/framework-adapters.md).
 
 ### GitHub Spec Kit (`spec-kit`)

@@ -145,7 +145,7 @@ These five route through the `QueueSurface` seam, not the engine:
 | 0 | `SUCCESS` | command completed normally |
 | 1 | `UNEXPECTED_ERROR` | anything unmapped (sanitized one-line stderr) |
 | 2 | `USAGE_ERROR` | parse failures: unknown command/flag, arity, missing `--plan`, apply flags on `plan`/`check` |
-| 3 | `CONFIGURATION_ERROR` | config file errors (category + path), missing workspace identity, state placement, credential-preflight diagnostics (names only, never values) |
+| 3 | `CONFIGURATION_ERROR` | config file errors (category + path), missing workspace identity, state placement, `TaskDepthConfigError` (invalid `maxTaskIssueDepth`: key + value only, 020), credential-preflight diagnostics (names only, never values) |
 | 4 | `GATE_REFUSED` | frozen gate refusals: `APPLY_FLAG_MISSING`, `CONFIRMATION_KEY_MISMATCH`, `LOW_CONFIDENCE_NOT_ACCEPTED`, `PLAN_REFERENCE_UNKNOWN`, `PLAN_REFERENCE_STALE`, `MANIFEST_UNJOURNALED`, `MANIFEST_EXPIRED` (plus queue-surface `refused` outcomes) |
 | 5 | `RUN_ABORTED` | aborted apply, integrity errors, report-screening failures, read-only violations, blocked output lines |
 | 6 | `LOCK_HELD` | another sync holds the lock — reported, never waited on or stolen |

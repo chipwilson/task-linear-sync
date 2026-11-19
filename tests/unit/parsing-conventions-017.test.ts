@@ -13,7 +13,9 @@ import type { ParseResult, TaskFileAdapter } from "task-linear-sync/parsing";
 
 import { genericFixtureAdapter, makeTestConfig } from "../helpers/parsing-fixtures.js";
 
-const cfg = makeTestConfig();
+// 020: pre-feature nesting fidelity (explicit 64 escape hatch) — MISSION asserts the
+// nested T002.1 checklist (depth 2), which the default cap of 1 would fold.
+const cfg = makeTestConfig({ maxTaskIssueDepth: 64 });
 const PATH = "kitty-specs/launch/tasks.md";
 
 // Regex SOURCE literals — exact copies of the data-model.md §2 row defaults.

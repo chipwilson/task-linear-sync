@@ -19,7 +19,10 @@ import { taskStableSeed } from "task-linear-sync/domain";
 import { fixtureRepoPath } from "../helpers/discovery-fixtures.js";
 import { makeTestConfig } from "../helpers/parsing-fixtures.js";
 
-const cfg = makeTestConfig();
+// 020: pre-feature nesting fidelity (explicit 64 escape hatch) — the SC-005 pin loop
+// parses the kiro/generic framework fixtures, which carry a nested checklist line
+// (depth 2) that the default cap of 1 would fold out of the seed recomputation.
+const cfg = makeTestConfig({ maxTaskIssueDepth: 64 });
 
 /** 004 consumer view (adapter-consumption boundary rule 2), as in parsing-spec-superpower.test.ts. */
 function consumerView(id: "spec-superpower" | "kiro" | "generic"): TaskFileAdapter {

@@ -16,6 +16,8 @@ import { join } from "node:path";
 import { test } from "node:test";
 import { fileURLToPath } from "node:url";
 
+import type { ConfigOverrides } from "task-linear-sync/config";
+
 import {
   CI_MAIN_PATH,
   copyFixtureReport,
@@ -37,13 +39,18 @@ interface Harness {
   readonly out: string;
 }
 
-function makeHarness(worldName: string): Harness {
+function makeHarness(worldName: string, config?: ConfigOverrides): Harness {
   const dir = mkdtempSync(join(tmpdir(), "tls-013-e2e-"));
   const workspace = join(dir, "ws");
   mkdirSync(workspace, { recursive: true });
   const entry = join(dir, "cli-entry.mjs");
   const census = join(dir, "census.jsonl");
-  writeCliEntry(entry, { entryPath: entry, worldDir: engineWorldDir(worldName), censusPath: census });
+  writeCliEntry(entry, {
+    entryPath: entry,
+    worldDir: engineWorldDir(worldName),
+    censusPath: census,
+    ...(config !== undefined ? { config } : {}),
+  });
   return { dir, workspace, entry, census, out: join(dir, "gh-output") };
 }
 
@@ -225,6 +232,66 @@ test("ci-e2e US2: the fixture world on disk is byte-for-byte untouched by an enf
   );
   assert.equal(result.exitCode, 1); // drift condition at the default threshold
   assert.deepEqual(hashTree(world), before);
+});
+
+/** Flat task-entry totals across a written report artifact's project/milestone groups. */
+function reportTaskTotal(reportJsonPath: string): number {
+  const doc = JSON.parse(readFileSync(reportJsonPath, "utf8")) as { groups?: { entries?: unknown[] }[] };
+  return (doc.groups ?? []).reduce((sum, group) => sum + (group.entries?.length ?? 0), 0);
+}
+
+/** Unique placeholder text living ONLY on `depth-folding-two-level`'s folded depth-3+ lines
+ *  (world tree: epic 1.1 → sub-task 1.1.1 → folded detail 1.1.1.1 + its folded child
+ *  1.1.1.1.1; flat control epic 1.2 — T028 fixture). */
+const FOLDED_SENTINELS = ["Iota detail line", "Kappa detail child"];
+
+/** One green enforcement run: exit 0, exactly one check invocation, all three conditions zero. */
+async function runCheckGreen(h: Harness): Promise<WrapperRunResult> {
+  const result = await runWrapper(
+    ["--workspace", h.workspace, "--cli-entry", h.entry],
+    { env: githubEnv({ eventName: "pull_request", output: h.out }) },
+  );
+  assert.equal(result.exitCode, 0, `stderr: ${result.stderr.slice(0, 400)}`);
+  assert.deepEqual(censusArgv(h), [["check", h.workspace]]);
+  assert.ok(result.outputs !== null);
+  assert.equal(result.outputs["status"], "pass");
+  assert.equal(result.outputs["summary"], PASS_SUMMARY);
+  assert.equal(result.outputs["unmapped-count"], "0");
+  assert.equal(result.outputs["conflict-count"], "0");
+  assert.equal(result.outputs["drift-count"], "0");
+  assert.match(result.outputs["report-json"], /report\.json$/);
+  return result;
+}
+
+test("ci-e2e US2: depth-folded lines never reach the enforcement totals — the same nested world stays green at cap 1 and cap 64 with strictly fewer task entries when folded", async () => {
+  // One world, two caps: writeCliEntry merges opts.config AFTER world.json config
+  // (tests/helpers/ci-harness.ts), so cap 1 folds everything below depth 1 and cap 64 is
+  // the practically-unlimited escape hatch — no second world needed (020 C3/C5).
+  const folded = makeHarness("depth-folding-two-level", { maxTaskIssueDepth: 1 });
+  const unfolded = makeHarness("depth-folding-two-level", { maxTaskIssueDepth: 64 });
+
+  const foldedRun = await runCheckGreen(folded);
+  const unfoldedRun = await runCheckGreen(unfolded);
+
+  // Exclusion totals ride the report's task-entry set (the report schema exposes no
+  // exclusions count — folded lines are absent BY CONSTRUCTION, exactly like every other
+  // exclusion, C8): cap 1 keeps the two depth-1 epics, cap 64 the full five-task tree.
+  const foldedPath = foldedRun.outputs?.["report-json"] ?? "";
+  const unfoldedPath = unfoldedRun.outputs?.["report-json"] ?? "";
+  const foldedTotal = reportTaskTotal(foldedPath);
+  const unfoldedTotal = reportTaskTotal(unfoldedPath);
+  assert.equal(foldedTotal, 2, "cap 1: only the two depth-1 epics reach the report");
+  assert.equal(unfoldedTotal, 5, "cap 64: every task exists (5 in the tree)");
+  assert.ok(foldedTotal < unfoldedTotal, `folded run carries strictly fewer task entries (${foldedTotal} < ${unfoldedTotal})`);
+
+  // Folded lines never appear in findings: no report artifact (either cap) and no wrapper
+  // surface carries their unique placeholder text (SC-003 sentinel posture).
+  const surfaces = [foldedRun.stdout, foldedRun.stderr, foldedRun.outputRaw ?? "", unfoldedRun.stdout, unfoldedRun.stderr, unfoldedRun.outputRaw ?? ""].join("\n");
+  const artifacts = readFileSync(foldedPath, "utf8") + "\n" + readFileSync(unfoldedPath, "utf8");
+  for (const sentinel of FOLDED_SENTINELS) {
+    assert.equal(surfaces.includes(sentinel), false, `wrapper surfaces must not contain: ${sentinel}`);
+    assert.equal(artifacts.includes(sentinel), false, `report artifacts must not contain: ${sentinel}`);
+  }
 });
 
 async function runOnFixture(fixture: string, flags: readonly string[], env: Record<string, string>): Promise<WrapperRunResult> {

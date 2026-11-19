@@ -1,0 +1,21 @@
+SC-001 fidelity evidence — feature 020 (T047) — 2026-11-19T01:38:48+00:00
+Baseline: /tmp/opencode/depth-baseline/reference (pre-change build, HEAD 823d8fb, unlimited default)
+Re-parse: /tmp/opencode/depth-baseline/final-cap64 (final tree, explicit maxTaskIssueDepth: 64)
+Command: diff -r reference final-cap64 (excluding MANIFEST files) -> exit 0
+
+-- baseline manifest --
+broken-line	471
+conflict-untouched	1604
+mixed-crlf	1522
+multi-lf	2253
+no-trailing-newline	888
+quickstart-scenario-1	1946
+-- final cap-64 manifest --
+broken-line	471
+conflict-untouched	1604
+mixed-crlf	1522
+multi-lf	2253
+no-trailing-newline	888
+quickstart-scenario-1	1946
+-- byte identity --
+diff clean: 6/6 files byte-for-byte identical (SC-001 gate: PASS)

@@ -31,6 +31,51 @@ Stable_UUIDs are computed here, never read from files (002 R11): build the seed 
 frozen `taskStableSeed()` and pass it to `deriveStableUuid(seed, toolId)` — a SHA-256
 digest folded into a lowercase RFC 4122 v5-shaped UUID. Same inputs, same UUID, forever.
 
+### Task-depth folding (`maxTaskIssueDepth`, 020)
+
+Depth is computed over the FULL draft tree before any folding, walking exactly the
+frozen indent-stack/orphan parent pointers (no extra grammar, 020 R2): a heading task
+is depth 1; a checklist task is 1 + the depth of its nearest task ancestor — a
+checklist directly beneath a heading task is depth 2. `config.maxTaskIssueDepth`
+(integers 1..64) caps which depths stay tasks: the built-in default `1` is a flat
+board, and `64` is the effectively-unlimited escape hatch (pre-020 behavior). Any
+other value — fractional, `0`, negative, above `64`, non-number — refuses at the
+`parseTaskFile` entry, **before any parsing**, with `TaskDepthConfigError` naming the
+key and the offending value (the CLI maps the name to exit 3); never clamped, never ignored.
+
+A draft at `depth > cap` **folds**. It stops being a task — no Stable_UUID, no
+`parentUuid`/`childUuids`, never assigned or rewritten by the renderer, never
+receiving a `[<Confirmation_Key>-<N>]` token, never reaching matching, plan, report,
+gates, or CI — and its line stays verbatim body content of the nearest surviving
+ancestor; because depth strictly increases down a chain, folding a draft folds its
+whole subtree. Each folded draft is recorded exactly once in `exclusions`, adding one
+reason:
+
+| reason | cause |
+| --- | --- |
+| `depth-folded` | checklist draft over the cap (`kind: "checklist"`, ascending by line) |
+
+The canonical exclusion-record discipline is `contracts/parsing-api.md` rule 4 and
+the canonical shape of this reason is rule C5 of
+`specs/020-task-depth-folding/contracts/depth-folding.md` — neither is re-declared
+here. Precedence is fixed upstream: fenced-interior and conflict-frozen lines never
+draft (so they never appear as `depth-folded`), and `summary-section` and `rollup`
+exclusions win over folding.
+
+**Span invariance (020 I3):** descendant task lines were never extent boundaries, so
+a surviving task's `Task_Body` span is identical across caps — the same content parsed
+at caps 1, 2, and 64 yields byte-equal spans, with the folded subtree sitting in the
+nearest surviving ancestor's body verbatim and in source order.
+
+> **Toggling risk (020 R6, accepted):** set `maxTaskIssueDepth` **before** the first
+> sync of a repository. Tightening it later surfaces previously created child issues
+> once each in the unmapped-issue report and archives nothing (zero archive/delete
+> operations — report-only). Toggling can shift the ordinal of tasks whose identity
+> seeds through the `ordinal:filePath` fallback — prefer local ids where toggling is
+> plausible (they never shift); a task whose line already carries a visible
+> issue-reference token re-matches at high confidence via `issueRefExact` despite the
+> ordinal shift.
+
 ## `renderTaskLines(filePath, content, assignments, config, options?)`
 
 Rewrites ONLY assigned lines. Every rendered line keeps its original bytes from line start

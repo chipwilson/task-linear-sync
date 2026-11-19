@@ -90,6 +90,8 @@ export function exitCodeForError(error: unknown): ExitCode {
   }
   if (
     isErrorNamed(error, "ConfigFileError", "MissingIdentityError", "StatePlacementError") ||
+    // 020 C6: an invalid maxTaskIssueDepth refuses as a configuration failure.
+    isErrorNamed(error, "TaskDepthConfigError") ||
     // Credential-preflight diagnostics surface as the tracker's named config error.
     isErrorNamed(error, "TrackerConfigError")
   ) {

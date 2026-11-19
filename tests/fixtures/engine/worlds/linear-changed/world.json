@@ -122,7 +122,8 @@
     "defaultTeamKey": "TEAM-A",
     "defaultProject": "proj-alpha",
     "confirmationKey": "ACME",
-    "descriptionNormalizationProfile": "default"
+    "descriptionNormalizationProfile": "default",
+    "maxTaskIssueDepth": 64
   },
   "metadata": {
     "scenario": "Only issue descriptions moved (vs seeded checkpoint baselines) ⇒ linear-changed; recency pair covers prefer-newer §3 cells."

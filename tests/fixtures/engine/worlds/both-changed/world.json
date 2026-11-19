@@ -103,7 +103,8 @@
     "defaultTeamKey": "TEAM-A",
     "defaultProject": "proj-alpha",
     "confirmationKey": "ACME",
-    "descriptionNormalizationProfile": "default"
+    "descriptionNormalizationProfile": "default",
+    "maxTaskIssueDepth": 64
   },
   "metadata": {
     "scenario": "Both sides diverged from the checkpoint baseline ⇒ both-changed ⇒ report-only; ACME-1 updatedAt is later (still always degrades)."

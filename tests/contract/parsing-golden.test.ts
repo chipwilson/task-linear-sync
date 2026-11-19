@@ -10,12 +10,12 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 
-import { renderTaskLines, LineRenderError, splitLines } from "task-linear-sync/parsing";
+import { renderTaskLines, LineRenderError, splitLines, parseTaskFile } from "task-linear-sync/parsing";
 import type { LineAssignment } from "task-linear-sync/parsing";
 
-import { readGolden, readGoldenJson, makeTestConfig } from "../helpers/parsing-fixtures.js";
+import { readGolden, readGoldenJson, makeTestConfig, genericFixtureAdapter } from "../helpers/parsing-fixtures.js";
 
-const cfg = makeTestConfig();
+const cfg = makeTestConfig({ maxTaskIssueDepth: 64 }); // 020: pin pre-feature cap (goldens render-only today — posture pin)
 const VIRTUAL_PATH = "specs/auth/tasks.md"; // the path passed to renderTaskLines (recorded verbatim in the error fixture)
 
 const CORPUS = ["multi-lf", "mixed-crlf", "no-trailing-newline", "conflict-untouched"] as const;
@@ -97,4 +97,34 @@ test("render golden corpus — broken fixture aborts with the recorded { filePat
   // Assignments were listed with line 3 first; validate-all-ascending still aborts at line 1.
   assert.equal(assignments[0]?.task.lineNumber, 3);
   assert.equal(expected.lineNumber, 1);
+});
+
+// ── 020 span invariance (contracts/depth-folding.md C4 / invariant I3) ──────────────
+// The same corpus parsed at caps 1 and 64: every task surviving under BOTH caps keeps
+// byte-equal Task_Body extents, and every `depth-folded` line rides verbatim inside a
+// surviving ancestor's body span. Goldens stay byte-unchanged (never regenerated).
+
+test("depth fold span invariance — same corpus at caps 1 and 64 keeps surviving extents byte-equal (C4/I3)", () => {
+  for (const name of [...CORPUS, "broken-line"]) {
+    const content = readGolden(`${name}.in.md`);
+    const wide = parseTaskFile(VIRTUAL_PATH, content, genericFixtureAdapter, makeTestConfig({ maxTaskIssueDepth: 64 }));
+    const flat = parseTaskFile(VIRTUAL_PATH, content, genericFixtureAdapter, makeTestConfig({ maxTaskIssueDepth: 1 }));
+    const wideByLine = new Map(wide.file.tasks.map((t) => [t.lineNumber, t]));
+    const lines = content.split(/\r?\n/u);
+
+    for (const t of flat.file.tasks) {
+      const sameAtWide = wideByLine.get(t.lineNumber);
+      assert.ok(sameAtWide, `${name}: cap-1 survivor ${String(t.lineNumber)} vanished at cap 64`);
+      assert.deepEqual(t.taskBody, sameAtWide.taskBody, `${name}: Task_Body span drifted for surviving line ${String(t.lineNumber)}`);
+    }
+
+    for (const rec of flat.exclusions.filter((e) => e.reason === "depth-folded")) {
+      assert.equal(rec.text, lines[rec.lineNumber - 1], `${name}: folded line ${String(rec.lineNumber)} recorded verbatim`);
+      const carriers = flat.file.tasks.filter((t) => t.taskBody.startLine <= rec.lineNumber && rec.lineNumber <= t.taskBody.endLine);
+      assert.ok(carriers.length > 0, `${name}: folded line ${String(rec.lineNumber)} lost from every surviving ancestor body`);
+    }
+
+    // Flat-board corollary at cap 1: nothing parented survives.
+    assert.equal(flat.file.tasks.filter((t) => t.parentUuid !== undefined).length, 0, `${name}: cap 1 keeps parent links`);
+  }
 });

@@ -97,7 +97,12 @@ test("discovery spec-kitty: US1-AC1/AC2 — printed ids, id-free titles, mission
   ];
   for (const [filePath, featureName, tasks] of expectations) {
     const content = readFileSync(join(KITTY, filePath), "utf8");
-    const { file, exclusions } = parseTaskFile(filePath, content, kitty, builtInDefaults);
+    // 020: this lane passed RAW builtInDefaults to parseTaskFile (no overrides seam) — clone
+    // with the pre-feature cap so the flat-board default (1) can never fold these checklists.
+    const { file, exclusions } = parseTaskFile(filePath, content, kitty, {
+      ...structuredClone(builtInDefaults),
+      maxTaskIssueDepth: 64,
+    });
     assert.equal(file.frameworkId, "spec-kitty");
     assert.equal(file.featureName, featureName, "US1-AC2 — the mission directory is the Feature_Name with zero configuration");
     assert.equal(file.tasks.length, tasks.length, `${filePath} — exactly the checkbox subtasks (US1-AC1)`);
@@ -361,7 +366,7 @@ test("discovery spec-kitty: FR-011 opt-out — removing spec-kitty from framewor
     "kitty-specs/001-demo/tasks.md",
     rollUp,
     builtInAdapters.generic as unknown as TaskFileAdapter,
-    makeTestConfig(),
+    makeTestConfig({ maxTaskIssueDepth: 64 }), // 020: generic orphan-parent rule makes every checkbox depth 2 here — pin pre-feature cap
   );
   const checklist = parsed.file.tasks.filter((t) => t.kind === "checklist");
   assert.ok(checklist.length > 0, "generic still claims the checkboxes");

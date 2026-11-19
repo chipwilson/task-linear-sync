@@ -6,6 +6,7 @@
     "plausible": 20
   },
   "minimumMatchMargin": 12,
+  "maxTaskIssueDepth": 64,
   "teams": {
     "acme": {
       "projects": ["proj-alpha", "proj-beta"],
