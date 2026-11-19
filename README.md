@@ -38,7 +38,10 @@ a file and never echoing it into any output.
 - **Version posture**: the package is in its 0.x line — under the
   [0.x posture](docs/versioning.md) breaking changes may ride minor bumps until
   the documented 1.0.0 condition is met. Surface-level stability guarantees
-  (below) hold throughout.
+  (below) hold throughout. Current release: **v0.4.0** — task-depth folding
+  (`maxTaskIssueDepth`, built-in default `1` — a flat board; set `64` for
+  sub-issues at every depth); every release ships its own section in
+  [CHANGELOG.md](CHANGELOG.md).
 - **Requires** Node 20 or newer wherever the tool runs; nothing else to install.
 
 > **Consumers, start here.** Install the CLI, install its git hooks, and read

@@ -7,6 +7,15 @@ this preview — lives in [docs/versioning.md](docs/versioning.md).
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-11-19
+
+Feature release — **task-depth folding** (feature 020) is the headline and
+carries the release's only behavior change: `maxTaskIssueDepth` ships with
+the built-in default `1` (flat board), so consumers who want sub-issues at
+every depth must now set `64` explicitly (details below). Also lands the
+exhaustive configuration reference and a README token-default correction
+(documentation only).
+
 - **Configuration reference** (`docs/configuration-reference.md`) — a new
   exhaustive catalogue of every configuration parameter (the complete
   `ResolvedConfig`, the additive `queue` group, and the `mcp` launch keys)
