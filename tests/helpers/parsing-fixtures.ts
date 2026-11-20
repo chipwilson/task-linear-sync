@@ -116,12 +116,14 @@ export const openSpecFixtureAdapter = {
  * grammar override that additionally captures full `Task 1.2`-style ids. The
  * override parses numeric-id fixtures identically to the frozen default (proves
  * override precedence without behavior drift for the corpus, research R2).
+ * 021 A-021-2: the word-form branch mirrors the amended default (digit required),
+ * keeping the override a strict superset of the built-in grammar (C8 parity).
  */
 export const kiroFixtureAdapter = {
   id: "kiro" as const,
   featureName: kiroFeatureName,
   headingGrammar:
-    "^\\s{0,3}#{1,6}\\s+(?:(?<id>Task\\s+[0-9]+(?:\\.[0-9]+)*|[0-9]+(?:\\.[0-9]+)*|[A-Za-z][A-Za-z0-9-]*\\d*)[.:]?\\s+)?(?<title>.+)$",
+    "^\\s{0,3}#{1,6}\\s+(?:(?<id>Task\\s+[0-9]+(?:\\.[0-9]+)*|[0-9]+(?:\\.[0-9]+)*|[A-Za-z][A-Za-z0-9-]*\\d[A-Za-z0-9-]*)[.:]?\\s+)?(?<title>.+)$",
 } satisfies TaskFileAdapter;
 /**
  * Strict custom grammar: ONLY `## Task <N.M>:` headings are task headings —
