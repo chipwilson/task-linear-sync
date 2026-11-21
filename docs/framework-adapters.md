@@ -43,6 +43,16 @@ Notes:
   of 017 amendment 2) are regex-source strings consumed downstream (004/005). Only
   `spec-kitty` declares the two new members; the rest inherit the built-in defaults.
   003 never parses task content.
+- **022 amendment A-022-1** adds two optional convention members, both absent-everywhere
+  by default (the other rows' behavior is byte-identical when they are omitted, pinned by
+  the discovery contract snapshots): `taskPathPatterns` — repository-root-relative POSIX
+  globs (`*` one segment, `**` zero-or-more) claiming task files by full path instead of
+  basename, joined into the same candidate union (see
+  [discovery.md](./discovery.md)); and the `Feature_Name` rule kind `segment-under-base` —
+  the first path segment beneath the adapter's **effective** `baseDirectories`, so files
+  anywhere under a mission keep the mission's name and intermediate lane directories are
+  never feature names. Both follow the existing override lanes: config-layer and
+  `overrides.adapters.<id>` deep-merge with arrays replacing wholesale.
 - Feature 021 amended those shared **built-in defaults** themselves — `headingIdGrammar`
   (`src/config/defaults.ts`) and the checklist-id span `LOCAL_ID_SPAN_RE`
   (`src/parsing/content.ts`) — and the five rows that consume them unchanged (`kiro`,

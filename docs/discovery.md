@@ -17,7 +17,11 @@ directory; otherwise `DiscoveryRootError` aborts with `condition` set to `"missi
 whose *name* matches a configured `skipDirectories` entry (defaults `.git`,
 `node_modules`, `dist`, `.next`, `coverage`) is skipped at any depth without descending.
 Only regular files are matched, on their basename, against the enabled adapters' effective
-`taskFilePatterns`. Symlinked files and directories are excluded from results and never
+`taskFilePatterns`, **and** — 022 amendment A-022-1 — against the optional path-scoped
+`taskPathPatterns` glob members of the same adapters, on the full repository-root-relative
+POSIX path; the two matcher families form one candidate union per adapter, so a path-scoped
+claim never widens the basename union the other identities consume. Symlinked files and
+directories are excluded from results and never
 traversed, silently, without aborting the walk — symlink loops therefore terminate.
 On top of `skipDirectories`, every **enabled** adapter's `frameworkSpecificExclusions`
 entries are skipped as well (`spec-kitty` contributes `kitty-specs/*/tasks/`): an entry
@@ -25,6 +29,16 @@ containing a `/` is a repository-root-relative directory prefix, a bare entry is
 name at any depth, and a `*` occupying a whole segment matches exactly one segment — a
 matching directory is skipped with its whole subtree (017 amendment 3). Disabling an adapter
 withdraws its entries, so the files behave exactly as before the feature.
+
+**Path-scoped candidates (022 amendment A-022-1).** A framework whose task files are defined
+by their location, not their file name, declares `taskPathPatterns`: repository-root-relative
+POSIX glob sources where `*` matches exactly one path segment and `**` matches zero or more
+segments (`kitty-specs/*/tasks/**/*.md` claims every Markdown document under a mission's
+`tasks/` folder, at any lane depth). Traversal hands each task-file matcher the pair
+`(name, relPath)`; basename-only matchers ignore the second argument, so existing adapters'
+candidate sets are unchanged. Compiled matchers join the adapter's candidate union beside
+the `taskFilePatterns` matchers — a file claimed by either family is a candidate exactly
+once. The compiler is exported as `compilePathPattern` from `task-linear-sync/discovery`.
 
 **Escape refusals.** Before any directory contents are read, the directory is verified
 (via `realpath`) to be separator-bounded inside the canonical root; a symlink that
