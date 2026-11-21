@@ -113,7 +113,7 @@ import {
   projectCandidates,
 } from "../matching/index.js";
 import type { MatchCandidate, TaskMatchInput } from "../matching/index.js";
-import { EngineError, IntegrityError } from "./errors.js";
+import { EngineError, IntegrityError, DocumentIdentityCollisionError } from "./errors.js";
 import { classifyTask, resolveConfiguredNormalizer } from "./classify.js";
 import { readCheckpointStore, selectMode } from "./mode.js";
 import type { ModeSelection } from "./mode.js";
@@ -212,7 +212,11 @@ async function projectMatchCandidates(
  * the hash never depends on the file's EOL style (SC-002).
  */
 function mirrorRegion(rawLines: readonly string[], task: Task): string {
-  const start = task.taskBody.startLine + 1; // 1-based first body line
+  // 022 C6.2: a document task's mirror region IS its extent — `startLine..endLine`
+  // INCLUSIVE (the leading heading line rides the mirror; front matter is outside the
+  // extent, R11). Every other kind keeps the frozen cross-lane decision 1: the body
+  // BELOW the task line (the task's own line never mirrors).
+  const start = task.kind === "document" ? task.taskBody.startLine : task.taskBody.startLine + 1; // 1-based first mirrored line
   const end = task.taskBody.endLine; // inclusive
   if (start > end) return "";
   return rawLines.slice(start - 1, end).join("\n");
@@ -430,6 +434,13 @@ function buildEntry(unit: TaskUnit, context: EntryContext): EntryBuild {
     labels.push(context.mode.diagnosticReason);
   }
 
+  if (task.kind === "document" && unit.specSection === "") {
+    // 022 C3.3/R11 — a front-matter-only document mirrors to visible empty content; the
+    // entry-label channel carries the `no-content` label (no schema change, never a
+    // silent drop). Pushed AFTER the branch lanes so create/frozen label resets keep it.
+    labels.push("no-content");
+  }
+
   const entry: PlanTaskEntry = {
     taskUuid: task.stableUuid,
     decision,
@@ -519,6 +530,34 @@ export async function buildSyncPlan(
     }
   }
   units.sort(compareWorkingOrder);
+
+  // ── 022 C2.4 / R8: repository-side durable-identity scan, after parse and BEFORE
+  // matching. Two or more parsed tasks sharing one `Stable_UUID` (for document
+  // identities: one mission, two documents, one normalized WP id) refuse plan build with
+  // the deterministic finding — framework, mission, id, colliding paths byte-wise
+  // ascending. No plan object exists, so no apply is reachable and no winner is guessed.
+  {
+    const unitsByUuid = new Map<string, TaskUnit[]>();
+    for (const unit of units) {
+      const bucket = unitsByUuid.get(unit.task.stableUuid);
+      if (bucket === undefined) unitsByUuid.set(unit.task.stableUuid, [unit]);
+      else bucket.push(unit);
+    }
+    for (const [uuid, bucket] of [...unitsByUuid.entries()].sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))) {
+      // Scoped to DOCUMENT-kind units (C2.4 is the document-identity rule): duplicate
+      // ids among heading/checklist tasks stay on their pinned legacy warn-and-continue
+      // lane (SC-005 — other identities' plan output is byte-identical).
+      if (bucket.filter((unit) => unit.task.kind === "document").length < 2) continue;
+      const first = bucket[0]!.task;
+      throw new DocumentIdentityCollisionError(
+        uuid,
+        first.frameworkId,
+        first.featureName ?? "",
+        first.localTaskId ?? "",
+        [...new Set(bucket.map((unit) => unit.filePath))],
+      );
+    }
+  }
 
   // ── Stage 3: match (006 over the 007-fetched scope; integrity abort on collision). ──
   const { issues, candidates } = await projectMatchCandidates(deps);

@@ -615,7 +615,9 @@ function issueScope(deps: EngineDependencies): IssueScope {
 
 /** Pinned cross-lane decision 1 (verbatim build.ts twin): the body BELOW the task line. */
 function mirrorRegion(rawLines: readonly string[], task: Task): string {
-  const start = task.taskBody.startLine + 1; // 1-based first body line
+  // Kept verbatim in step with `build.ts` mirrorRegion — 022 C6.2: document tasks mirror
+  // their inclusive extent; every other kind keeps the body-below-the-task-line slice.
+  const start = task.kind === "document" ? task.taskBody.startLine : task.taskBody.startLine + 1; // 1-based first mirrored line
   const end = task.taskBody.endLine; // inclusive
   if (start > end) return "";
   return rawLines.slice(start - 1, end).join("\n");
@@ -1029,6 +1031,12 @@ async function landAssignedTaskLine(
 ): Promise<void> {
   const keyMatch = /^(.+)-(\d+)$/.exec(view.key);
   if (keyMatch === null) return;
+  if (flow.task.kind === "document") {
+    // 022 C6.1/R10: document tasks have no renderable task line — the document itself is
+    // the content and repository `tasks/` files are never written. No render assignment,
+    // ever; the planned step (if any) stays pending.
+    return;
+  }
   const abs = join(context.plan.repositoryRoot, flow.filePath);
   let content: string;
   try {
