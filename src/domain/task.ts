@@ -7,7 +7,13 @@
 /** Canonical framework identifiers (001 Glossary: Supported_Framework). */
 export type FrameworkId = "bmad" | "spec-kit" | "open-spec" | "kiro" | "spec-superpower" | "spec-kitty" | "generic";
 
-export type TaskKind = "heading" | "checklist";
+/**
+ * Task extraction kinds. Amended 2026-11-21 by feature 022 (docs/contract-amendments.md,
+ * A-022-0): `"document"` added for the document-unit task mode (one work-package document
+ * = one task). Additive only — every prior value keeps its meaning, its state payloads,
+ * and its `Stable_UUID` seeds.
+ */
+export type TaskKind = "heading" | "checklist" | "document";
 
 /** Inclusive line range of the mirrored task section (001 R2.17). */
 export interface TaskBodyExtent {

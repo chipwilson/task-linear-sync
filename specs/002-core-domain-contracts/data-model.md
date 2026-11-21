@@ -32,7 +32,7 @@ actionable unit. (Owner of derivation/computation: 004; shape frozen here.)
 | Field | Type | Rules |
 |---|---|---|
 | `stableUuid` | `string` (8-4-4-4-12 lowercase) | Deterministic v5-shaped UUID per research R11; **never** derived from title, checkbox state, or visible issue prefix |
-| `kind` | `"heading" \| "checklist"` | |
+| `kind` | `"heading" \| "checklist" \| "document"` | `"document"` added 2026-11-21 by feature 022 (A-022-0) — the document-unit task mode; `taskBody` for kind `document` is the document body extent (first body line..last line, front matter excluded) |
 | `filePath` | `string` | Repository-relative POSIX path of the TaskFile |
 | `lineNumber` | `integer ≥ 1` | 1-based line position |
 | `frameworkId` | `FrameworkId` = `"bmad" \| "spec-kit" \| "open-spec" \| "kiro" \| "spec-superpower" \| "generic"` | |
@@ -47,7 +47,8 @@ actionable unit. (Owner of derivation/computation: 004; shape frozen here.)
 | `taskBody` | `TaskBodyExtent` | `{ startLine, endLine }` inclusive range of the mirrored section (line + all Markdown down to next task or sibling-or-shallower heading) |
 | `unresolvedConflict` | `boolean` | `true` iff `taskBody` region contains Conflict_Markers |
 
-Validation: `kind = "heading"` ⇔ `checked` absent; `childUuids` entries reference tasks in
+Validation: `kind = "checklist"` ⇔ `checked` present (so `checked` is absent for `"heading"`
+and, since A-022-0, for `"document"`); `childUuids` entries reference tasks in
 the same `filePath`; `unresolvedConflict = true` freezes the task for reconciliation (008).
 
 ## 2. TaskFile
