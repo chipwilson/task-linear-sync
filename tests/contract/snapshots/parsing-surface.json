@@ -37,6 +37,7 @@
     "ExtractOutput",
     "ResolvedConventions",
     "TaskDraft",
+    "detectDocumentTitleHeading",
     "detectFlatDocument",
     "extractTasks",
     "parseIssueRefAndCleanTitle",

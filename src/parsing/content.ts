@@ -164,8 +164,8 @@ export function escapeRegExp(literal: string): string {
  * separating punctuation mark so ordinary sentence text never parses as an ID span
  * (`Task 2.1:`, `1.2.3:`, `T001 —`).
  *
- * 021 amendment A-021-2 (research R4.2/R6): a DOTTED-numeric id (`4.1`, `1.2.3`) is
- * additionally capturable with whitespace alone — `4.1 Create …` stores the separator-free
+ * 021 amendment A-021-2 (research R4.2/R6): a DOTTED-numeric id (`4.1`, or deeper dotted
+ * forms) is additionally capturable with whitespace alone — `4.1 Create …` stores the separator-free
  * id `4.1`; bare integers (`2 of 3 done`) still require the trailing separator. The
  * adapter-supplied `checklistIdPattern` keeps precedence over this span (V9).
  */

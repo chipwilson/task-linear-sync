@@ -35,9 +35,10 @@ npm run lint && npm run type-check && npm run build   # CI merge-blocking gates
    issue description equals its own task region; **no created description contains the full file or any
    other task's text** (the reported bug's regression assertion); re-plan = 0 actions; toggling one
    checkbox = exactly 1 issue update; rollback restores the file.
-3. **Titles**: no issue titled `Plan`; the title-heading issue (if surfaced) is titled
-   `<feature>: Implementation Plan`; task issues carry their own text (e.g. `auth: Create EC2 client
-   wrapper with retry logic`).
+ 3. **Titles**: no issue titled `Plan`; the title-heading issue (if surfaced) is titled
+    `Implementation Plan`; task issues carry their own text (e.g. `Create EC2 client wrapper with
+    retry logic`). Create/update inputs are the undecorated `baseTitle` (the frozen `build.ts`
+    cross-lane decision); any `<feature>: ` prefix is a tracker-presentation view, not stored input.
 4. **No regressions (SC-005)**: `parsing-corpus.test.ts`, parsing goldens, `depth-folding-*` worlds,
    spec-kitty/spec-superpower suites, and discovery suites pass with **unchanged** expectations — the
    intentional flat-board folding of orphans under real `## 9.0:`-style task headings is preserved.
