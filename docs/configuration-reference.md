@@ -75,13 +75,23 @@ Regex sources are compiled by the parser/renderer lane (004/005).
 
 | Key | Type | Intelligent default | Notes |
 |---|---|---|---|
-| `headingIdGrammar` | regex source | `^\s{0,3}#{1,6}\s+(?:(?<id>[0-9]+(?:\.[0-9]+)*|[A-Za-z][A-Za-z0-9-]*\d*)[.:]?\s+)?(?<title>.+)$` | Heading → task. Captures a single leading id token (`T001`, `TASK-1`, `1.2`); in `## Task 1.2 …` only the token `Task` is captured. |
+| `headingIdGrammar` | regex source | `^\s{0,3}#{1,6}\s+(?:(?<id>[0-9]+(?:\.[0-9]+)*|[A-Za-z][A-Za-z0-9-]*\d[A-Za-z0-9-]*)[.:]?\s+)?(?<title>.+)$` | Heading → task. Captures a single leading id token (`T001`, `TASK-1`, `1.2`). The word-form branch **requires a digit** (021 amendment A-021-2): digit-bearing word ids still capture, while a digit-less leading word (`## Implementation Plan`) yields no id and the title keeps its full text — so in `## Task 1.2 …` no id is captured at all (the single token `Task` bears no digit). Id-less headings remain heading tasks. |
 | `phasePattern` | regex source | `^\s{0,3}#{1,2}\s+Phase\s+[0-9]+[.:]?\s*(?<phase>.*)$` | Tracks the current phase from the most recent matching H1/H2 heading. |
 | `summaryPattern` | regex source | `^\s{0,3}#{2,4}\s+(?:Summary\|Overview)\b` | H2–H4 summary/overview sections are excluded from task extraction. |
 | `rollupPattern` | regex source | `\b(?:parent\|roll-?up)\b` | Lines mentioning a parent/roll-up are rollup labels, not tasks. |
-| `flatChecklistMarkers` | string[] | `["- [ ]", "- [x]", "- [X]", "* [ ]", "* [x]", "* [X]"]` | Checkbox markers recognized as task lines (both bullet styles, both case spellings of checked). |
+| `flatChecklistMarkers` | string[] | `["- [ ]", "- [x]", "- [X]", "* [ ]", "* [x]", "* [X]"]` | Checkbox markers recognized as task lines (both bullet styles, both case spellings of checked); also the marker trigger of the flat-document pre-scan. Flat-document detection (021 amendment A-021-3): a document is flat when **no** grammar-matching heading exists **or** its only grammar-matching heading is the **document-title heading** — the first non-blank, non-fenced line at level 1 that the grammar yields no id for (the amended default grammar makes `# Implementation Plan`-style titles qualify) — that title heading is disregarded as a task parent, so top-level checkboxes beneath it are parentless depth-1 tasks, which the default `maxTaskIssueDepth: 1` flat board keeps. |
 | `tabWidth` | integer | `2` | Column width used when normalizing indentation. |
 | `maxTaskIssueDepth` | integer | `1` (flat board; set `64` for effectively unlimited) | 1..64, named refusal at the parsing entry (`TaskDepthConfigError` names the key and the offending value; CLI exit 3) — an out-of-range value is never silently clamped or ignored. Default `1`: only depth-1 tasks (top-level checklists and all heading tasks) become issues; deeper checklists fold verbatim into the nearest surviving ancestor's body. `64` restores the pre-020 behavior; validation is shared by every lane at `parseTaskFile`, never inside `loadConfig` (merge-only) — 020 amendment A-020-1. |
+
+Checklist local-id capture is **not a configuration key**: it is governed by the
+built-in module-local span grammar `LOCAL_ID_SPAN_RE` (`src/parsing/content.ts`),
+which strips a leading local-id from checkbox lines and heading title spans. A
+digit is required; word-form ids and bare integers still need a trailing
+separator (`.`/`:`/`—`/`–`/`-`), while a **dotted-numeric** id (`4.1`, or deeper
+dotted forms) additionally captures with whitespace alone, separator-free (021 amendment
+A-021-2). An adapter-supplied `checklistIdPattern`
+(`overrides.adapters.<id>` — programmatic lane, no config-file key) takes
+precedence over the built-in span.
 
 ## Routing identities — deliberately **no defaults**
 

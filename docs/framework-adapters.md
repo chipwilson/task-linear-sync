@@ -35,13 +35,36 @@ Notes:
 - `spec-kitty`'s two extra grammar members follow the same override lanes as every other
   convention — `overrides.adapters["spec-kitty"]` (deep-merged, arrays replace) beats the
   built-in row — but neither has a config-file key, so `adapter.<member> ?? built-in default`
-  is the whole resolution (017 C5.1). Their defaults stay inert for the other six rows,
-  which parse exactly as before (017 C5.3).
+  is the whole resolution (017 C5.1). Their defaults stay inert for the other six rows
+  (017 C5.3): only `spec-kitty` declares the two members, and the 021 amendment below touches
+  only the shared built-in defaults, not these override lanes.
 - Grammar fields (`headingGrammar`, `phasePattern`, `summaryPattern`, `rollupPattern`,
   `titleBehavior.stripPrefixes`, plus the optional `checklistIdPattern` and `titleTagPattern`
   of 017 amendment 2) are regex-source strings consumed downstream (004/005). Only
   `spec-kitty` declares the two new members; the rest inherit the built-in defaults.
   003 never parses task content.
+- Feature 021 amended those shared **built-in defaults** themselves — `headingIdGrammar`
+  (`src/config/defaults.ts`) and the checklist-id span `LOCAL_ID_SPAN_RE`
+  (`src/parsing/content.ts`) — and the five rows that consume them unchanged (`kiro`,
+  `spec-kit`, `open-spec`, `bmad`, `generic`) pick the correction up all at once:
+  a word-form heading id must contain a digit (`TASK-1`, `SYNC1`, `T001`-style ids still
+  capture; digit-less leading words like `Implementation` no longer do, so `# Implementation
+  Plan` yields no id and keeps its full text); a dotted-numeric checklist id captures with
+  whitespace alone (`4.1 Create …` → id `4.1`) while bare integers still require a trailing
+  separator, and an adapter `checklistIdPattern` override keeps precedence over the span.
+  A first-line level-1 heading that matches the grammar yet yields no local id is the
+  **document-title heading**: it stays a heading task (body = its preamble only) but never
+  adopts column-0 checkboxes — those become parentless depth-1 tasks and survive the default
+  `maxTaskIssueDepth: 1`. Flat-checklist detection counts a document whose only grammar
+  heading is the title heading as flat (internal signal equals the determination — no
+  public API change).
+- The two override rows are unchanged by 021 and structurally immune, pinned by
+  `tests/unit/parsing-adapter-immunity.test.ts`: `spec-kitty`'s never-matching heading grammar
+  `(?!` yields zero heading tasks, so the document-title rule can never bind (its own
+  `checklistIdPattern` still captures dotted ids like `4.1`), and in `spec-superpower` every
+  checkbox is a rollup-excluded body line its narrow `#{2,4} Task N:` grammar never claims —
+  a title-headed checkbox plan yields zero tasks (never one giant task) and `Task N:` headings
+  bound each other.
 - `builtInAdapters` (`task-linear-sync/discovery`) is the frozen seven-key record
   (`kiro`, `spec-kit`, `open-spec`, `bmad`, `spec-superpower`, `spec-kitty`, `generic`) of immutable
   `FrameworkAdapter` values.
