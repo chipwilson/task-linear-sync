@@ -76,6 +76,15 @@ export function discoverGitContext(canonicalRoot: string): Promise<GitContext>;
 
 /** Basename/dir-name glob matcher (*, ?, [..]) — exported for config validation reuse (research R2). */
 export function compileNamePattern(pattern: string): (name: string) => boolean;
+
+/**
+ * Amended 2026-11-21 by feature 022 (docs/contract-amendments.md, A-022-1): path-scoped
+ * candidate glob matcher over the FULL root-relative POSIX path. Segment grammar matches
+ * compileNamePattern; `*` occupies exactly one path segment, `**` zero or more segments
+ * (segment semantics consistent with the 017 A-3 exclusion grammar); anchored — no prefix
+ * or suffix leak. Consumed by `taskPathPatterns` matching (framework-adapter.md).
+ */
+export function compilePathPattern(pattern: string): (relPath: string) => boolean;
 ```
 
 ## Behavior rules (normative)

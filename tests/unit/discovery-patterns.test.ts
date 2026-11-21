@@ -7,17 +7,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 
-import * as discovery from "task-linear-sync/discovery";
-import { compileNamePattern } from "task-linear-sync/discovery";
-
-/**
- * A-022-1 (022) — the path-glob compiler under test. Resolved through the namespace so
- * the red-first run fails AT RUNTIME inside the assertions below while every existing
- * test still compiles and runs (Principle VI observation requirement).
- */
-const compilePathPattern = (discovery as Record<string, unknown>)["compilePathPattern"] as
-  | ((pattern: string) => (relPath: string) => boolean)
-  | undefined;
+import { compileNamePattern, compilePathPattern } from "task-linear-sync/discovery";
 
 test("discovery patterns: exact basename 'tasks.md' matches only itself", () => {
   const m = compileNamePattern("tasks.md");
@@ -105,7 +95,6 @@ test("path patterns: the compiler exists (A-022-1 amendment member)", () => {
 });
 
 test("path patterns: 'kitty-specs/*/tasks/**/*.md' matches collection documents at any depth", () => {
-  assert.ok(compilePathPattern, "compiler present");
   const m = compilePathPattern("kitty-specs/*/tasks/**/*.md");
   assert.equal(m("kitty-specs/002-x/tasks/WP01-a.md"), true, "`**` = zero segments (flat layout)");
   assert.equal(m("kitty-specs/002-x/tasks/planned/WP01-a.md"), true, "legacy lane sub-folder");
@@ -113,7 +102,6 @@ test("path patterns: 'kitty-specs/*/tasks/**/*.md' matches collection documents 
 });
 
 test("path patterns: the collection pattern does NOT widen beyond the collection", () => {
-  assert.ok(compilePathPattern, "compiler present");
   const m = compilePathPattern("kitty-specs/*/tasks/**/*.md");
   assert.equal(m("kitty-specs/002-x/tasks.md"), false, "the roll-up is not a collection document");
   assert.equal(m("kitty-specs/002-x/tasks/img.png"), false, "non-.md attachments never match");
@@ -122,7 +110,6 @@ test("path patterns: the collection pattern does NOT widen beyond the collection
 });
 
 test("path patterns: a single '*' occupies exactly one segment and never crosses '/'", () => {
-  assert.ok(compilePathPattern, "compiler present");
   const m = compilePathPattern("kitty-specs/*/tasks.md");
   assert.equal(m("kitty-specs/001-a/tasks.md"), true);
   assert.equal(m("kitty-specs/001-a/nested/tasks.md"), false, "`*` crosses no separator");
@@ -130,7 +117,6 @@ test("path patterns: a single '*' occupies exactly one segment and never crosses
 });
 
 test("path patterns: anchored — no suffix leak and no prefix leak", () => {
-  assert.ok(compilePathPattern, "compiler present");
   const m = compilePathPattern("kitty-specs/*/tasks/**/*.md");
   assert.equal(m("kitty-specs/002-x/tasks/WP01-a.md.extra"), false, "no suffix leak");
   assert.equal(m("vendor/kitty-specs/002-x/tasks/WP01-a.md"), false, "root-relative — no prefix leak");
