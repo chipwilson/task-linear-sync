@@ -201,9 +201,13 @@ test("parsing extract — precedence: adapter headingGrammar beats merged config
   );
 
   // Same config, no adapter override: merged `headingIdGrammar` default applies.
+  // 021 amendment A-021-2: `Task` is a digit-less word-form id and is NOT consumed by
+  // the built-in default any more — the heading keeps its full text (word-form ids
+  // must contain a digit). The `Task <N.M>` id form stays capturable through adapter
+  // overrides only (strict-grammar case above).
   const fallback = parseTaskFile(PATH, content, genericFixtureAdapter, cfg);
   assert.deepEqual(fallback.file.tasks.map((task) => task.lineNumber), [1, 3]);
-  assert.equal(fallback.file.tasks[0]?.title, "1.2: Do the thing"); // frozen default's narrower `id` group
+  assert.equal(fallback.file.tasks[0]?.title, "Task 1.2: Do the thing"); // amended default: full text, no id
 
   // minimalCustomAdapter (id + headingGrammar only, 001 FR-026 shape) still extracts.
   const minimal = parseTaskFile(

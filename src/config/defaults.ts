@@ -47,7 +47,14 @@ export const builtInDefaults: ResolvedConfig = {
   siblingDocuments: ["spec.md", "plan.md", "research.md"],
 
   // ── Grammar (001 R17.4; overridable regex sources; tab width 2) ──
-  headingIdGrammar: "^\\s{0,3}#{1,6}\\s+(?:(?<id>[0-9]+(?:\\.[0-9]+)*|[A-Za-z][A-Za-z0-9-]*\\d*)[.:]?\\s+)?(?<title>.+)$",
+  // 021 amendment A-021-2: the word-form id branch must contain a digit, so
+  // `TASK-1`/`SYNC1`/`T001`-style ids still capture while an ordinary title such as
+  // `# Implementation Plan` yields no id and keeps its full text (research R4.1/R6).
+  // The branch is the previous `[A-Za-z][A-Za-z0-9-]*\d*` with the digit REQUIRED —
+  // every former digit-bearing capture is preserved byte-identically; only digit-less
+  // word ids drop out. The numeric/dotted-numeric branch and the catch-all title group
+  // are unchanged — id-less headings remain heading tasks (corpus model, FR-009).
+  headingIdGrammar: "^\\s{0,3}#{1,6}\\s+(?:(?<id>[0-9]+(?:\\.[0-9]+)*|[A-Za-z][A-Za-z0-9-]*\\d[A-Za-z0-9-]*)[.:]?\\s+)?(?<title>.+)$",
   phasePattern: "^\\s{0,3}#{1,2}\\s+Phase\\s+[0-9]+[.:]?\\s*(?<phase>.*)$",
   summaryPattern: "^\\s{0,3}#{2,4}\\s+(?:Summary|Overview)\\b",
   rollupPattern: "\\b(?:parent|roll-?up)\\b",

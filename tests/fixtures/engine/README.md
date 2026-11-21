@@ -41,3 +41,4 @@ worlds/<world>/
 | `rollback-full/` | Full apply → total-restoration rollback (SC-003) |
 | `rollback-interrupted/` | Rollback interrupted at every step index — resumable |
 | `spec-kitty-basic/` | Spec Kitty roll-up layout — engine lifecycle with the five-identity results shape (017 SC-005) |
+| `kiro-plan-basic/` | Kiro implementation-plan per-task splitting at shipped defaults — the 021 regression world |

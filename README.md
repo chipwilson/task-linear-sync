@@ -38,9 +38,9 @@ a file and never echoing it into any output.
 - **Version posture**: the package is in its 0.x line — under the
   [0.x posture](docs/versioning.md) breaking changes may ride minor bumps until
   the documented 1.0.0 condition is met. Surface-level stability guarantees
-  (below) hold throughout. Current release: **v0.4.0** — task-depth folding
-  (`maxTaskIssueDepth`, built-in default `1` — a flat board; set `64` for
-  sub-issues at every depth); every release ships its own section in
+  (below) hold throughout. Current release: **v0.5.0** — per-task
+  splitting of title-headed implementation plans (each checkbox task gets
+  its own issue and region); every release ships its own section in
   [CHANGELOG.md](CHANGELOG.md).
 - **Requires** Node 20 or newer wherever the tool runs; nothing else to install.
 
@@ -234,6 +234,20 @@ the default framework of `install-agent-hook`: it scaffolds a `kiro-json`
 agent hook into `.kiro/hooks/` that enqueues a sync when spec files are
 saved. No configuration needed if you keep Kiro's default layout.
 
+Kiro `tasks.md` files typically open with a title heading such as
+`# Implementation Plan`. A level-1 heading on the document's first content
+line that matches the heading grammar but yields no local id names the
+document: it stays a heading task whose body is only its own preamble and it
+never owns the checklist beneath it, and a document whose only
+grammar-matching heading is that title heading reads as a flat checklist.
+Top-level checkboxes beneath the title heading are parentless depth-1 tasks,
+so at the out-of-the-box `maxTaskIssueDepth: 1` every task of a title-headed
+plan becomes its own issue instead of folding into one giant title issue.
+Numbered checklist items capture durably: `- [x] 4.1 …` stores the local id
+`4.1` without any trailing separator, a bare integer still requires its
+separator, and sentence text (`2 of 3 done`) captures nothing; an
+adapter-supplied `checklistIdPattern` keeps precedence over these rules.
+
 ### OpenSpec (`open-spec`)
 
 Detection is disjunctive — a path containing `openspec/` or `open-spec/`, or
@@ -301,8 +315,11 @@ convention, an SDD tool with no fixed layout (add its task-file names to
 matches, and an explicit choice (`frameworkAdapters`, or a selection
 override) when you want it everywhere. The heading grammar is the broad
 built-in one — a single leading id token before the title (`T001`, `TASK-1`,
-`1.2`, …; in `## Task 1.2 …` only the token `Task` is captured), no framework
-title prefixes are stripped, and no framework-specific exclusions apply. Its
+`1.2`, …), and a word-form id must contain a digit: in `## Task 1.2 …` no id
+is captured and the full text stays the title (a level-1 first-line heading
+that yields no id names the document — see [AWS Kiro](#aws-kiro-kiro)). No
+framework title prefixes are stripped, and no framework-specific exclusions
+apply. Its
 agent-hook scaffold (`install-agent-hook --framework generic`) lands in
 `.task-linear-sync/hooks/`.
 

@@ -75,16 +75,50 @@ export function parseIssueRefAndCleanTitle(text: string, confirmationKey: string
   return issueRef ? { rest: stripped, issueRef } : { rest: stripped };
 }
 
-/** FR-005 flat-document pre-scan (both triggers; "a pure pre-scan of the fenced-line set"). */
+/**
+ * C1 (021 amendment A-021-1; data-model §1) — the **document-title heading**: the heading
+ * that names the DOCUMENT rather than a task. Verbatim conditions: the document's first
+ * non-blank, non-fenced line; ATX level exactly 1; matches the effective heading-id
+ * grammar (it would otherwise be a heading task); its title span yields no
+ * `Local_Task_ID`; at most one per document (a second level-1 heading mid-file is an
+ * ordinary heading task). Fenced `#` lines never qualify (V2); a checkbox-first file has
+ * none (V3). Returns the title heading's line number when the determination holds.
+ */
+export function detectDocumentTitleHeading(
+  lines: readonly ContentLine[],
+  conventions: ResolvedConventions,
+): number | undefined {
+  for (const line of lines) {
+    if (line.inFence || line.text.trim() === "") continue; // scan to the FIRST non-blank, non-fenced line
+    if (headingLevelOf(line.text) !== 1) return undefined; // ATX level exactly 1
+    const m = conventions.headingGrammar.exec(line.text);
+    if (!m || m.groups?.title === undefined) return undefined; // a grammar-matching heading TASK
+    return m.groups?.id === undefined ? line.number : undefined; // yields no Local_Task_ID → title heading
+  }
+  return undefined;
+}
+
+/**
+ * FR-005 flat-document pre-scan (021 amendment A-021-3 / contract C3; "a pure pre-scan of
+ * the fenced-line set"). The determination is normative for top-level checkbox parenting:
+ * flat iff NO grammar-matching heading exists OR the only grammar-matching heading is the
+ * document-title heading (previously false for title-headed documents — the defect);
+ * the configured flat-checklist marker trigger is unchanged.
+ */
 export function detectFlatDocument(
   lines: readonly ContentLine[],
   conventions: ResolvedConventions,
   config: ResolvedConfig,
 ): boolean {
-  const hasGrammarHeading = lines.some(
-    (line) => !line.inFence && headingLevelOf(line.text) !== undefined && conventions.headingGrammar.test(line.text),
+  const titleHeadingLine = detectDocumentTitleHeading(lines, conventions);
+  const hasOtherGrammarHeading = lines.some(
+    (line) =>
+      !line.inFence &&
+      headingLevelOf(line.text) !== undefined &&
+      line.number !== titleHeadingLine &&
+      conventions.headingGrammar.test(line.text),
   );
-  if (!hasGrammarHeading) return true;
+  if (!hasOtherGrammarHeading) return true; // C3 rows 1–2: none, or only the title heading
   const firstTextLine = lines.find((line) => line.text.trim() !== "" && !line.inFence);
   if (!firstTextLine) return false;
   return config.flatChecklistMarkers.some(
@@ -118,6 +152,9 @@ export function extractTasks(
   let summaryLevel: number | undefined;
   const stack: TaskDraft[] = []; // monotonic indent stack of open CHECKLIST tasks (R5)
   let currentHeading: TaskDraft | null = null; // nearest enclosing heading TASK
+  // C2 (021 A-021-1): the document-title heading names the document, never a task parent.
+  const titleHeadingLine = detectDocumentTitleHeading(lines, conv);
+  let currentHeadingIsTitle = false;
 
   for (const line of lines) {
     if (line.inFence || frozen.has(line.number)) continue; // fenced pseudo-tasks / conflict interiors are non-task text
@@ -128,6 +165,7 @@ export function extractTasks(
       // orphan target moves to this section's heading task (or none for non-task headings).
       stack.length = 0;
       currentHeading = null;
+      currentHeadingIsTitle = false;
       if (summaryLevel !== undefined && level <= summaryLevel) summaryLevel = undefined; // section closed (FR-004)
 
       if (conv.phasePattern.test(line.text)) {
@@ -159,6 +197,7 @@ export function extractTasks(
         children: [],
       };
       currentHeading = draft;
+      currentHeadingIsTitle = line.number === titleHeadingLine;
       drafts.push(draft);
       continue;
     }
@@ -178,8 +217,12 @@ export function extractTasks(
 
     // FR-002 indent stack: pop entries at-or-deeper than this line, adopt the stack top,
     // else the enclosing heading task (orphan rule), else none (flat/top-level).
+    // C2 (021 A-021-1): with an EMPTY indent stack the enclosing heading task is skipped
+    // when it is the document-title heading — top-level checkboxes beneath the document
+    // title attach to no heading (parent null → depth 1). All other orphan adoption,
+    // including beneath `## 9.0:`-style organizer headings, is unchanged.
     while (stack.length > 0 && (stack[stack.length - 1]?.indentWidth ?? 0) >= line.indentWidth) stack.pop();
-    const parent = stack[stack.length - 1] ?? currentHeading;
+    const parent = stack[stack.length - 1] ?? (stack.length === 0 && currentHeadingIsTitle ? null : currentHeading);
 
     const idSplit = stripLeadingLocalId(cb.rest, conv.checklistIdPattern);
     const localPart = idSplit?.[0];

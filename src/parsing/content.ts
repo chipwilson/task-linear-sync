@@ -163,9 +163,14 @@ export function escapeRegExp(literal: string): string {
  * checklist lines is likewise recorded as `localTaskId`"). Requires a digit and a
  * separating punctuation mark so ordinary sentence text never parses as an ID span
  * (`Task 2.1:`, `1.2.3:`, `T001 —`).
+ *
+ * 021 amendment A-021-2 (research R4.2/R6): a DOTTED-numeric id (`4.1`, or deeper dotted
+ * forms) is additionally capturable with whitespace alone — `4.1 Create …` stores the separator-free
+ * id `4.1`; bare integers (`2 of 3 done`) still require the trailing separator. The
+ * adapter-supplied `checklistIdPattern` keeps precedence over this span (V9).
  */
 export const LOCAL_ID_SPAN_RE =
-  /^(?<id>(?:[A-Za-z][A-Za-z0-9-]*[ \t]+)?[0-9]+(?:\.[0-9]+)*[ \t]*[.:—–-]|[A-Za-z][A-Za-z0-9-]*\d+[ \t]*[.:—–-])[ \t]+/u;
+  /^(?<id>(?:[A-Za-z][A-Za-z0-9-]*[ \t]+)?[0-9]+(?:\.[0-9]+)*[ \t]*[.:—–-]|[0-9]+(?:\.[0-9]+)+|[A-Za-z][A-Za-z0-9-]*\d+[ \t]*[.:—–-])[ \t]+/u;
 
 /** Strip a leading local-ID span, returning [idWithoutSeparator, remainder] when present. `idPattern` (017 amendment 2) overrides the built-in span grammar; its `id` named group is the captured ID. */
 export function stripLeadingLocalId(rest: string, idPattern?: RegExp): [id: string, remainder: string] | undefined {

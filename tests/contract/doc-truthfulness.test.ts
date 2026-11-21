@@ -171,10 +171,20 @@ test("doc-truthfulness: GUARD-24 intro states reports never touch Linear milesto
 });
 
 test("doc-truthfulness: GUARD-12 requirements.md keeps the mandated heading-grammar default", () => {
+  // 021 amendment A-021-2 replaced the pre-021 narrow grammar mandate (which carried the
+  // unimplemented `Task\s+\d+`/`T\d{2,5}` alternatives) with the aligned default: any
+  // heading text is a heading task, with an optional leading identifier whose word form
+  // must contain a digit. The guard's purpose is unchanged — the mandated default stays
+  // verbatim until the next amendment; no erasing unimplemented mandates.
   assert.match(
     requirements,
-    /T\\d\{2,5\}/,
-    "GUARD-12 (C-054): the R2.2 mandated default grammar (incl. the Task\\s+\\d+ alternative the code lacks) stays until FU-002 lands — no erasing unimplemented mandates",
+    /word-form identifier containing at least one digit/,
+    "GUARD-12 (C-054, amended by A-021-2): the R2.2 mandated default grammar (digit-required word-form id) stays — no erasing unimplemented mandates",
+  );
+  assert.match(
+    requirements,
+    /word-form identifier with no digit SHALL NOT be consumed/,
+    "GUARD-12 (C-054, amended by A-021-2): the SHALL-NOT digit-less-word rule stays mandated verbatim",
   );
 });
 
