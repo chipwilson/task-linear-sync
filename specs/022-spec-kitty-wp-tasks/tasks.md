@@ -164,7 +164,7 @@ description: "Task list for feature 022 — Spec Kitty Work-Package Task Source 
 
 - [ ] T038 Run the FULL quickstart.md validation: every row of the Automated-validation table (including `node --test build/tests/unit/agent-hooks.test.js` scaffold-refusal pin and the five contract suites row); the manual walkthrough steps 1–8 executed on the fake-`Linear_Port` CLI lanes with zero configuration (steps 5–7 are automated in T030/T028/T023 — spot-verify the CLI output shapes); `npm run build && npm run compile:tests`; `npm test` full pyramid green with coverage ≥ threshold; SC-005 check: `git diff --stat` proves the other six identities' fixtures/snapshots untouched. Record the outcome in the PR body (T042).
 
-- [ ] T039 Extend `tests/e2e/spec-kitty-work-packages.test.ts` (created in T025 — same file, strictly after it) with the US2 and US3 scenario walkthroughs: leftovers probe (quickstart step 6) and idempotence + lifecycle probe (step 5) plus the collision probe refusal (step 7) and the opt-out fall-through (step 8, FR-013) at the CLI/e2e level, complementing the integration suites.
+- [x] T039 Extend `tests/e2e/spec-kitty-work-packages.test.ts` (created in T025 — same file, strictly after it) with the US2 and US3 scenario walkthroughs: leftovers probe (quickstart step 6) and idempotence + lifecycle probe (step 5) plus the collision probe refusal (step 7) and the opt-out fall-through (step 8, FR-013) at the CLI/e2e level, complementing the integration suites.
 
 ---
 
