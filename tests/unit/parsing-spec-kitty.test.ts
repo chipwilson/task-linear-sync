@@ -1,207 +1,156 @@
 /**
- * T012 [017 US1] — the Spec Kitty roll-up grammar pinned on the REAL built-in row
- * (`builtInAdapters["spec-kitty"]`), not a stand-in: the checklist local-id variants of
- * C3.4, the capability-tag rule of C3.5, template-section containment (C3.3), YAML front
- * matter (C3.2), work-package grouping (C3.6), and the R3 `flatDocument` pin.
- *
- * The parse-level `Task.title` is the RAW title (frozen 004 semantics: tags are file
- * content), so every derived-title assertion here runs the same `cleanTitle` the engine
- * threads `titleTagPattern` through (contracts/spec-kitty-adapter.md C3.5).
+ * T018 [022 US1] — the Spec Kitty DOCUMENT-mode parsing pins, re-based-rewritten over the
+ * shipped row plus the A-022-2 `documentTaskRule` (values verbatim from data-model §3;
+ * the row itself is re-based in T020, after which this object IS the row). The superseded
+ * 017 checklist-grammar pins (roll-up extraction, tags, phases, grouping) are flipped
+ * test-first per R13: the roll-up and everything under `tasks/` are documentation — the
+ * only extraction unit is the work-package DOCUMENT (contracts/spec-kitty-work-packages.md
+ * C0–C4, FR-004/FR-005, R4/R11).
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";
 
 import { builtInAdapters } from "task-linear-sync/discovery";
-import { cleanTitle, parseTaskFile, splitLines } from "task-linear-sync/parsing";
-import type { CleanTitleOptions, TaskFileAdapter } from "task-linear-sync/parsing";
-
-import { extractTasks } from "../../src/parsing/extract.js";
+import { parseTaskFile } from "task-linear-sync/parsing";
+import type { TaskFileAdapter } from "task-linear-sync/parsing";
 
 import { makeTestConfig } from "../helpers/parsing-fixtures.js";
 
 const cfg = makeTestConfig();
-const PATH = "kitty-specs/001-demo/tasks.md";
 
-/** The shipped row (full `FrameworkAdapter` surface: `titleBehavior`, `titleTagPattern`). */
-const kittyRow = builtInAdapters["spec-kitty"];
+/** data-model §3 — the re-based row's document rule (the T020 row must match these values). */
+const documentTaskRule = {
+  collectionPattern: "^kitty-specs/[^/]+/tasks/.+\\.md$",
+  idKey: "work_package_id",
+  titleKey: "title",
+  fileNameIdPattern: "(?i)^WP(\\d+)[^/]*\\.md$",
+};
 
-/** The shipped row satisfies the consumer view structurally (amendment 2 members included). */
-const kitty = kittyRow as unknown as TaskFileAdapter;
+/** The shipped row widened with the document rule — the consumer view the engine receives. */
+const kitty = { ...builtInAdapters["spec-kitty"], documentTaskRule } as unknown as TaskFileAdapter;
 
-/** Same derivation the engine performs on `derivedTitle` / mirrored issue titles. */
-function derived(rawTitle: string): string {
-  return cleanTitle(rawTitle, {
-    confirmationKey: cfg.confirmationKey,
-    titleStripPrefixes: [...(kittyRow.titleBehavior?.stripPrefixes ?? [])],
-    titleTagPattern: kittyRow.titleTagPattern,
-  } satisfies CleanTitleOptions);
-}
-
-function parseLine(line: string) {
-  return parseTaskFile(PATH, `${line}\n`, kitty, cfg);
-}
-
-test("parsing spec-kitty: every printed id form yields the printed local id and an id-free title (C3.4, FR-005)", () => {
-  const cases: readonly [string, string, string][] = [
-    ["- [ ] T001 Create the scaffold", "T001", "Create the scaffold"],
-    ["- [ ] T001: Create the scaffold", "T001", "Create the scaffold"],
-    ["- [ ] T001. Create the scaffold", "T001", "Create the scaffold"],
-    ["- [ ] T001 — Create the scaffold", "T001", "Create the scaffold"],
-    ["- [ ] 042 Create the ledger", "042", "Create the ledger"],
-    ["- [ ] 2.1 Draft the outline", "2.1", "Draft the outline"],
-    ["- [ ] T002.3 [P] Wire the flag parser", "T002.3", "[P] Wire the flag parser"],
-  ];
-  for (const [line, localTaskId, title] of cases) {
-    const task = parseLine(line).file.tasks[0];
-    assert.ok(task, `${line} yields one task`);
-    assert.equal(task.kind, "checklist", "checklist subtask (C3.3)");
-    assert.equal(task.localTaskId, localTaskId, `${line} — id equals the printed id`);
-    assert.equal(task.title, title, `${line} — id span excluded, raw content kept (C3.4)`);
-    assert.equal(task.frameworkId, "spec-kitty");
-  }
-});
-
-test("parsing spec-kitty: an id-less checkbox is still a task — the ordinal seed path stays available (C4.1)", () => {
-  const { file } = parseLine("- [ ] Just rewrite the scaffold");
-  const task = file.tasks[0];
-  assert.ok(task, "zero tasks lost to a missing id");
-  assert.ok(!("localTaskId" in task), "no id ⇒ no localTaskId field, so the seed falls back to the ordinal");
-  assert.equal(task.title, "Just rewrite the scaffold");
-});
-
-test("parsing spec-kitty: [P]/[Pn]/[USn] tags stay in the file and vanish from derived titles (C3.5, FR-006)", () => {
-  const cases: readonly [string, string, string][] = [
-    ["- [ ] T003 [P] Add payouts", "T003", "Add payouts"],
-    ["- [ ] T004 [P2] Rotate the API keys", "T004", "Rotate the API keys"],
-    ["- [ ] T005 [US1] List transactions", "T005", "List transactions"],
-    ["- [ ] T006 [P] Ship [US2] the ledger", "T006", "Ship the ledger"],
-  ];
-  for (const [line, localTaskId, expected] of cases) {
-    const task = parseLine(line).file.tasks[0];
-    assert.ok(task);
-    assert.match(task.title, /^\[(?:P\d*|US\d+)\]/u, "the RAW title keeps the tag — it is file content");
-    assert.equal(derived(task.title), expected, `${line} — derived/mirrored title carries no tag`);
-    assert.equal(derived(derived(task.title)), expected, "re-deriving is a no-op (Principle IV)");
-    assert.equal(task.localTaskId, localTaskId, "the id span and the tag are independent spans");
-  }
-});
-
-test("parsing spec-kitty: a bracketed issue reference is never a capability tag (C3.5)", () => {
-  const { file } = parseLine("- [ ] T007 [SYNC-9] [US1] Sync the ledger");
-  const task = file.tasks[0];
-  assert.ok(task);
-  assert.deepEqual(task.issueRef, { key: "SYNC", number: 9 });
-  assert.equal(task.title, "[US1] Sync the ledger", "`[SYNC-9]` is consumed by the ref rule, the tag by the raw title");
-  assert.equal(derived(task.title), "Sync the ledger", "the tag strips; nothing else is eaten");
-  assert.equal(
-    cleanTitle("[SYNC-9] [US1] Sync the ledger", { confirmationKey: cfg.confirmationKey, titleStripPrefixes: [] }),
-    "[US1] Sync the ledger",
-    "without the adapter member the reference alone strips — unchanged global behavior (C5.3)",
-  );
-});
-
-const ROLL_UP = [
+const WP_DOC = [
   "---",
-  "mission: 001-demo",
-  "created: 2026-11-02",
+  "work_package_id: wp01",
+  "title: \"Set up the ledger\"",
+  "dependencies:",
+  "  - research.md",
   "---",
   "",
-  "# 001-demo — Tasks",
+  "# Work Package WP01: Set up the ledger",
   "",
-  "## Inputs",
-  "- [ ] this illustrative checkbox must NOT become a task",
+  "## Objectives & Success Criteria",
+  "- The ledger crate compiles.",
   "",
-  "## Work Package WP01: Scaffold",
-  "- [ ] T001 Create the scaffold",
-  "- [ ] T002 Implement charging",
+  "Implement the scaffold. Subtask guidance:",
+  "- [ ] T001 Create the crate",
+  "- [ ] T002 Wire the CLI",
   "",
-  "## Work Package WP02: Payments",
-  "- [ ] T003 [P] Add payouts",
-  "- [ ] T004 [US1] List transactions",
+  "## Definition of Done",
+  "- [ ] All checks pass",
   "",
-  "## Dependencies",
-  "T003 depends on T001.",
-  "",
-  "## Risks & Mitigations",
-  "- Keep tag rendering stable.",
 ].join("\n");
 
-test("parsing spec-kitty: the canonical roll-up yields exactly the four subtasks — no headings, no front matter, no template checkboxes (C3.1–C3.3)", () => {
-  const { file, exclusions } = parseTaskFile(PATH, ROLL_UP, kitty, cfg);
+test("022 document mode: a recognized WP document yields EXACTLY ONE document draft (C1.1, C3, R11)", () => {
+  const { file } = parseTaskFile("kitty-specs/001-demo/tasks/wp01-ledger.md", WP_DOC, kitty, cfg);
+  assert.equal(file.tasks.length, 1, "one document, one task — checkboxes inside are content (FR-004)");
+  const task = file.tasks[0];
+  assert.equal(task.kind, "document");
+  assert.equal(task.localTaskId, "WP01", "normalized identifier (R7): front-matter id wins");
+  assert.equal(task.title, "Set up the ledger", 'front-matter titleKey wins the cascade (C3.1)');
+  assert.equal(task.frameworkId, "spec-kitty");
+  assert.deepEqual(task.taskBody, { startLine: 8, endLine: 18 }, "body extent: first non-blank line after the fence .. last non-blank line, fence excluded, heading INCLUDED (R11)");
+  assert.ok(!("parentUuid" in task), "fold-inert: no parent (R4)");
+  assert.deepEqual(task.childUuids, [], "fold-inert: no children (R4)");
+  assert.equal(task.unresolvedConflict, false);
+});
+
+test("022 document mode: the roll-up yields zero drafts — checkboxes, WP headings and prose are documentation (FR-005)", () => {
+  const rollUp = [
+    "---",
+    "mission: 001-demo",
+    "---",
+    "",
+    "# 001-demo — Tasks",
+    "",
+    "## Work Package WP01: Scaffold",
+    "- [ ] T001 Create the scaffold",
+    "- [ ] T002 Implement charging",
+    "",
+    "## Dependencies",
+    "T002 depends on T001.",
+    "",
+  ].join("\n");
+  const { file, exclusions, warnings } = parseTaskFile("kitty-specs/001-demo/tasks.md", rollUp, kitty, cfg);
+  assert.deepEqual(file.tasks, [], "tasks.md never identifies (C2.2)");
+  assert.deepEqual(exclusions, [], "zero line-scanning: no checklist/summary/roll-up exclusion records either");
+  assert.deepEqual(warnings, []);
+});
+
+test("022 document mode: a claimed non-recognizing file (notes.md) yields zero drafts — no fall-through (C2.3)", () => {
+  const notes = ["# Notes", "", "- [ ] remember the release checklist", ""].join("\n");
+  const { file, exclusions } = parseTaskFile("kitty-specs/001-demo/tasks/notes.md", notes, kitty, cfg);
+  assert.deepEqual(file.tasks, [], "in the collection, but no id anywhere ⇒ zero documents");
+  assert.deepEqual(exclusions, [], "not line-scanned");
+});
+
+test("022 document mode: Tnnn ids and DoD checkboxes are never extraction inputs (FR-004)", () => {
+  const { file } = parseTaskFile("kitty-specs/001-demo/tasks/wp02-lane/WP02-payments.md", WP_DOC, kitty, cfg);
+  assert.equal(file.tasks.length, 1, "five checkboxes, still ONE task");
   assert.deepEqual(
-    file.tasks.map((t) => [t.kind, t.localTaskId, t.lineNumber]),
-    [
-      ["checklist", "T001", 12],
-      ["checklist", "T002", 13],
-      ["checklist", "T003", 16],
-      ["checklist", "T004", 17],
-    ],
-    "front-matter lines and EVERY heading are document structure only (C3.1, C3.2)",
-  );
-  assert.equal(file.featureName, "001-demo", "the mission directory is the feature (C2.3)");
-  assert.deepEqual(
-    exclusions.map((e) => [e.lineNumber, e.reason]),
-    [[9, "summary-section"]],
-    "the unfenced `## Inputs` checkbox is an exclusion record, not a task (C3.3)",
+    file.tasks.map((t) => t.localTaskId),
+    ["WP02"],
+    "lane directory + file-name token: WP02 identifies via fileNameIdPattern (C2.1)",
   );
 });
 
-test("parsing spec-kitty: work packages group subtasks and an empty work package yields nothing (C3.6, FR-007)", () => {
-  const { file } = parseTaskFile(PATH, ROLL_UP, kitty, cfg);
-  assert.deepEqual(
-    file.tasks.map((t) => [t.localTaskId, t.phase]),
-    [
-      ["T001", "WP01: Scaffold"],
-      ["T002", "WP01: Scaffold"],
-      ["T003", "WP02: Payments"],
-      ["T004", "WP02: Payments"],
-    ],
-    "the heading sets the grouping until the next heading — the heading itself never becomes a task",
-  );
-  const empty = parseTaskFile(
-    PATH,
-    ["## Work Package WP01: Scaffold", "- [ ] T001 Do it", "## Work Package WP02: Nothing here", "## Dependencies", "None."].join("\n"),
-    kitty,
-    cfg,
-  ).file;
-  assert.deepEqual(
-    empty.tasks.map((t) => [t.localTaskId, t.phase]),
-    [["T001", "WP01: Scaffold"]],
-    "a work package with no subtasks yields zero tasks (C3.6)",
-  );
-  // Grouping context only: subtasks written after the empty WP belong to it — the
-  // heading changes the grouping, then a later section groups nothing, with zero tasks.
-  const trailing = parseTaskFile(
-    PATH,
-    [
-      "## Work Package WP01: Scaffold",
-      "- [ ] T001 Do it",
-      "## Work Package WP02: Empty middle",
-      "## Work Package WP03: Carries the tail",
-      "- [ ] T002 Finish it",
-      "## Dependencies",
-      "- [ ] illustrative checkbox under a prose section",
-      "T002 depends on T001.",
-    ].join("\n"),
+test("022 document mode: a front-matter-only document yields one draft with an EMPTY body (C3.3)", () => {
+  const { file } = parseTaskFile(
+    "kitty-specs/001-demo/tasks/wp03-skeleton.md",
+    ["---", "work_package_id: wp03", "---", ""].join("\n"),
     kitty,
     cfg,
   );
-  assert.deepEqual(
-    trailing.file.tasks.map((t) => [t.localTaskId, t.phase]),
-    [
-      ["T001", "WP01: Scaffold"],
-      ["T002", "WP03: Carries the tail"],
-    ],
-    "the empty WP contributes grouping context only: it yields zero tasks and re-groups what follows",
-  );
-  assert.deepEqual(
-    trailing.exclusions.map((e) => [e.lineNumber, e.reason]),
-    [[7, "summary-section"]],
-    "the prose section keeps grouping nothing — its checkbox is excluded, not grouped",
+  assert.equal(file.tasks.length, 1);
+  const task = file.tasks[0];
+  assert.equal(task.localTaskId, "WP03");
+  assert.equal(task.title, "Skeleton", "cascade falls to the readable file-name slug — never the identifier token (C3.1, R6)");
+  assert.ok(
+    task.taskBody.startLine > task.taskBody.endLine,
+    `empty body is startLine > endLine (${task.taskBody.startLine} > ${task.taskBody.endLine}): the mirrored slice is visibly empty, never a silent drop`,
   );
 });
 
-test("parsing spec-kitty: a roll-up is a flat document — metadata only, no behavioral consumer (research R3)", () => {
-  const { flatDocument } = extractTasks(splitLines(ROLL_UP, cfg.tabWidth), new Set(), kitty, cfg);
-  assert.equal(flatDocument, true, "the never-matching heading grammar makes every roll-up flat");
+test("022 document mode: conflict markers inside the document still set unresolvedConflict — the scan stays upstream (R4)", () => {
+  const conflicted = [
+    "---",
+    "work_package_id: wp04",
+    "---",
+    "",
+    "# Work Package WP04: Migrate",
+    "<<<<<<< ours",
+    "- our guidance",
+    "=======",
+    "- theirs",
+    ">>>>>>> theirs",
+    "",
+  ].join("\n");
+  const { file, conflictBlocks } = parseTaskFile("kitty-specs/001-demo/tasks/wp04-migrate.md", conflicted, kitty, cfg);
+  assert.equal(conflictBlocks.length, 1, "the conflict scan is unchanged for document-mode files");
+  assert.equal(file.tasks.length, 1);
+  assert.equal(file.tasks[0].unresolvedConflict, true, "taskBody intersects the block (FR-009 equivalent)");
+});
+
+test("022 document mode: an unterminated front-matter fence is body, not front matter — the file still recognizes by name (R5)", () => {
+  const { file } = parseTaskFile(
+    "kitty-specs/001-demo/tasks/WP05-open.md",
+    ["---", "work_package_id: wp05", "", "# Work Package WP05", ""].join("\n"),
+    kitty,
+    cfg,
+  );
+  assert.equal(file.tasks.length, 1, "no closing fence ⇒ no front matter ⇒ file-name token identifies");
+  const task = file.tasks[0];
+  assert.equal(task.localTaskId, "WP05");
+  assert.equal(task.title, "Work Package WP05", "the leading heading wins over the slug; the --- lines are body");
+  assert.equal(task.taskBody.startLine, 1, "the whole file is the body");
 });
