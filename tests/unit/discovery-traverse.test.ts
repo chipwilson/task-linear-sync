@@ -12,7 +12,7 @@ import { builtInDefaults, deepMerge } from "task-linear-sync/config";
 import type { ResolvedConfig } from "task-linear-sync/config";
 import { discoverTaskFiles } from "task-linear-sync/discovery";
 import type { DiscoveryResult } from "task-linear-sync/discovery";
-import { traverseRepository } from "../../src/discovery/traverse.js";
+import { skipByExclusion, traverseRepository } from "../../src/discovery/traverse.js";
 import { posixOnly, withTempTree, fixtureRepoPath } from "../helpers/discovery-fixtures.js";
 
 /** Discover with git off (isolate traversal); every observed open is recorded into `probePaths`. */
@@ -225,29 +225,21 @@ test("discovery traverse: diagnostics and refusals are deterministically ordered
   );
 });
 
-test("discovery traverse: the `kitty-specs/*/tasks/` exclusion skips per-work-package prompt dirs for EVERY adapter — `*` is exactly one segment (017 C2.5, amendment 3)", async () => {
-  await withTempTree(
-    "traverse-kitty-exclusion",
-    [
-      { kind: "file", path: "kitty-specs/launch/tasks.md" },
-      { kind: "file", path: "kitty-specs/launch/tasks/WP01-setup.md" },
-      { kind: "file", path: "kitty-specs/launch/tasks/tasks.md" },
-      { kind: "file", path: "kitty-specs/launch/tasks/deep/tasks.md" },
-      { kind: "file", path: "kitty-specs/launch/tasks2/tasks.md" },
-      { kind: "file", path: "kitty-specs/tasks/tasks.md" },
-    ],
-    async (tree) => {
-      const result = await walk(tree);
-      assert.deepEqual(
-        filePaths(result),
-        ["kitty-specs/launch/tasks.md", "kitty-specs/launch/tasks2/tasks.md", "kitty-specs/tasks/tasks.md"],
-        "the mission roll-up survives; `tasks/` (and its subtree) is skipped at exactly one segment; `tasks2/` is a different name; `kitty-specs/tasks/` is a mission NAMED tasks — its roll-up syncs",
-      );
-    },
-  );
+// 022 SUPERSESSION: the spec-kitty ROW no longer declares this exclusion (data-model §3 —
+// the tasks/ folder IS the collection). The amendment-3 entry grammar itself stays part of
+// the framework contract, so it is pinned here directly on the pure predicate — no row
+// dependence — with the exact matrix the 017 walk-driven test used.
+test("discovery traverse: the `*`-segment exclusion grammar — `kitty-specs/*/tasks/` skips exactly one mission segment, subtree included (017 amendment 3, pinned on the predicate since 022)", () => {
+  const skip = skipByExclusion("kitty-specs/*/tasks/");
+  assert.ok(skip("kitty-specs/launch/tasks", "tasks"), "the mission tasks dir is skipped");
+  assert.ok(skip("kitty-specs/launch/tasks/deep", "deep"), "…with its whole subtree");
+  assert.equal(skip("kitty-specs/launch/tasks2", "tasks2"), false, "`tasks2` is a different name");
+  assert.equal(skip("kitty-specs/tasks", "tasks"), false, "`*` requires exactly one mission segment — a mission NAMED tasks keeps syncing");
+  assert.equal(skip("kitty-specs/launch/sub/tasks", "tasks"), false, "`*` crosses no separator");
+  assert.equal(skip("kitty-specs", "kitty-specs"), false, "the base itself is never skipped");
 });
 
-test("discovery traverse: disabling spec-kitty removes its exclusion — affected files behave exactly as before 017 (C2.6, FR-011)", async () => {
+test("discovery traverse: disabling spec-kitty keeps the collection invisible — files behave exactly as before the row existed (022 FR-013 parity, 017 C2.6 lineage)", async () => {
   await withTempTree(
     "traverse-kitty-disabled",
     [
@@ -266,9 +258,8 @@ test("discovery traverse: disabling spec-kitty removes its exclusion — affecte
 });
 
 // ── A-022-1 (022) — path-scoped candidates through traversal and the discovery union
-// (contracts/spec-kitty-work-packages.md C1.1–C1.4). Pins land test-first; the row-driven
-// descent goes green when T012 wires the union and T020 re-bases the row (removes the
-// 017 exclusion). ───────────────────────────────────────────────────────────────────────
+// (contracts/spec-kitty-work-packages.md C1.1–C1.4). The row drives these green since the
+// T020 re-base: `taskPathPatterns` claims the collection and the 017 exclusion is gone. ──
 
 test("022 traverse: the task-file matcher predicate receives (name, relPath); path matchers claim non-basename files", async () => {
   await withTempTree(

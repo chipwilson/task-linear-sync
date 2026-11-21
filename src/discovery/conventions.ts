@@ -44,6 +44,8 @@ export interface ResolvedConventions {
   readonly taskFilePatterns: readonly string[];
   /** A-022-1 (022): optional path-scoped candidate globs (see `FrameworkAdapter.taskPathPatterns`). */
   readonly taskPathPatterns?: readonly string[];
+  /** A-022-2 (022): optional document-unit task rule, passed through untouched (see `FrameworkAdapter.documentTaskRule`). */
+  readonly documentTaskRule?: FrameworkAdapter["documentTaskRule"];
   readonly baseDirectories: readonly string[];
   readonly detection: FrameworkAdapter["detection"];
   readonly featureNameRule: FeatureNameRule;
@@ -234,6 +236,7 @@ export function defineFrameworkAdapter(c: ResolvedConventions): FrameworkAdapter
     id: c.id,
     taskFilePatterns: [...c.taskFilePatterns],
     ...(c.taskPathPatterns !== undefined ? { taskPathPatterns: [...c.taskPathPatterns] } : {}),
+    ...(c.documentTaskRule !== undefined ? { documentTaskRule: { ...c.documentTaskRule } } : {}),
     baseDirectories: [...c.baseDirectories],
     detection: c.detection,
     featureNameRule: c.featureNameRule,

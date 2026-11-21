@@ -37,67 +37,39 @@ const CHECKBOX_LINES: readonly number[] = [3, 9, 15, 22, 23, 30, 37, 44, 52, 59,
 const kittyRow = builtInAdapters["spec-kitty"];
 const kittyView = {
   id: "spec-kitty" as const,
-  featureName: (filePath: string) => kittyRow.featureName(filePath), // kitty-specs/<x>/tasks.md → x
+  featureName: (filePath: string) => kittyRow.featureName(filePath), // kitty-specs/<x>/… → x
   headingGrammar: kittyRow.headingGrammar,
-  phasePattern: kittyRow.phasePattern,
-  summaryPattern: kittyRow.summaryPattern,
-  rollupPattern: kittyRow.rollupPattern,
-  checklistIdPattern: kittyRow.checklistIdPattern,
+  documentTaskRule: kittyRow.documentTaskRule, // 022 re-base: the row is document-mode
 } satisfies TaskFileAdapter;
 
-/**
- * Empirically pinned id/title table (adapter checklistIdPattern: leading integers need 2+
- * digits or a dotted tail — `1.`/`2.` stay IN the title, `4.1` captures `4.1`, `10.` captures
- * `10`). Derived from the compiled parser; the row's own grammar, unchanged by 021.
- */
-const KITTY_ID_TITLE: readonly (readonly [number, string | null, string])[] = [
-  [3, null, "1. Set up project structure and dependencies"],
-  [9, null, "2. Implement configuration management module"],
-  [15, null, "3. Implement logging module"],
-  [22, null, "4. Implement EC2 service module"],
-  [23, "4.1", "Create EC2 client wrapper with retry logic"],
-  [30, "4.2", "Implement instance discovery functionality"],
-  [37, "4.3", "Implement instance shutdown functionality"],
-  [44, null, "5. Implement main Lambda handler"],
-  [52, null, "6. Implement error handling and response formatting"],
-  [59, null, "7. Create IAM policy and deployment configuration"],
-  [65, null, "8. Write integration tests"],
-  [72, null, "9. Add comprehensive error handling tests"],
-  [79, "10", "Create deployment and monitoring setup"],
-];
-
-test("immunity spec-kitty — kiro-plan shape yields 13 parentless checklist tasks, zero heading tasks (C9, R3)", () => {
+test("immunity spec-kitty (022 re-base) — the kiro-plan shape is document-mode inert: zero roll-up tasks, one document task (C9, R3, R4)", () => {
   // Mirror pins (corpus precedent): the view reads the shipped built-in conventions verbatim.
   assert.equal(kittyView.headingGrammar, specKittyConventions.headingGrammar);
-  assert.equal(kittyView.phasePattern, specKittyConventions.phasePattern);
-  assert.equal(kittyView.summaryPattern, specKittyConventions.summaryPattern);
-  assert.equal(kittyView.rollupPattern, specKittyConventions.rollupPattern);
-  assert.equal(kittyView.checklistIdPattern, specKittyConventions.checklistIdPattern);
-  assert.equal(kittyView.headingGrammar, "(?!)", "never-matching heading grammar — the structural immunity (R3)");
+  assert.deepEqual(kittyView.documentTaskRule, specKittyConventions.documentTaskRule);
+  assert.equal(kittyView.headingGrammar, "(?!)", "never-matching heading grammar — retained placeholder, never consulted in document mode (R3)");
 
-  const result = parseTaskFile("kitty-specs/auth/tasks.md", CONTENT, kittyView, cfg);
-  const { tasks } = result.file;
+  const rollUp = parseTaskFile("kitty-specs/auth/tasks.md", CONTENT, kittyView, cfg);
+  assert.deepEqual(rollUp.file.tasks, [], "the roll-up never extracts — thirteen checkboxes, title heading and prose are documentation (FR-005)");
+  assert.deepEqual(rollUp.exclusions, [], "zero line-scanning: no exclusion records of any kind");
+  assert.deepEqual(rollUp.warnings, []);
+  assert.equal(rollUp.featureName, "auth", "kitty-specs/<x>/tasks.md → x (segment-under-base)");
+  assert.equal(rollUp.file.frameworkId, "spec-kitty");
 
-  assert.equal(tasks.length, 13, "exactly the thirteen checkboxes — the title heading is structure only");
-  assert.deepEqual(tasks.map((task) => task.lineNumber), CHECKBOX_LINES);
-  assert.ok(tasks.every((task) => task.kind === "checklist"), "zero heading tasks (C3.1): `# Implementation Plan` matches nothing");
-  assert.deepEqual(tasks.map((task) => [task.lineNumber, task.localTaskId ?? null, task.title]), KITTY_ID_TITLE);
-  assert.ok(tasks.every((task) => task.checked === true), "all thirteen `[x]` boxes checked");
-
-  // Depth 1 at default cap 1: no heading task exists to adopt anything, so every checkbox is a
-  // parentless root and nothing is depth-folded — the shape the shared fix moves kiro toward.
-  assert.ok(tasks.every((task) => !("parentUuid" in task)), "every survivor is parentless (depth 1) at cap 1");
-  assert.ok(tasks.every((task) => task.childUuids.length === 0), "no parent adopts a sibling at column 0");
-
-  // No exclusion records AT ALL: zero depth-folded, no summary-section, no rollup (verify).
-  // (Filter BEFORE the emptiness pin: deepEqual-with-[] narrows `exclusions` to `never[]`.)
-  assert.equal(result.exclusions.filter((record) => record.reason === "depth-folded").length, 0, "zero depth-folded exclusions");
-  assert.deepEqual(result.exclusions, [], "no exclusion records of any kind");
-  assert.deepEqual(result.conflictBlocks, []);
-  assert.deepEqual(result.warnings, []);
-  assert.equal(result.featureName, "auth", "kitty-specs/<x>/tasks.md → x");
-  assert.equal(result.file.frameworkId, "spec-kitty");
+  // The same content as a collection document: exactly ONE task carrying the whole plan as
+  // body — whatever plan shape is pasted inside, document mode can never produce the
+  // reported one-giant-issue shape NOR thirteen issues (R4).
+  const doc = parseTaskFile("kitty-specs/auth/tasks/wp01-plan.md", CONTENT, kittyView, cfg);
+  assert.equal(doc.file.tasks.length, 1);
+  const task = doc.file.tasks[0];
+  assert.equal(task.kind, "document");
+  assert.equal(task.localTaskId, "WP01");
+  assert.equal(task.title, "Implementation Plan", "leading heading wins the cascade (C3.1)");
+  assert.deepEqual(task.taskBody, { startLine: 1, endLine: RAW_LINES.length }, "the entire pasted plan is body content");
+  assert.ok(!("parentUuid" in task) && task.childUuids.length === 0, "fold-inert at depth 1 (R4)");
+  assert.equal(rollUp.conflictBlocks.length, 0);
+  assert.deepEqual(doc.exclusions, []);
 });
+
 
 // ── spec-superpower view (mirrors parsing-spec-superpower.test.ts's adapter view) ──────
 

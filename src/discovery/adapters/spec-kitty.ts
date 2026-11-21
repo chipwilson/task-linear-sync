@@ -1,10 +1,14 @@
 /**
- * Built-in `spec-kitty` adapter row (017; contracts/spec-kitty-adapter.md C1–C3; the
- * exact defaults of data-model.md §2). Spec Kitty lays out one roll-up task file per
- * mission (`kitty-specs/<mission>/tasks.md`): work-package headings group subtasks, the
- * template/prose sections are excluded, checklist lines carry `T001`-style local ids,
- * and `[P]`/`[USn]` capability tags belong to the file, not to derived titles.
- * The heading grammar never matches — zero `heading` tasks originate here (C3.1).
+ * Built-in `spec-kitty` adapter row — RE-BASED for feature 022 per data-model §3. Spec
+ * Kitty's task source is the work-package DOCUMENT: every Markdown document under a
+ * mission's `tasks/` folder (`taskPathPatterns`, A-022-1) that carries a work-package id
+ * (`documentTaskRule`, A-022-2) is exactly one task. The roll-up (`tasks.md`/`TASKS.md`)
+ * stays claimed — as documentation: its checklist lines, work-package headings and prose
+ * are content, never extraction inputs (FR-005). The 017 roll-up grammar members
+ * (`checklistIdPattern`, `titleTagPattern`, `phasePattern`, `summaryPattern`) are retired
+ * from the row (the whitelist members remain available to custom adapters), and the 017
+ * C2.5 tasks-directory exclusion is REMOVED — the collection descends. Detection stays
+ * path-only (017 C2.1); scaffold requests keep refusing (C1.3).
  */
 import { builtInDefaults } from "../../config/defaults.js";
 import type { FrameworkAdapter } from "../adapter.js";
@@ -12,22 +16,25 @@ import { defineFrameworkAdapter, type ResolvedConventions } from "../conventions
 
 export const specKittyConventions: ResolvedConventions = {
   id: "spec-kitty",
-  taskFilePatterns: [...builtInDefaults.taskFilePatterns],
+  taskFilePatterns: [...builtInDefaults.taskFilePatterns], // roll-up claim — unchanged semantics
+  taskPathPatterns: ["kitty-specs/*/tasks/**/*.md"], // A-022-1: the work-package collection (R2)
   baseDirectories: ["kitty-specs/"],
   detection: {
     pathPrefixes: ["kitty-specs/"], // C2.1 — path claims with NO sibling requirement
   },
-  featureNameRule: { kind: "parent-dir" }, // the mission beneath the specs root (C2.3)
-  headingGrammar: "(?!)", // never-matching: work-package/template headings are structure only (C3.1)
-  phasePattern: "^#{2,4}\\s+Work Package\\s+(?<phase>WP\\d+(?::\\s*[^\\n]*)?)\\s*$", // C3.6
-  summaryPattern:
-    "^\\s{0,3}#{2,4}\\s+(?:Inputs|Prerequisites|Organization|Subtask Format|Path Conventions|Goal|Independent Test|Implementation Notes|Parallel Opportunities|Dependencies|Risks & Mitigations)\\b", // C3.3
-  checklistIdPattern: "^(?<id>[Tt]?\\d{2,}(?:\\.\\d+)*|\\d+(?:\\.\\d+)+)[ \\t]*[.:—–-]?[ \\t]+", // C3.4 (amendment 2) — second alternation: dotted variants with single-digit heads ("2.1"), per T012/C3.4
-  titleTagPattern: "\\[(?:P\\d*|US\\d+)\\]", // C3.5 (amendment 2) — derived titles only
+  featureNameRule: { kind: "segment-under-base" }, // the mission beneath the specs root (R3)
+  headingGrammar: "(?!)", // never-matching placeholder retained; document mode never consults it
+  documentTaskRule: {
+    // A-022-2 (data-model §3, verbatim): collection gate + recognition keys + file-name id.
+    collectionPattern: "^kitty-specs/[^/]+/tasks/.+\\.md$",
+    idKey: "work_package_id",
+    titleKey: "title",
+    fileNameIdPattern: "(?i)^WP(\\d+)[^/]*\\.md$",
+  },
   titleBehavior: { stripPrefixes: [...builtInDefaults.titleStripPrefixes] },
   siblingDocuments: [...builtInDefaults.siblingDocuments],
   // C1.3 — no agentHooksDirectory and no template: scaffold requests refuse with zero writes.
-  frameworkSpecificExclusions: ["kitty-specs/*/tasks/"], // C2.5 (amendment 3 `*`-segment grammar)
+  frameworkSpecificExclusions: [], // 022: the tasks/ folder IS the collection (supersedes 017 C2.5)
 };
 
 export const specKittyAdapter: FrameworkAdapter = defineFrameworkAdapter(specKittyConventions);

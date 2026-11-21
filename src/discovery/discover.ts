@@ -39,7 +39,16 @@ function taskFileMatchers(registry: AdapterRegistry): ((name: string, relPath: s
     for (const pattern of adapter.taskFilePatterns) uniqueNames.add(pattern);
     for (const pattern of adapter.taskPathPatterns ?? []) uniquePaths.add(pattern);
   }
-  return [...[...uniqueNames].map(compileNamePattern), ...[...uniquePaths].map(compilePathPattern)];
+  // The traversal calls every matcher `(name, relPath)`: basename matchers consume the
+  // first argument, path matchers the SECOND — `compilePathPattern` yields a one-argument
+  // `(relPath)` predicate, so it joins the union behind an argument-adapting lambda.
+  return [
+    ...[...uniqueNames].map(compileNamePattern),
+    ...[...uniquePaths].map((pattern) => {
+      const matchesPath = compilePathPattern(pattern);
+      return (_name: string, relPath: string): boolean => matchesPath(relPath);
+    }),
+  ];
 }
 
 /**

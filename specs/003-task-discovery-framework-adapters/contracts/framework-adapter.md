@@ -61,6 +61,20 @@ export interface FrameworkAdapter {
    * adapter without this member sees a byte-identical candidate set (FR-013).
    */
   readonly taskPathPatterns?: readonly string[];
+  /**
+   * Amended 2026-11-21 by feature 022 (docs/contract-amendments.md, A-022-2): optional
+   * DOCUMENT-unit task rule — the four source strings (collection-gate regex, front-matter
+   * id key, front-matter title key, file-name id regex) consumed by the 004 document
+   * pipeline (004 contracts/parsing-api.md rule 13). Discovery passes the value through
+   * UNTOUCHED and never interprets it; absent ⇒ downstream extraction is byte-identical.
+   * On the override and custom-descriptor layers the object replaces wholesale.
+   */
+  readonly documentTaskRule?: {
+    readonly collectionPattern: string;
+    readonly idKey: string;
+    readonly titleKey: string;
+    readonly fileNameIdPattern: string;
+  };
   readonly baseDirectories: readonly string[];          // repo-root-relative POSIX, e.g. ".kiro/specs/"
   readonly detection: {
     readonly pathPrefixes?: readonly string[];          // POSIX path startsWith any
