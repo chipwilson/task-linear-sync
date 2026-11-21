@@ -7,6 +7,38 @@ this preview — lives in [docs/versioning.md](docs/versioning.md).
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-11-21
+
+Feature release — **per-task splitting of Kiro implementation-plan files**
+(feature 021) is the headline and carries the release's only behavior
+change: a recognized task file whose only heading is a leading title
+(`# Implementation Plan`) no longer collapses into one giant issue. Each
+top-level checkbox task becomes its own task with its own description
+region, and the title heading itself becomes one task titled after the
+heading.
+
+- **Document-title heading rule** (`src/parsing/extract.ts`) — a single
+  leading title-only heading is no longer a hierarchy anchor: checkbox
+  tasks beneath it stay at the default task-depth allowance, the heading
+  becomes the plan's title task, and orphan adoption never attaches tasks
+  to it. Heading-driven and heading-less files are unchanged (contract
+  C1–C3; pinned corpora byte-unchanged).
+- **Heading-id grammar amendment** (`src/config/defaults.ts`,
+  `src/parsing/content.ts`) — a word-form heading identifier must contain
+  at least one digit, so prose titles like `# Implementation Plan` no
+  longer read as `Task` ids; dotted-numeric ids (`4.1`) are now captured
+  with whitespace-only separators, restoring real local ids for
+  sub-numbered plan steps.
+- **Identity note (users of the broken shape)** — tasks previously hidden
+  inside the giant issue get corrected id seeds on the first sync after
+  the upgrade, so they create fresh issues; the old giant issue is no
+  longer matched and should be deleted manually or via the stale-issue
+  report. Subsequent runs are idempotent.
+- **Documentation** — README adapter row,
+  [docs/framework-adapters.md](docs/framework-adapters.md) kiro section,
+  and [docs/configuration-reference.md](docs/configuration-reference.md)
+  (`headingIdGrammar`, id-span capture) describe the amended behavior.
+
 ## [0.4.0] - 2026-11-19
 
 Feature release — **task-depth folding** (feature 020) is the headline and
