@@ -147,3 +147,48 @@ test("discovery built-ins: agentHookScaffold writes nothing to disk (research R1
     assert.deepEqual(await listTree(tree), before, "zero writes — 010 owns persistence");
   });
 });
+
+// ── A-022-1 (022, R3) — `segment-under-base` Feature_Name rule: the FIRST path segment
+// after the row's EFFECTIVE base directories (the mission, never the `tasks` folder and
+// never a lane sub-folder). Derived from the effective base set, so a consumer-overridden
+// `baseDirectories` keeps working (Principle III). ──────────────────────────────────────
+
+import { createAdapterRegistry } from "task-linear-sync/discovery";
+import type { FeatureNameRule } from "task-linear-sync/discovery";
+import { applyFeatureNameRule } from "../../src/discovery/conventions.js";
+
+/** The new kind is a type error until A-022-1 lands — cast keeps the red-first suite compiling. */
+const segmentUnderBase = { kind: "segment-under-base" } as unknown as FeatureNameRule;
+
+test("022 feature names: segment-under-base returns the mission beneath the base (R3)", () => {
+  assert.equal(
+    applyFeatureNameRule(segmentUnderBase, ["kitty-specs/"], "kitty-specs/002-x/tasks/WP01.md"),
+    "002-x",
+    "first segment after the base — the mission",
+  );
+  assert.equal(
+    applyFeatureNameRule(segmentUnderBase, ["kitty-specs/"], "kitty-specs/002-x/tasks.md"),
+    "002-x",
+    "the roll-up attributes to the same mission",
+  );
+  assert.equal(
+    applyFeatureNameRule(segmentUnderBase, ["kitty-specs/"], "kitty-specs/002-x/tasks/planned/WP01-x.md"),
+    "002-x",
+    "a lane directory is never a feature name (data-model §1)",
+  );
+});
+
+test("022 feature names: segment-under-base is undefined outside every base and for files sitting directly in the base", () => {
+  assert.equal(applyFeatureNameRule(segmentUnderBase, ["kitty-specs/"], "specs/001-x/tasks/WP01.md"), undefined);
+  assert.equal(applyFeatureNameRule(segmentUnderBase, ["kitty-specs/"], "kitty-specs/tasks.md"), undefined, "no segment UNDER the base except the file itself");
+});
+
+test("022 feature names: the rule follows the EFFECTIVE base directories (programmatic override, Principle III)", () => {
+  const registry = createAdapterRegistry(builtInDefaults, {
+    adapters: { "spec-kitty": { baseDirectories: ["kit-root/"], featureNameRule: segmentUnderBase } },
+  });
+  const kitty = registry.enabledAdapters.find((a) => a.id === "spec-kitty");
+  assert.ok(kitty, "spec-kitty row present");
+  assert.equal(kitty.featureName("kit-root/m1/tasks/WP01.md"), "m1", "a consumer-overridden root is honored");
+  assert.equal(kitty.featureName("kitty-specs/m1/tasks/WP01.md"), undefined, "the replaced base no longer derives");
+});
