@@ -65,6 +65,47 @@ export class IntegrityError extends EngineError {
 }
 
 /**
+ * Repository-side durable-identity collision (022 C2.4 / R8 — the plan-build twin of the
+ * tracker-side `IntegrityError`): two or more parsed tasks share one `Stable_UUID`. For
+ * document identities (framework, mission, normalized WP id — path-independent by R7)
+ * this is a duplicate work-package id inside one mission. A HARD refusal: plan build
+ * aborts before matching, no plan object exists, and no winner is guessed (Principle II,
+ * FR-008). The finding is deterministic: framework, mission, id, and the colliding paths
+ * sorted byte-wise ascending.
+ */
+export class DocumentIdentityCollisionError extends EngineError {
+  override readonly name = "DocumentIdentityCollisionError";
+
+  /** The collided durable identity. */
+  readonly taskUuid: string;
+
+  /** The framework whose row produced the identities. */
+  readonly frameworkId: string;
+
+  /** The mission (Feature_Name) the colliding documents live under; "" when absent. */
+  readonly featureName: string;
+
+  /** The colliding local id (normalized WP id for document kind). */
+  readonly localTaskId: string;
+
+  /** The colliding task-file paths, byte-wise ascending (R8 — deterministic report). */
+  readonly filePaths: readonly string[];
+
+  constructor(taskUuid: string, frameworkId: string, featureName: string, localTaskId: string, filePaths: readonly string[]) {
+    super(
+      `document identity collision — framework '${frameworkId}' mission '${featureName}' id '${localTaskId}': ` +
+        `paths (sorted): ${[...filePaths].sort((a, b) => (a < b ? -1 : a > b ? 1 : 0)).join(", ")}; ` +
+        `plan build refused, no winner guessed (C2.4, R8)`,
+    );
+    this.taskUuid = taskUuid;
+    this.frameworkId = frameworkId;
+    this.featureName = featureName;
+    this.localTaskId = localTaskId;
+    this.filePaths = [...filePaths].sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));
+  }
+}
+
+/**
  * Journal tamper or unreadability (research R9/R11/R14; contracts/journal-rollback.md §2):
  * envelope tag-check failure, unreadable manifest/step-journal, or malformed journal
  * material. Carries **no plaintext** — the message is a sanitized diagnostic only

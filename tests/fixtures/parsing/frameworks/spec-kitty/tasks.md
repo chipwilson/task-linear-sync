@@ -1,34 +1,28 @@
 ---
 mission: 001-corpus
-created: 2026-11-10
-kit: spec-kitty
+created: 2026-11-04
 ---
 
-# Tasks: Mission 001-corpus
+# 001-corpus — Tasks (roll-up index)
 
 ## Inputs
-
-- Feature: `kitty-specs/001-corpus/spec.md`
-- Plan: `kitty-specs/001-corpus/plan.md`
-
-Illustrative subtask syntax (never a task — template prose):
-
+- Source spec: `spec.md`
 - [ ] T099 Illustrative checkbox inside the Inputs section
 
-## Work Package WP01: Create auth module
+## Subtask Format
+- [ ] Txxx Short imperative title, optional [P] or [USn] tag
 
+## Work Package WP01: Create auth module
 - [ ] T001 [P] Create the auth module
 - [ ] T002 Wire the auth module into the app
 
 ## Work Package WP02: Ship the corpus mission
-
 - [ ] T003 [US1] Ship the corpus mission
 
 ## Dependencies
-
-T002 depends on T001. T003 depends on T002.
+T002 depends on T001.
 
 ## Risks & Mitigations
-
-- Risk: illustrative checkboxes may be mistaken for tasks; mitigated by the
-  summary-section grammar.
+- Under the corrected model this roll-up is documentation: every checkbox line above is
+  an index fragment and yields ZERO tasks. The work packages are `tasks/WP01-auth.md`
+  and `tasks/WP02-billing.md`.

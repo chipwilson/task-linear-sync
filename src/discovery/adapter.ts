@@ -43,6 +43,8 @@ export type FeatureNameRule =
   | { readonly kind: "segment-after"; readonly markers: readonly string[] }
   /** Task-file basename with a leading `NNNN-NN-NN-` date prefix and the final extension removed (spec-superpower, 018 R5). */
   | { readonly kind: "date-stripped-basename" }
+  /** First path segment after the row's EFFECTIVE base directory (spec-kitty mission — 022 A-022-1, R3). */
+  | { readonly kind: "segment-under-base" }
   | { readonly kind: "none" };
 
 /**
@@ -56,6 +58,27 @@ export interface FrameworkAdapter {
   readonly id: FrameworkIdentity;
   /** Basename globs (research R2); effective value after merge (R7). */
   readonly taskFilePatterns: readonly string[];
+  /**
+   * A-022-1 (022): optional PATH-scoped candidate globs over the full root-relative POSIX
+   * path (`*` exactly one segment, `**` zero or more — `compilePathPattern`). They join the
+   * traversal candidate union ALONGSIDE the basename matchers; the traversal predicate
+   * widens to `(name, relPath)` and basename-only matchers ignore the second argument, so
+   * adapters without this member keep byte-identical candidate sets (FR-013).
+   */
+  readonly taskPathPatterns?: readonly string[];
+  /**
+   * A-022-2 (022): optional document-unit task rule — the four regex/source strings the 004
+   * document pipeline consumes (collection gate, front-matter id/title keys, file-name id).
+   * Present ⇒ parsing runs document mode INSTEAD of heading/checklist extraction for this
+   * adapter's files (contracts/parsing-api.md rule 13); the value passes through discovery
+   * untouched (discovery never interprets it). Absent ⇒ extraction unchanged everywhere.
+   */
+  readonly documentTaskRule?: {
+    readonly collectionPattern: string;
+    readonly idKey: string;
+    readonly titleKey: string;
+    readonly fileNameIdPattern: string;
+  };
   /** Repo-root-relative POSIX dir patterns; also discovery hints + rank material. */
   readonly baseDirectories: readonly string[];
   /** Declarative markers driving detection (001 R7.2). */
@@ -165,6 +188,8 @@ export interface CustomAdapterDescriptor {
   /** 017 amendment 2 members — carried verbatim onto the custom row when declared. */
   readonly checklistIdPattern?: string;
   readonly titleTagPattern?: string;
+  /** A-022-2 (022): document-unit task rule — carried verbatim onto the custom row when declared. */
+  readonly documentTaskRule?: FrameworkAdapter["documentTaskRule"];
   readonly titleBehavior?: { readonly stripPrefixes: readonly string[] };
   /** Defaults to the configured `siblingDocuments` when absent. */
   readonly siblingDocuments?: readonly string[];
@@ -177,6 +202,10 @@ export interface CustomAdapterDescriptor {
 /** FR-011 overridable-convention subset for a known adapter. */
 export interface AdapterConventions {
   readonly taskFilePatterns?: readonly string[];
+  /** A-022-1 (022): path-scoped candidates; arrays replace wholesale like every list member. */
+  readonly taskPathPatterns?: readonly string[];
+  /** A-022-2 (022): document-unit task rule; the whole object replaces wholesale (scalars replace). */
+  readonly documentTaskRule?: FrameworkAdapter["documentTaskRule"];
   readonly baseDirectories?: readonly string[];
   readonly detection?: Partial<FrameworkAdapter["detection"]>;
   readonly headingGrammar?: string;

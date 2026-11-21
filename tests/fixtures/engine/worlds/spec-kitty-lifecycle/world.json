@@ -1,0 +1,62 @@
+{
+  "$comment": "T029 [022 US3] — lifecycle world: two missions each carrying a WP01 document (US3-AC3 distinctness), driven through lane flips, Activity Log / Review Report appends and an in-collection rename (sync-spec-kitty-lifecycle.test.ts). Tracker starts empty; identity must survive every edit.",
+  "name": "spec-kitty-lifecycle",
+  "teams": [
+    {
+      "key": "TEAM-A",
+      "id": "ac000000-0000-4000-8000-000000000101",
+      "projects": [
+        {
+          "id": "proj-alpha",
+          "name": "Project Alpha"
+        }
+      ],
+      "workflowStates": [
+        {
+          "id": "ac000000-0000-4000-8000-000000000201",
+          "name": "Backlog",
+          "type": "backlog"
+        },
+        {
+          "id": "ac000000-0000-4000-8000-000000000202",
+          "name": "Todo",
+          "type": "todo"
+        },
+        {
+          "id": "ac000000-0000-4000-8000-000000000203",
+          "name": "Done",
+          "type": "completed"
+        }
+      ]
+    }
+  ],
+  "issues": [],
+  "config": {
+    "teams": {
+      "TEAM-A": {
+        "projects": [
+          "proj-alpha"
+        ],
+        "workflowStates": {
+          "backlog": "Backlog",
+          "todo": "Todo",
+          "done": "Done",
+          "completedTypes": [
+            "completed"
+          ],
+          "ignoredTypes": [
+            "canceled",
+            "duplicate"
+          ]
+        }
+      }
+    },
+    "defaultTeamKey": "TEAM-A",
+    "defaultProject": "proj-alpha",
+    "confirmationKey": "SYNC",
+    "descriptionNormalizationProfile": "default"
+  },
+  "metadata": {
+    "scenario": "Work-package documents survive the kanban lifecycle (022 US3): lane flips, Activity Log / Review Report appends and an in-collection rename update the SAME issue; the two missions' WP01 remain two distinct issues."
+  }
+}

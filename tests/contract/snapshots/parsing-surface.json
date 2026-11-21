@@ -32,6 +32,16 @@
     "foldDraftsOverCap",
     "validateTaskDepthCap"
   ],
+  "parsing/document": [
+    "DocumentDraft",
+    "DocumentTaskRule",
+    "FrontMatterScan",
+    "compileRuleSource",
+    "deriveDocumentTask",
+    "normalizeIdentifierToken",
+    "readableFileSlug",
+    "scanFrontMatter"
+  ],
   "parsing/extract": [
     "ExclusionRecord",
     "ExtractOutput",

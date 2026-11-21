@@ -146,6 +146,12 @@ export function renderTaskLines(
   // ── validate ALL before touching ANY (ascending line number) ──────────────────
   for (const assignment of ordered) {
     const n = assignment.task.lineNumber;
+    if (assignment.task.kind === "document") {
+      // 022 C6.1 defensive lane: a document task has no renderable line — its extent IS
+      // the content (R10: repository `tasks/` files are never rewritten). An assignment
+      // reaching here is a caller bug; refuse as a structural mismatch.
+      throw new LineRenderError(filePath, n, "structure-mismatch");
+    }
     if (!Number.isInteger(n) || n < 1 || n > lines.length) {
       throw new LineRenderError(filePath, n, "line-out-of-range");
     }

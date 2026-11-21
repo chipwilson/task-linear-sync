@@ -7,7 +7,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 
-import { compileNamePattern } from "task-linear-sync/discovery";
+import { compileNamePattern, compilePathPattern } from "task-linear-sync/discovery";
 
 test("discovery patterns: exact basename 'tasks.md' matches only itself", () => {
   const m = compileNamePattern("tasks.md");
@@ -83,4 +83,45 @@ test("discovery patterns: skip globs match directory names too (override layer f
 test("discovery patterns: matcher is reusable (compiled once per run, called many times)", () => {
   const m = compileNamePattern("tasks.md");
   for (let i = 0; i < 3; i++) assert.equal(m("tasks.md"), true, `call ${i}`);
+});
+
+// ── A-022-1 (022) — path-scoped candidate patterns (contracts/spec-kitty-work-packages.md
+// C1.1): root-relative POSIX SEGMENT globs matched against the FULL relative path. `*`
+// occupies exactly one path segment, `**` zero or more (segment semantics consistent with
+// the 017 A-3 exclusion grammar); matching is anchored — no prefix or suffix leak. ──────
+
+test("path patterns: the compiler exists (A-022-1 amendment member)", () => {
+  assert.equal(typeof compilePathPattern, "function", "compilePathPattern must be exported");
+});
+
+test("path patterns: 'kitty-specs/*/tasks/**/*.md' matches collection documents at any depth", () => {
+  const m = compilePathPattern("kitty-specs/*/tasks/**/*.md");
+  assert.equal(m("kitty-specs/002-x/tasks/WP01-a.md"), true, "`**` = zero segments (flat layout)");
+  assert.equal(m("kitty-specs/002-x/tasks/planned/WP01-a.md"), true, "legacy lane sub-folder");
+  assert.equal(m("kitty-specs/002-x/tasks/planned/deep/WP01-a.md"), true, "`**` = zero or more segments");
+});
+
+test("path patterns: the collection pattern does NOT widen beyond the collection", () => {
+  const m = compilePathPattern("kitty-specs/*/tasks/**/*.md");
+  assert.equal(m("kitty-specs/002-x/tasks.md"), false, "the roll-up is not a collection document");
+  assert.equal(m("kitty-specs/002-x/tasks/img.png"), false, "non-.md attachments never match");
+  assert.equal(m("specs/001-x/tasks/WP01.md"), false, "rooted at kitty-specs/ — other trees never match");
+  assert.equal(m("kitty-specs/002-x/tasks"), false, "a directory path is not a .md candidate");
+});
+
+test("path patterns: a single '*' occupies exactly one segment and never crosses '/'", () => {
+  const m = compilePathPattern("kitty-specs/*/tasks.md");
+  assert.equal(m("kitty-specs/001-a/tasks.md"), true);
+  assert.equal(m("kitty-specs/001-a/nested/tasks.md"), false, "`*` crosses no separator");
+  assert.equal(m("kitty-specs/tasks.md"), false, "`*` requires exactly one segment");
+});
+
+test("path patterns: anchored — no suffix leak and no prefix leak", () => {
+  const m = compilePathPattern("kitty-specs/*/tasks/**/*.md");
+  assert.equal(m("kitty-specs/002-x/tasks/WP01-a.md.extra"), false, "no suffix leak");
+  assert.equal(m("vendor/kitty-specs/002-x/tasks/WP01-a.md"), false, "root-relative — no prefix leak");
+  const exact = compilePathPattern("docs/tasks.md");
+  assert.equal(exact("docs/tasks.md"), true);
+  assert.equal(exact("docs/tasks.mdx"), false);
+  assert.equal(exact("docs/tasks.md/../evil"), false);
 });

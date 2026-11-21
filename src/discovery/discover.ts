@@ -8,7 +8,7 @@
  *
  * Zero writes, zero tracker calls, zero state-directory involvement (Principle I).
  */
-import { compileNamePattern } from "./patterns.js";
+import { compileNamePattern, compilePathPattern } from "./patterns.js";
 import { canonicalizeRepositoryRoot } from "./root.js";
 import { discoverGitContext } from "./git.js";
 import { createAdapterRegistry, selectAdapter } from "./registry.js";
@@ -25,13 +25,30 @@ import type {
   GitContext,
 } from "./types.js";
 
-/** Union of the enabled pool's effective task-file matchers (basenames). */
-function taskFileMatchers(registry: AdapterRegistry): ((name: string) => boolean)[] {
-  const unique = new Set<string>();
+/**
+ * Union of the enabled pool's effective task-file matchers: basename globs
+ * (`taskFilePatterns`, research R2) and — A-022-1 (022, C1.1) — path-scoped globs
+ * (`taskPathPatterns`) over the full root-relative POSIX path, joined ALONGSIDE the
+ * basename matchers without widening them (FR-013: other identities' candidate sets
+ * unchanged; non-`.md` files stay outside the candidates because no pattern names them).
+ */
+function taskFileMatchers(registry: AdapterRegistry): ((name: string, relPath: string) => boolean)[] {
+  const uniqueNames = new Set<string>();
+  const uniquePaths = new Set<string>();
   for (const adapter of registry.enabledAdapters) {
-    for (const pattern of adapter.taskFilePatterns) unique.add(pattern);
+    for (const pattern of adapter.taskFilePatterns) uniqueNames.add(pattern);
+    for (const pattern of adapter.taskPathPatterns ?? []) uniquePaths.add(pattern);
   }
-  return [...unique].map(compileNamePattern);
+  // The traversal calls every matcher `(name, relPath)`: basename matchers consume the
+  // first argument, path matchers the SECOND — `compilePathPattern` yields a one-argument
+  // `(relPath)` predicate, so it joins the union behind an argument-adapting lambda.
+  return [
+    ...[...uniqueNames].map(compileNamePattern),
+    ...[...uniquePaths].map((pattern) => {
+      const matchesPath = compilePathPattern(pattern);
+      return (_name: string, relPath: string): boolean => matchesPath(relPath);
+    }),
+  ];
 }
 
 /**

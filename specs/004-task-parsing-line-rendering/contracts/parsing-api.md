@@ -77,6 +77,27 @@ export function parseTaskFile(
     from the frozen `taskStableSeed` function; the UUID never appears in file content.
 12. **Determinism** (Principle IV): identical `(filePath, content, adapter, config)` inputs
     produce structurally identical `ParseResult`s, field-for-field, including array orders.
+13. **Document mode** (022 amendment A-022-2; `contracts/spec-kitty-work-packages.md`
+    C0–C3 in `specs/022-spec-kitty-wp-tasks/`): when the consumed adapter carries
+    `documentTaskRule`, the heading/checklist extraction of rules 1–6 and the depth
+    folding of 020 are REPLACED by the document-unit pipeline — per claimed file:
+    split any well-formed leading front-matter fence (first non-blank line `---`, closed
+    by a following `---`/`…` fence; malformed/unterminated/absent ⇒ no front matter, the
+    whole file is body; only top-level scalar keys read); test `collectionPattern` against
+    `filePath`; recognize by non-empty front-matter `idKey` scalar **else**
+    `fileNameIdPattern` on the basename; emit **0 or 1** draft of kind `document` —
+    `localTaskId` = normalized id (upper-case `WP` + digits for the spec-kitty row),
+    `title` per the cascade front-matter `titleKey` → body's leading ATX heading text →
+    readable file-name slug (identifier token stripped, `-`/`_` → spaces, whitespace
+    collapsed; front-matter text never appears in a title), and
+    `taskBody = { startLine: first body line, endLine: last line }` — the extent IS the
+    mirrored content range, inclusive of the leading heading line. Files failing
+    recognition (including roll-ups) short-circuit to **zero drafts with zero
+    line-scanning**: no grammar exclusions, no nesting, no duplicate warnings. The
+    conflict scan and screening inputs run unchanged upstream (rule 9 applies; depth 1
+    makes 020 folding vacuous — a single parentless draft never folds). Seed, ordinal,
+    and determinism rules (7, 11, 12) apply unchanged. Absent member ⇒ rules 1–12
+    byte-identical for every other adapter.
 
 ## Test obligations (mapped in quickstart)
 

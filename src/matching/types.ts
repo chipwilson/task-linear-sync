@@ -64,7 +64,13 @@ export interface SignalContribution {
 }
 
 /** data-model §3 — machine-readable non-usability reason (diagnostics, never selection input). */
-export type PairExclusion = "below-plausible" | "gated-team" | "gated-project" | "gated-framework";
+export type PairExclusion =
+  | "below-plausible"
+  | "gated-team"
+  | "gated-project"
+  | "gated-framework"
+  /** A-022-3 (022 C4.3): document-kind task without the durable anchor — never selectable. */
+  | "document-kind-not-durable";
 
 /** data-model §3 — scoring intermediate for one task↔candidate pair. */
 export interface PairScore {

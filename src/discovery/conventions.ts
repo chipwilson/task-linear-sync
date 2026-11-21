@@ -42,6 +42,10 @@ import { isBuiltInFrameworkId } from "./types.js";
 export interface ResolvedConventions {
   readonly id: FrameworkIdentity;
   readonly taskFilePatterns: readonly string[];
+  /** A-022-1 (022): optional path-scoped candidate globs (see `FrameworkAdapter.taskPathPatterns`). */
+  readonly taskPathPatterns?: readonly string[];
+  /** A-022-2 (022): optional document-unit task rule, passed through untouched (see `FrameworkAdapter.documentTaskRule`). */
+  readonly documentTaskRule?: FrameworkAdapter["documentTaskRule"];
   readonly baseDirectories: readonly string[];
   readonly detection: FrameworkAdapter["detection"];
   readonly featureNameRule: FeatureNameRule;
@@ -174,6 +178,22 @@ export function applyFeatureNameRule(rule: FeatureNameRule, baseDirectories: rea
       const undated = name.replace(/^\d{4}-\d{2}-\d{2}-/, "");
       return undated.replace(/\.[^./]+$/, "");
     }
+    case "segment-under-base": {
+      // 022 A-022-1 (R3): the FIRST path segment after an EFFECTIVE base directory —
+      // the mission beneath the specs root. A `tasks` folder or lane sub-folder sits
+      // DEEPER and is never a feature name; a file sitting directly in the base has no
+      // segment under the base and derives nothing. Derived from the MERGED
+      // baseDirectories, so a consumer-overridden root keeps working (Principle III).
+      for (const base of baseDirectories) {
+        const norm = base.replace(/\/+$/, "");
+        if (norm !== "" && relPath.startsWith(`${norm}/`)) {
+          const rest = relPath.slice(norm.length + 1);
+          const segments = rest.split("/");
+          return segments.length >= 2 && segments[0] !== "" ? (segments[0] as string) : undefined;
+        }
+      }
+      return undefined;
+    }
   }
 }
 
@@ -215,6 +235,8 @@ export function defineFrameworkAdapter(c: ResolvedConventions): FrameworkAdapter
   return deepFreeze<FrameworkAdapter>({
     id: c.id,
     taskFilePatterns: [...c.taskFilePatterns],
+    ...(c.taskPathPatterns !== undefined ? { taskPathPatterns: [...c.taskPathPatterns] } : {}),
+    ...(c.documentTaskRule !== undefined ? { documentTaskRule: { ...c.documentTaskRule } } : {}),
     baseDirectories: [...c.baseDirectories],
     detection: c.detection,
     featureNameRule: c.featureNameRule,

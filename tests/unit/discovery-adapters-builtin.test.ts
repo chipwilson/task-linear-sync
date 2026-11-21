@@ -80,28 +80,27 @@ test("discovery built-ins: generic row — FR-010 purity, config-driven bases, `
   assert.equal(generic.agentHookTemplate, "command-json");
 });
 
-test("discovery built-ins: spec-kitty row — kitty-specs/ base, path-only detection, task exclusion dir, never-matching headings, the two new grammar members, no scaffold (017 C1–C3)", () => {
+test("discovery built-ins: spec-kitty row — kitty-specs/ base, path-only detection, document collection, never-matching headings, no scaffold (022 re-base; 017 C1–C2)", () => {
   const kitty = builtInAdapters["spec-kitty"];
   assert.equal(kitty.id, "spec-kitty");
   assert.deepEqual(kitty.baseDirectories, ["kitty-specs/"]);
   assert.deepEqual(kitty.detection.pathPrefixes, ["kitty-specs/"], "claims by path prefix only");
   assert.equal(kitty.detection.siblingsAnyOf, undefined, "NO sibling document requirement (C2.1)");
   assert.equal(kitty.detection.requirePathAndSiblings, undefined);
-  assert.deepEqual(kitty.featureNameRule, { kind: "parent-dir" }, "the mission is the directory beneath the root (C2.3)");
+  assert.deepEqual(kitty.featureNameRule, { kind: "segment-under-base" }, "the mission is the FIRST segment beneath the base (022 R3)");
   assert.equal(kitty.featureName("kitty-specs/launch/tasks.md"), "launch");
   assert.deepEqual(kitty.taskFilePatterns, [...builtInDefaults.taskFilePatterns]);
-  assert.deepEqual(kitty.frameworkSpecificExclusions, ["kitty-specs/*/tasks/"], "per-work-package agent-prompt dirs (C2.5)");
+  assert.deepEqual(kitty.taskPathPatterns, ["kitty-specs/*/tasks/**/*.md"], "the work-package collection (022 A-022-1)");
+  assert.deepEqual(kitty.frameworkSpecificExclusions, [], "022 REMOVES the 017 tasks/-dir exclusion — the collection descends");
   assert.equal(kitty.headingGrammar, "(?!)");
-  assert.equal(new RegExp("(?!)", "u").test("## Work Package WP01: Setup"), false, "never-matching grammar (C3.1)");
-  assert.equal(kitty.phasePattern, "^#{2,4}\\s+Work Package\\s+(?<phase>WP\\d+(?::\\s*[^\\n]*)?)\\s*$");
-  assert.equal(kitty.checklistIdPattern, "^(?<id>[Tt]?\\d{2,}(?:\\.\\d+)*|\\d+(?:\\.\\d+)+)[ \\t]*[.:—–-]?[ \\t]+", "C3.4 — dotted variants with single-digit heads ('2.1') included");
-  assert.equal(kitty.titleTagPattern, "\\[(?:P\\d*|US\\d+)\\]", "C3.5");
+  assert.equal(new RegExp("(?!)", "u").test("## Work Package WP01: Setup"), false, "never-matching grammar (022: structural placeholder, document mode never consults it)");
+  assert.ok(kitty.documentTaskRule, "022 A-022-2 — the document rule rides the row (full value pinned in discovery-adapters-spec-kitty.test.ts)");
   assert.equal(kitty.agentHooksDirectory, undefined, "no agent-hook scaffold (C1.3)");
   assert.equal(kitty.agentHookTemplate, undefined);
 });
 
-test("discovery built-ins: the other five rows carry NO checklistIdPattern/titleTagPattern (C5.3, SC-005)", () => {
-  for (const id of ["bmad", "generic", "kiro", "open-spec", "spec-kit"]) {
+test("discovery built-ins: no built-in row carries checklistIdPattern/titleTagPattern post-022 (C5.3, SC-005; spec-kitty retired them in 022)", () => {
+  for (const id of ["bmad", "generic", "kiro", "open-spec", "spec-kit", "spec-kitty"]) {
     const adapter = builtInAdapters[id as keyof typeof builtInAdapters];
     assert.equal(adapter.checklistIdPattern, undefined, `${id}: checklistIdPattern absent`);
     assert.equal(adapter.titleTagPattern, undefined, `${id}: titleTagPattern absent`);
@@ -146,4 +145,48 @@ test("discovery built-ins: agentHookScaffold writes nothing to disk (research R1
     agentHookScaffold("generic", "task-sync");
     assert.deepEqual(await listTree(tree), before, "zero writes — 010 owns persistence");
   });
+});
+
+// ── A-022-1 (022, R3) — `segment-under-base` Feature_Name rule: the FIRST path segment
+// after the row's EFFECTIVE base directories (the mission, never the `tasks` folder and
+// never a lane sub-folder). Derived from the effective base set, so a consumer-overridden
+// `baseDirectories` keeps working (Principle III). ──────────────────────────────────────
+
+import { createAdapterRegistry } from "task-linear-sync/discovery";
+import type { FeatureNameRule } from "task-linear-sync/discovery";
+import { applyFeatureNameRule } from "../../src/discovery/conventions.js";
+
+const segmentUnderBase: FeatureNameRule = { kind: "segment-under-base" };
+
+test("022 feature names: segment-under-base returns the mission beneath the base (R3)", () => {
+  assert.equal(
+    applyFeatureNameRule(segmentUnderBase, ["kitty-specs/"], "kitty-specs/002-x/tasks/WP01.md"),
+    "002-x",
+    "first segment after the base — the mission",
+  );
+  assert.equal(
+    applyFeatureNameRule(segmentUnderBase, ["kitty-specs/"], "kitty-specs/002-x/tasks.md"),
+    "002-x",
+    "the roll-up attributes to the same mission",
+  );
+  assert.equal(
+    applyFeatureNameRule(segmentUnderBase, ["kitty-specs/"], "kitty-specs/002-x/tasks/planned/WP01-x.md"),
+    "002-x",
+    "a lane directory is never a feature name (data-model §1)",
+  );
+});
+
+test("022 feature names: segment-under-base is undefined outside every base and for files sitting directly in the base", () => {
+  assert.equal(applyFeatureNameRule(segmentUnderBase, ["kitty-specs/"], "specs/001-x/tasks/WP01.md"), undefined);
+  assert.equal(applyFeatureNameRule(segmentUnderBase, ["kitty-specs/"], "kitty-specs/tasks.md"), undefined, "no segment UNDER the base except the file itself");
+});
+
+test("022 feature names: the rule follows the EFFECTIVE base directories (programmatic override, Principle III)", () => {
+  const registry = createAdapterRegistry(builtInDefaults, {
+    adapters: { "spec-kitty": { baseDirectories: ["kit-root/"], featureNameRule: segmentUnderBase } },
+  });
+  const kitty = registry.enabledAdapters.find((a) => a.id === "spec-kitty");
+  assert.ok(kitty, "spec-kitty row present");
+  assert.equal(kitty.featureName("kit-root/m1/tasks/WP01.md"), "m1", "a consumer-overridden root is honored");
+  assert.equal(kitty.featureName("kitty-specs/m1/tasks/WP01.md"), undefined, "the replaced base no longer derives");
 });

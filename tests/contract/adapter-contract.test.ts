@@ -168,3 +168,61 @@ test("discovery adapter contract: the FrameworkAdapter interface consumed here i
     assert.ok(name in mod, `frozen 004 seam '${name}' must stay exported`);
   }
 });
+
+// ── A-022-2 (022) — the 004 member whitelist gains the OPTIONAL `documentTaskRule`
+// (contracts/adapter-consumption.md rule 2): document-unit task mode. Absent ⇒ extraction
+// is byte-identical for every other adapter. ─────────────────────────────────────────────
+
+import { existsSync, readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
+import { parseTaskFile } from "task-linear-sync/parsing";
+import type { TaskFileAdapter } from "task-linear-sync/parsing";
+import { genericFixtureAdapter, makeTestConfig } from "../helpers/parsing-fixtures.js";
+
+const WHITELIST_MEMBERS: readonly string[] = [
+  "id",
+  "featureName",
+  "headingGrammar",
+  "phasePattern",
+  "summaryPattern",
+  "rollupPattern",
+  "checklistIdPattern",
+  "titleTagPattern",
+  "identityFileScope",
+  "documentTaskRule", // A-022-2 (022)
+];
+
+test("022 adapter consumption: TaskFileAdapter declares exactly the whitelist members, documentTaskRule optional (A-022-2)", () => {
+  const dtsPath = fileURLToPath(new URL("../../../dist/parsing/adapter.d.ts", import.meta.url));
+  assert.ok(existsSync(dtsPath), "dist/parsing/adapter.d.ts missing (run npm run build)");
+  const dts = readFileSync(dtsPath, "utf8");
+  const body = /export interface TaskFileAdapter \{([\s\S]*?)\n\}/.exec(dts)?.[1] ?? "";
+  // Top-level members only — the emitted declaration indents members by 4, nested by 8.
+  const members = [...body.matchAll(/^ {4}(?! )(?:readonly\s+)?([A-Za-z0-9_$]+)(\??)[:(]/gm)].map((m) => m[1] as string);
+  assert.deepEqual(
+    [...members].sort(),
+    [...WHITELIST_MEMBERS].sort(),
+    "the TaskFileAdapter member set must equal the documented whitelist (adapter-consumption.md rule 2) — additions are amendments",
+  );
+  assert.match(
+    body,
+    /documentTaskRule\?:\s*\{[\s\S]*?collectionPattern[^}]*?idKey[^}]*?titleKey[^}]*?fileNameIdPattern[^}]*?\}/,
+    "documentTaskRule is OPTIONAL and carries the four regex-source members",
+  );
+});
+
+test("022 adapter consumption: absent documentTaskRule ⇒ extraction unchanged (inert for every other adapter)", () => {
+  const cfg = makeTestConfig();
+  const content = [
+    "## 1.1: Keep the parser happy",
+    "",
+    "- [ ] T001 Still a checklist task",
+    "",
+  ].join("\n");
+  const without = parseTaskFile("docs/auth/tasks.md", content, genericFixtureAdapter, cfg);
+  // The member type lands with A-022-2 (T015); the cast keeps the red-first suite compiling.
+  const explicitAbsent = { ...genericFixtureAdapter, documentTaskRule: undefined } as unknown as TaskFileAdapter;
+  const withExplicitUndefined = parseTaskFile("docs/auth/tasks.md", content, explicitAbsent, cfg);
+  assert.deepEqual(withExplicitUndefined, without, "an adapter omitting (or explicitly undefined-ing) the member parses byte-identically");
+  assert.ok(without.file.tasks.length > 0, "the heading/checklist pipeline still extracts for member-less adapters");
+});

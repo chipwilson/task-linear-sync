@@ -1,5 +1,10 @@
 /**
  * T021 [017 polish] — SC-005 engine parity over the committed `spec-kitty-basic` world.
+ * T031 [022] RE-BASE: the world's repo is the corrected document model (WP collection
+ * under `tasks/`, roll-ups as claimed documentation) — the pinned task set is now ONE
+ * entry per work-package document (3), mirrored content is the document body verbatim,
+ * and `expectedMarkdownChanges` is empty everywhere (rollback of a document-only run is
+ * a no-write undo).
  *
  * The engine suites are identity-agnostic (they drive `Unit`s through the fake
  * `Linear_Port`), so "the six identities yield the same results shape" is pinned here
@@ -52,11 +57,17 @@ test("engine spec-kitty world: plan/apply/re-plan/rollback match the pre-existin
     const preRunFiles = walkFiles(w.repositoryRoot);
     const engine = attachEngine(w, createSyncEngine, { keyProvider: w.keyProvider });
 
-    // 1. PLAN — bootstrap: the eight printed subtasks, claimed as spec-kitty.
+    // 1. PLAN — bootstrap: one entry per work-package DOCUMENT (022 T031 re-base);
+    //    roll-ups stay claimed documentation and contribute no entries.
     const plan = await engine.buildSyncPlan({ repositoryRoot: w.repositoryRoot });
-    assert.equal(plan.entries.length, 8, "both missions — all eight subtasks planned");
+    assert.equal(plan.entries.length, 3, "both missions — three WP documents planned");
+    assert.ok(plan.entries.every((e) => e.filePath.includes("/tasks/")));
     assert.ok(plan.entries.every((e) => e.frameworkId === "spec-kitty"));
     assert.ok(plan.entries.every((e) => e.decision === "create"));
+    assert.ok(
+      plan.entries.every((e) => e.expectedMarkdownChanges.length === 0),
+      "documents never plan markdown rewrites (C6.1)",
+    );
 
     // 2. APPLY — same result fields as every scenario world (status, runId, operations).
     const applied = await engine.applySyncPlan(plan, gates(w, plan.lowConfidencePresent));
@@ -64,12 +75,22 @@ test("engine spec-kitty world: plan/apply/re-plan/rollback match the pre-existin
     assert.equal(typeof applied.runId, "string");
     assert.ok(applied.operations.length > 0, "operations journaled");
     assert.ok(applied.operations.every((o) => o.status !== "failed"));
-    assert.equal(callsOf(w, "createIssue").length, 8, "one create per task");
+    assert.equal(callsOf(w, "createIssue").length, 3, "one create per document");
+    // Content = the document body verbatim (C2.3 — no front matter in this world).
+    const billingBytes = readFileSync(
+      join(engineWorldDir("spec-kitty-basic"), "repo/kitty-specs/002-billing/tasks/WP01-invoices.md"),
+      "utf8",
+    ).replace(/\s+$/u, "");
+    const billingCreate = callsOf(w, "createIssue").find((c) =>
+      (c.args[0] as { description: string }).description.includes("Invoices"),
+    );
+    assert.ok(billingCreate, "the billing document was created");
+    assert.equal((billingCreate!.args[0] as { description: string }).description, billingBytes);
 
     // 3. RE-PLAN — full sync is a fixpoint (SC-002 currency).
     const engine2 = attachEngine(w, createSyncEngine, { keyProvider: w.keyProvider });
     const plan2 = await engine2.buildSyncPlan({ repositoryRoot: w.repositoryRoot });
-    assert.equal(plan2.entries.length, 8);
+    assert.equal(plan2.entries.length, 3);
     assert.deepEqual(
       plan2.entries.filter((e) => e.decision === "create" || e.decision === "update"),
       [],
@@ -81,7 +102,7 @@ test("engine spec-kitty world: plan/apply/re-plan/rollback match the pre-existin
     const rollback = await engine2.rollbackRun(applied.runId);
     assert.ok(rollback.reversedOperations > 0, "journaled operations reversed");
     assert.deepEqual(walkFiles(w.repositoryRoot), preRunFiles, "every repo file byte-equal to the pre-run walk");
-    assert.equal(w.fake.world.issues.size, 8, "created issues are never deleted…");
+    assert.equal(w.fake.world.issues.size, 3, "created issues are never deleted…");
     assert.ok(
       [...w.fake.world.issues.values()].every((i) => i.archived === true),
       "…they are all archived by the rollback (FR-013/016)",
@@ -151,7 +172,7 @@ test("engine spec-kitty world: CLI read-only commands accept spec-kitty (plan/in
     for (const key of ["entries", "unmapped", "unresolvedConflicts", "lowConfidence"]) {
       assert.equal(typeof summary.counts[key], "number", `counts.${key}`);
     }
-    assert.equal(summary.counts.entries, 8, "eight planned entries under the spec-kitty adapter");
+    assert.equal(summary.counts.entries, 3, "three planned document entries under the spec-kitty adapter");
   } finally {
     await w.dispose();
   }

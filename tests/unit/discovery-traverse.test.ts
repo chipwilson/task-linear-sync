@@ -12,7 +12,8 @@ import { builtInDefaults, deepMerge } from "task-linear-sync/config";
 import type { ResolvedConfig } from "task-linear-sync/config";
 import { discoverTaskFiles } from "task-linear-sync/discovery";
 import type { DiscoveryResult } from "task-linear-sync/discovery";
-import { posixOnly, withTempTree } from "../helpers/discovery-fixtures.js";
+import { skipByExclusion, traverseRepository } from "../../src/discovery/traverse.js";
+import { posixOnly, withTempTree, fixtureRepoPath } from "../helpers/discovery-fixtures.js";
 
 /** Discover with git off (isolate traversal); every observed open is recorded into `probePaths`. */
 async function walk(
@@ -224,29 +225,21 @@ test("discovery traverse: diagnostics and refusals are deterministically ordered
   );
 });
 
-test("discovery traverse: the `kitty-specs/*/tasks/` exclusion skips per-work-package prompt dirs for EVERY adapter — `*` is exactly one segment (017 C2.5, amendment 3)", async () => {
-  await withTempTree(
-    "traverse-kitty-exclusion",
-    [
-      { kind: "file", path: "kitty-specs/launch/tasks.md" },
-      { kind: "file", path: "kitty-specs/launch/tasks/WP01-setup.md" },
-      { kind: "file", path: "kitty-specs/launch/tasks/tasks.md" },
-      { kind: "file", path: "kitty-specs/launch/tasks/deep/tasks.md" },
-      { kind: "file", path: "kitty-specs/launch/tasks2/tasks.md" },
-      { kind: "file", path: "kitty-specs/tasks/tasks.md" },
-    ],
-    async (tree) => {
-      const result = await walk(tree);
-      assert.deepEqual(
-        filePaths(result),
-        ["kitty-specs/launch/tasks.md", "kitty-specs/launch/tasks2/tasks.md", "kitty-specs/tasks/tasks.md"],
-        "the mission roll-up survives; `tasks/` (and its subtree) is skipped at exactly one segment; `tasks2/` is a different name; `kitty-specs/tasks/` is a mission NAMED tasks — its roll-up syncs",
-      );
-    },
-  );
+// 022 SUPERSESSION: the spec-kitty ROW no longer declares this exclusion (data-model §3 —
+// the tasks/ folder IS the collection). The amendment-3 entry grammar itself stays part of
+// the framework contract, so it is pinned here directly on the pure predicate — no row
+// dependence — with the exact matrix the 017 walk-driven test used.
+test("discovery traverse: the `*`-segment exclusion grammar — `kitty-specs/*/tasks/` skips exactly one mission segment, subtree included (017 amendment 3, pinned on the predicate since 022)", () => {
+  const skip = skipByExclusion("kitty-specs/*/tasks/");
+  assert.ok(skip("kitty-specs/launch/tasks", "tasks"), "the mission tasks dir is skipped");
+  assert.ok(skip("kitty-specs/launch/tasks/deep", "deep"), "…with its whole subtree");
+  assert.equal(skip("kitty-specs/launch/tasks2", "tasks2"), false, "`tasks2` is a different name");
+  assert.equal(skip("kitty-specs/tasks", "tasks"), false, "`*` requires exactly one mission segment — a mission NAMED tasks keeps syncing");
+  assert.equal(skip("kitty-specs/launch/sub/tasks", "tasks"), false, "`*` crosses no separator");
+  assert.equal(skip("kitty-specs", "kitty-specs"), false, "the base itself is never skipped");
 });
 
-test("discovery traverse: disabling spec-kitty removes its exclusion — affected files behave exactly as before 017 (C2.6, FR-011)", async () => {
+test("discovery traverse: disabling spec-kitty keeps the collection invisible — files behave exactly as before the row existed (022 FR-013 parity, 017 C2.6 lineage)", async () => {
   await withTempTree(
     "traverse-kitty-disabled",
     [
@@ -262,4 +255,139 @@ test("discovery traverse: disabling spec-kitty removes its exclusion — affecte
       assert.ok(filePaths(result).includes("kitty-specs/launch/tasks/tasks.md"), "exclusion is gone with the disabled adapter");
     },
   );
+});
+
+// ── A-022-1 (022) — path-scoped candidates through traversal and the discovery union
+// (contracts/spec-kitty-work-packages.md C1.1–C1.4). The row drives these green since the
+// T020 re-base: `taskPathPatterns` claims the collection and the 017 exclusion is gone. ──
+
+test("022 traverse: the task-file matcher predicate receives (name, relPath); path matchers claim non-basename files", async () => {
+  await withTempTree(
+    "traverse-relpath-predicate",
+    [
+      { kind: "file", path: "collect/a.xyz" }, // basename matches NO enabled pattern
+      { kind: "file", path: "tasks.md" }, // basename matcher keeps working
+    ],
+    async (tree) => {
+      const seenArgs: Array<[string, string]> = [];
+      const output = await traverseRepository({
+        root: tree,
+        taskFileMatchers: [
+          (name: string, relPath: string) => {
+            seenArgs.push([name, relPath]);
+            return name === "tasks.md";
+          },
+          (_name: string, relPath: string) => relPath === "collect/a.xyz",
+        ],
+        skipDirectoryMatchers: [],
+      });
+      assert.deepEqual(
+        output.candidates.map((c) => c.filePath),
+        ["collect/a.xyz", "tasks.md"],
+        "path-aware matcher joins the candidate set",
+      );
+      for (const [name, relPath] of seenArgs) {
+        assert.ok(!name.includes("/"), `matcher name argument is a basename (${name})`);
+        assert.ok(!relPath.startsWith("/"), `relPath is root-relative POSIX (${relPath})`);
+      }
+    },
+  );
+});
+
+test("022 traverse: basename-only matchers ignore the second argument — existing candidate sets unchanged", async () => {
+  await withTempTree(
+    "traverse-basename-unchanged",
+    [
+      { kind: "file", path: "docs/auth/tasks.md" },
+      { kind: "file", path: "docs/auth/notes.md" },
+      { kind: "file", path: "docs/auth/spec.md" },
+    ],
+    async (tree) => {
+      // Default config, spec-kitty ENABLED: no path-pattern widening outside kitty-specs/,
+      // so a plain docs tree discovers exactly the basename-union files, as ever.
+      const result = await walk(tree);
+      assert.deepEqual(filePaths(result), ["docs/auth/tasks.md"]);
+    },
+  );
+});
+
+test("022 traverse: taskPathPatterns descends kitty-specs/<mission>/tasks/ and claims lane sub-folders (C1.1/C1.2)", async () => {
+  await withTempTree(
+    "traverse-kitty-descent",
+    [
+      { kind: "file", path: "kitty-specs/001-demo/tasks.md" },
+      { kind: "file", path: "kitty-specs/001-demo/tasks/WP01-scaffold.md" },
+      { kind: "file", path: "kitty-specs/001-demo/tasks/notes.md" },
+      { kind: "file", path: "kitty-specs/001-demo/tasks/img.png" },
+      { kind: "file", path: "kitty-specs/002-billing/tasks/planned/WP01-billing.md" },
+    ],
+    async (tree) => {
+      const result = await walk(tree);
+      assert.deepEqual(filePaths(result), [
+        "kitty-specs/001-demo/tasks.md",
+        "kitty-specs/001-demo/tasks/WP01-scaffold.md",
+        "kitty-specs/001-demo/tasks/notes.md",
+        "kitty-specs/002-billing/tasks/planned/WP01-billing.md",
+      ], "the collection descends (flat + lane sub-folders); the roll-up stays claimed; non-.md never enters");
+      assert.ok(
+        result.files.every((f) => f.frameworkId === "spec-kitty" && f.adapterId === "spec-kitty"),
+        "every collection file is claimed by spec-kitty — no fall-through (FR-001)",
+      );
+      const byPath = new Map(result.files.map((f) => [f.filePath, f.featureName ?? null]));
+      assert.equal(byPath.get("kitty-specs/001-demo/tasks/WP01-scaffold.md"), "001-demo", "mission is the feature, not the folder");
+      assert.equal(byPath.get("kitty-specs/001-demo/tasks/notes.md"), "001-demo");
+      assert.equal(byPath.get("kitty-specs/002-billing/tasks/planned/WP01-billing.md"), "002-billing", "a lane directory is never a feature name");
+      assert.ok(
+        ![...result.files].some((f) => f.featureName === "tasks"),
+        "feature name is NEVER the tasks folder",
+      );
+    },
+  );
+});
+
+test("022 traverse: path matchers join the union WITHOUT widening other identities' candidates (C1.3)", async () => {
+  await withTempTree(
+    "traverse-union-disjoint",
+    [
+      { kind: "file", path: "specs/001-x/spec.md" }, // NOT a basename-union member — must stay a non-candidate
+      { kind: "file", path: "specs/001-x/tasks.md" },
+      { kind: "file", path: "specs/001-x/plan.md" }, // spec-kit sibling marker
+      { kind: "file", path: "kitty-specs/001-demo/tasks/WP01-scaffold.md" },
+    ],
+    async (tree) => {
+      const result = await walk(tree);
+      const paths = filePaths(result);
+      assert.ok(!paths.includes("specs/001-x/spec.md"), "spec.md is no one's candidate — the path union never widens basename semantics");
+      const specKit = result.files.find((f) => f.filePath === "specs/001-x/tasks.md");
+      assert.equal(specKit?.frameworkId, "spec-kit", "the spec-kit claim is unaffected by the kitty path patterns");
+      const kitty = result.files.find((f) => f.filePath === "kitty-specs/001-demo/tasks/WP01-scaffold.md");
+      assert.equal(kitty?.frameworkId, "spec-kitty");
+    },
+  );
+});
+
+test("022 traverse: DISABLE parity — spec-kitty off restores pre-017 fall-through byte-identically (C1.4, FR-013)", async () => {
+  // Reference captured BEFORE any 022 mechanism landed (git-tracked behavior of the
+  // 017 code over the reworked fixture): roll-ups fall through to `generic` with no
+  // feature name; collection files are not candidates; zero diagnostics.
+  const config = {
+    ...structuredClone(builtInDefaults),
+    frameworkAdapters: builtInDefaults.frameworkAdapters.filter((id) => id !== "spec-kitty"),
+  } as ResolvedConfig;
+  const result = await walk(fixtureRepoPath("spec-kitty"), config);
+  assert.deepEqual(
+    result.files.map((f) => ({
+      filePath: f.filePath,
+      frameworkId: f.frameworkId,
+      adapterId: f.adapterId,
+      featureName: f.featureName ?? null,
+    })),
+    [
+      { filePath: "kitty-specs/001-demo/tasks.md", frameworkId: "generic", adapterId: "generic", featureName: null },
+      { filePath: "kitty-specs/002-billing/tasks.md", frameworkId: "generic", adapterId: "generic", featureName: null },
+      { filePath: "kitty-specs/003-plan-only/tasks.md", frameworkId: "generic", adapterId: "generic", featureName: null },
+    ],
+    "removing the row removes patterns, claims and document-mode as a unit",
+  );
+  assert.deepEqual(result.diagnostics, [], "fall-through produces no new diagnostics");
 });

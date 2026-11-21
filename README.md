@@ -38,9 +38,10 @@ a file and never echoing it into any output.
 - **Version posture**: the package is in its 0.x line — under the
   [0.x posture](docs/versioning.md) breaking changes may ride minor bumps until
   the documented 1.0.0 condition is met. Surface-level stability guarantees
-  (below) hold throughout. Current release: **v0.5.0** — per-task
-  splitting of title-headed implementation plans (each checkbox task gets
-  its own issue and region); every release ships its own section in
+  (below) hold throughout. Current release: **v0.6.0** — spec-kitty
+  work-package documents are the task source (one document = one fully
+  detailed task; the mission roll-up yields zero tasks); every release ships
+  its own section in
   [CHANGELOG.md](CHANGELOG.md).
 - **Requires** Node 20 or newer wherever the tool runs; nothing else to install.
 
@@ -172,7 +173,7 @@ all enabled by default through the `frameworkAdapters` config key:
 | `open-spec` | OpenSpec | path contains `openspec/`/`open-spec/` **or** sibling `openspec.json`/`proposal.md` | `openspec/`, `open-spec/` | segment after `openspec/`, `changes/`, or `specs/` |
 | `bmad` | BMAD | path contains `bmad/`/`bmad-method/` **or** sibling `prd.md`/`architecture.md` | `bmad/`, `bmad-method/`, `docs/` | parent dir, else task-file basename |
 | `spec-superpower` | Spec Superpowers | path beneath `docs/superpowers/plans/` | `docs/superpowers/plans/` | date-stripped plan filename |
-| `spec-kitty` | Spec Kitty | path beneath `kitty-specs/` (no sibling requirement) | `kitty-specs/` | immediate parent dir beneath `kitty-specs/` (the mission) |
+| `spec-kitty` | Spec Kitty | path beneath `kitty-specs/` (no sibling requirement) — tasks are the work-package documents under `kitty-specs/<mission>/tasks/`; the roll-up yields none | `kitty-specs/` | immediate parent dir beneath `kitty-specs/` (the mission) |
 | `generic` | any Markdown layout | fallback — never claims a file by marker | configured base dirs | parent dir under a base |
 
 When several adapters match one file, selection ranks the longest matching
@@ -286,24 +287,32 @@ filenames are never claimed (widen `taskFilePatterns` for that); there is no
 agent-hook scaffold for this framework.
 ### Spec Kitty (`spec-kitty`)
 
-Spec Kitty keeps one mission per directory: the checklist is
-`kitty-specs/<mission>/tasks.md`, the mission directory is the feature name,
-and `spec.md`, `plan.md`, and `research.md` ride along as sibling documents.
-Anything beneath `kitty-specs/` is claimed — no sibling marker is required —
-and the `kitty-specs/<mission>/tasks/` bookkeeping directory (the per-work-package
-agent-prompt files Spec Kitty generates) is excluded from discovery, because
-those prompts are not tasks.
+Spec Kitty keeps one mission per directory, and the sync unit is the
+work-package document under `kitty-specs/<mission>/tasks/` — one document is
+one fully detailed task. The roll-up `kitty-specs/<mission>/tasks.md` stays
+claimed but is index content: its checklist lines, `## Work Package …`
+headings, and prose yield zero tasks and are never extraction inputs. The
+mission directory is the feature name, and `spec.md`, `plan.md`, and
+`research.md` ride along as sibling documents. Anything beneath
+`kitty-specs/` is claimed — no sibling marker is required — and legacy
+per-lane sub-folders beneath `tasks/` are accepted collection content.
 
-Checklist lines carry their own id, printed without the `[]` Spec Kit uses —
-`- [ ] T001 Create the scaffold` — so the local id is read out of the line body
-(`<id> <text>`), and `## Work Package WP01: <title>` headings group the subtasks
-into phases rather than becoming tasks themselves. `[P]`, `[P1]`, and `[US1]`
-capability tags stay verbatim in the file and in the mirrored issue body but are
-stripped from derived task titles, so the issue title is the plain task text.
-Task-file names and base directories are configuration keys. The two extra
-grammars Spec Kitty adds (`checklistIdPattern`, `titleTagPattern`) have
-no config-file key — only the programmatic `overrides.adapters["spec-kitty"]` lane
-(deep-merged, arrays replace) re-points them over the built-in row (see
+Identity is the mission plus the work-package id: the front-matter
+`work_package_id` scalar when present, else the leading `WP<digits>` token
+of the file name (`wp01-billing.md` → `WP01`). Neither the file name itself
+nor the document's position enters the identity, so a rename inside the
+mission's `tasks/` folder keeps the same task. The title cascades:
+front-matter `title:` → the body's first heading of any level → a readable
+file-slug. The mirrored issue content is the document verbatim minus its
+leading front matter. Documents are never written back — no confirmation
+prefix, no landed line, ever — and pairing with tracker issues happens only
+through the durable sync-state anchor: roll-up-era issues left by pre-0.6
+syncs never re-pair and are surfaced as stale for operator cleanup
+(removal stays a manual decision). Task-file names and base directories are
+configuration keys. The document rule itself (collection pattern,
+`work_package_id`/`title` keys, file-name id pattern) has no config-file
+key — only the programmatic `overrides.adapters["spec-kitty"]` lane
+(deep-merged, arrays replace) re-points it over the built-in row (see
 [Framework adapters](docs/framework-adapters.md)).
 
 ### Generic Markdown (`generic`)

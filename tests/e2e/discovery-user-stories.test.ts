@@ -118,13 +118,24 @@ test("e2e US: repeat-run byte-identity across the whole result (SC-002)", async 
 
 test("e2e US: spec-kitty zero-config walkthrough — the id set keyed off builtInAdapters, spec-kitty included (017 US1)", async () => {
   const kitty = await discoverTaskFiles({ repositoryRoot: KITTY, config: builtInDefaults, gitContext: false });
+  // 022 T031-carryover re-base: the roll-ups stay claimed AND the work-package
+  // collection under tasks/ is now claimed too (A-022-1 descent) — 9 files, mission
+  // feature names everywhere, lane sub-folders included. Recognition (task count) is
+  // the parsing tier's pin (discovery-spec-kitty / parsing-document), not this list.
   assert.deepEqual(
     kitty.files.map((f) => [f.filePath, f.frameworkId, f.featureName]),
     [
       ["kitty-specs/001-demo/tasks.md", "spec-kitty", "001-demo"],
+      ["kitty-specs/001-demo/tasks/WP01-scaffold.md", "spec-kitty", "001-demo"],
+      ["kitty-specs/001-demo/tasks/WP03-no-title.md", "spec-kitty", "001-demo"],
+      ["kitty-specs/001-demo/tasks/front-matter-only.md", "spec-kitty", "001-demo"],
+      ["kitty-specs/001-demo/tasks/notes.md", "spec-kitty", "001-demo"],
+      ["kitty-specs/001-demo/tasks/review-feedback.md", "spec-kitty", "001-demo"],
       ["kitty-specs/002-billing/tasks.md", "spec-kitty", "002-billing"],
+      ["kitty-specs/002-billing/tasks/planned/WP01-billing.md", "spec-kitty", "002-billing"],
+      ["kitty-specs/003-plan-only/tasks.md", "spec-kitty", "003-plan-only"],
     ],
-    "zero configuration keys: the mission directory is the Feature_Name (US1-AC2)",
+    "zero configuration keys: the mission directory is the Feature_Name (US1-AC2); the collection descends (022)",
   );
   const five = await discoverTaskFiles({ repositoryRoot: FIVE, config: builtInDefaults });
   const superpower = await discoverTaskFiles({ repositoryRoot: fixtureRepoPath("spec-superpower"), config: builtInDefaults, gitContext: false });

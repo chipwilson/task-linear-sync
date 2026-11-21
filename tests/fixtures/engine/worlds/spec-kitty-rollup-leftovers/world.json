@@ -1,0 +1,426 @@
+{
+  "$comment": "T028 [022 US2] — pre-022 leftovers: every roll-up-era issue of the spec-kitty-upstream mission 002 (Tnnn seeds for the checklist lines, ordinal-fallback seeds for the Work Package headings) with durable anchors, seeded into an otherwise empty tracker. Under the corrected model the plan contains ONLY work-package documents; none of these legacy issues may pair (durable-only veto, C5.1/C5.2) and none is deleted.",
+  "name": "spec-kitty-rollup-leftovers",
+  "teams": [
+    {
+      "key": "TEAM-A",
+      "id": "ac000000-0000-4000-8000-000000000101",
+      "projects": [
+        {
+          "id": "proj-alpha",
+          "name": "Project Alpha"
+        }
+      ],
+      "workflowStates": [
+        {
+          "id": "ac000000-0000-4000-8000-000000000201",
+          "name": "Backlog",
+          "type": "backlog"
+        },
+        {
+          "id": "ac000000-0000-4000-8000-000000000202",
+          "name": "Todo",
+          "type": "todo"
+        },
+        {
+          "id": "ac000000-0000-4000-8000-000000000203",
+          "name": "Done",
+          "type": "completed"
+        }
+      ]
+    }
+  ],
+  "issues": [
+    {
+      "id": "ac000000-0000-4000-8000-000000000510",
+      "key": "ACME-1",
+      "teamKey": "TEAM-A",
+      "projectId": "proj-alpha",
+      "title": "Work Package WP01: Release Validation Tooling",
+      "description": "Legacy roll-up era mirror — pre-0.6 index fragment for heading at line 16.",
+      "stateType": "todo",
+      "updatedAt": "2026-01-01T00:000:01.000Z"
+    },
+    {
+      "id": "ac000000-0000-4000-8000-000000000511",
+      "key": "ACME-2",
+      "teamKey": "TEAM-A",
+      "projectId": "proj-alpha",
+      "title": "T001 Add the version-consistency check",
+      "description": "Legacy roll-up era mirror — pre-0.6 index fragment for T001.",
+      "stateType": "todo",
+      "updatedAt": "2026-01-01T00:000:02.000Z"
+    },
+    {
+      "id": "ac000000-0000-4000-8000-000000000512",
+      "key": "ACME-3",
+      "teamKey": "TEAM-A",
+      "projectId": "proj-alpha",
+      "title": "T002 Add the changelog-coverage check",
+      "description": "Legacy roll-up era mirror — pre-0.6 index fragment for T002.",
+      "stateType": "todo",
+      "updatedAt": "2026-01-01T00:000:03.000Z"
+    },
+    {
+      "id": "ac000000-0000-4000-8000-000000000513",
+      "key": "ACME-4",
+      "teamKey": "TEAM-A",
+      "projectId": "proj-alpha",
+      "title": "T003 Wire checks into one validate command",
+      "description": "Legacy roll-up era mirror — pre-0.6 index fragment for T003.",
+      "stateType": "todo",
+      "updatedAt": "2026-01-01T00:000:04.000Z"
+    },
+    {
+      "id": "ac000000-0000-4000-8000-000000000514",
+      "key": "ACME-5",
+      "teamKey": "TEAM-A",
+      "projectId": "proj-alpha",
+      "title": "T004 Unit-test each check with fixtures",
+      "description": "Legacy roll-up era mirror — pre-0.6 index fragment for T004.",
+      "stateType": "todo",
+      "updatedAt": "2026-01-01T00:000:05.000Z"
+    },
+    {
+      "id": "ac000000-0000-4000-8000-000000000515",
+      "key": "ACME-6",
+      "teamKey": "TEAM-A",
+      "projectId": "proj-alpha",
+      "title": "T005 Document the validate command",
+      "description": "Legacy roll-up era mirror — pre-0.6 index fragment for T005.",
+      "stateType": "todo",
+      "updatedAt": "2026-01-01T00:000:06.000Z"
+    },
+    {
+      "id": "ac000000-0000-4000-8000-000000000516",
+      "key": "ACME-7",
+      "teamKey": "TEAM-A",
+      "projectId": "proj-alpha",
+      "title": "Work Package WP02: Publication Runbook",
+      "description": "Legacy roll-up era mirror — pre-0.6 index fragment for heading at line 23.",
+      "stateType": "todo",
+      "updatedAt": "2026-01-01T00:000:07.000Z"
+    },
+    {
+      "id": "ac000000-0000-4000-8000-000000000517",
+      "key": "ACME-8",
+      "teamKey": "TEAM-A",
+      "projectId": "proj-alpha",
+      "title": "T006 Draft the pre-publish checklist",
+      "description": "Legacy roll-up era mirror — pre-0.6 index fragment for T006.",
+      "stateType": "todo",
+      "updatedAt": "2026-01-01T00:000:08.000Z"
+    },
+    {
+      "id": "ac000000-0000-4000-8000-000000000518",
+      "key": "ACME-9",
+      "teamKey": "TEAM-A",
+      "projectId": "proj-alpha",
+      "title": "T007 Draft the publish step sequence",
+      "description": "Legacy roll-up era mirror — pre-0.6 index fragment for T007.",
+      "stateType": "todo",
+      "updatedAt": "2026-01-01T00:000:09.000Z"
+    },
+    {
+      "id": "ac000000-0000-4000-8000-000000000519",
+      "key": "ACME-10",
+      "teamKey": "TEAM-A",
+      "projectId": "proj-alpha",
+      "title": "T008 Draft the rollback procedure",
+      "description": "Legacy roll-up era mirror — pre-0.6 index fragment for T008.",
+      "stateType": "todo",
+      "updatedAt": "2026-01-01T00:000:10.000Z"
+    },
+    {
+      "id": "ac000000-0000-4000-8000-000000000520",
+      "key": "ACME-11",
+      "teamKey": "TEAM-A",
+      "projectId": "proj-alpha",
+      "title": "T009 Dry-run the runbook against the staging index",
+      "description": "Legacy roll-up era mirror — pre-0.6 index fragment for T009.",
+      "stateType": "todo",
+      "updatedAt": "2026-01-01T00:000:11.000Z"
+    },
+    {
+      "id": "ac000000-0000-4000-8000-000000000521",
+      "key": "ACME-12",
+      "teamKey": "TEAM-A",
+      "projectId": "proj-alpha",
+      "title": "T010 Review the runbook with a second maintainer",
+      "description": "Legacy roll-up era mirror — pre-0.6 index fragment for T010.",
+      "stateType": "todo",
+      "updatedAt": "2026-01-01T00:000:12.000Z"
+    },
+    {
+      "id": "ac000000-0000-4000-8000-000000000522",
+      "key": "ACME-13",
+      "teamKey": "TEAM-A",
+      "projectId": "proj-alpha",
+      "title": "T011 Add the tag-after-publish guard",
+      "description": "Legacy roll-up era mirror — pre-0.6 index fragment for T011.",
+      "stateType": "todo",
+      "updatedAt": "2026-01-01T00:000:13.000Z"
+    },
+    {
+      "id": "ac000000-0000-4000-8000-000000000523",
+      "key": "ACME-14",
+      "teamKey": "TEAM-A",
+      "projectId": "proj-alpha",
+      "title": "Work Package WP03: Post-Release Verification",
+      "description": "Legacy roll-up era mirror — pre-0.6 index fragment for heading at line 31.",
+      "stateType": "todo",
+      "updatedAt": "2026-01-01T00:000:14.000Z"
+    },
+    {
+      "id": "ac000000-0000-4000-8000-000000000524",
+      "key": "ACME-15",
+      "teamKey": "TEAM-A",
+      "projectId": "proj-alpha",
+      "title": "T012 Fetch the published artifact metadata",
+      "description": "Legacy roll-up era mirror — pre-0.6 index fragment for T012.",
+      "stateType": "todo",
+      "updatedAt": "2026-01-01T00:000:15.000Z"
+    },
+    {
+      "id": "ac000000-0000-4000-8000-000000000525",
+      "key": "ACME-16",
+      "teamKey": "TEAM-A",
+      "projectId": "proj-alpha",
+      "title": "T013 Verify the artifact hash matches the build",
+      "description": "Legacy roll-up era mirror — pre-0.6 index fragment for T013.",
+      "stateType": "todo",
+      "updatedAt": "2026-01-01T00:000:16.000Z"
+    },
+    {
+      "id": "ac000000-0000-4000-8000-000000000526",
+      "key": "ACME-17",
+      "teamKey": "TEAM-A",
+      "projectId": "proj-alpha",
+      "title": "T014 Smoke-install from the public index",
+      "description": "Legacy roll-up era mirror — pre-0.6 index fragment for T014.",
+      "stateType": "todo",
+      "updatedAt": "2026-01-01T00:000:17.000Z"
+    },
+    {
+      "id": "ac000000-0000-4000-8000-000000000527",
+      "key": "ACME-18",
+      "teamKey": "TEAM-A",
+      "projectId": "proj-alpha",
+      "title": "T015 Announce completion in the activity log",
+      "description": "Legacy roll-up era mirror — pre-0.6 index fragment for T015.",
+      "stateType": "todo",
+      "updatedAt": "2026-01-01T00:000:18.000Z"
+    },
+    {
+      "id": "ac000000-0000-4000-8000-000000000528",
+      "key": "ACME-19",
+      "teamKey": "TEAM-A",
+      "projectId": "proj-alpha",
+      "title": "T016 File follow-up issues for deferred items",
+      "description": "Legacy roll-up era mirror — pre-0.6 index fragment for T016.",
+      "stateType": "todo",
+      "updatedAt": "2026-01-01T00:000:19.000Z"
+    }
+  ],
+  "attachments": [
+    {
+      "issueId": "ac000000-0000-4000-8000-000000000510",
+      "id": "att-1",
+      "url": "https://sync.example.invalid/task-linear-sync/3b307b26-4129-51cb-ad68-c7d7b5ac9fa2",
+      "title": "task-linear-sync sync state",
+      "metadata": {
+        "__task-linear-sync": "{\"cursors\":{\"lastSyncAt\":\"2026-01-01T00:000:01.000Z\"},\"descriptionContentHash\":\"0000000000000000000000000000000000000000000000000000000000000000\",\"frameworkMetadata\":{\"featureName\":\"002-lightweight-pypi-release\",\"filePath\":\"kitty-specs/002-lightweight-pypi-release/tasks.md\",\"frameworkId\":\"spec-kitty\"},\"history\":[],\"taskUuid\":\"3b307b26-4129-51cb-ad68-c7d7b5ac9fa2\"}"
+      }
+    },
+    {
+      "issueId": "ac000000-0000-4000-8000-000000000511",
+      "id": "att-2",
+      "url": "https://sync.example.invalid/task-linear-sync/093c4805-aaa3-5577-b9ae-091b50be2851",
+      "title": "task-linear-sync sync state",
+      "metadata": {
+        "__task-linear-sync": "{\"cursors\":{\"lastSyncAt\":\"2026-01-01T00:000:02.000Z\"},\"descriptionContentHash\":\"0000000000000000000000000000000000000000000000000000000000000000\",\"frameworkMetadata\":{\"featureName\":\"002-lightweight-pypi-release\",\"filePath\":\"kitty-specs/002-lightweight-pypi-release/tasks.md\",\"frameworkId\":\"spec-kitty\",\"localTaskId\":\"T001\"},\"history\":[],\"taskUuid\":\"093c4805-aaa3-5577-b9ae-091b50be2851\"}"
+      }
+    },
+    {
+      "issueId": "ac000000-0000-4000-8000-000000000512",
+      "id": "att-3",
+      "url": "https://sync.example.invalid/task-linear-sync/70c78596-baf6-5520-be24-ef7823079b68",
+      "title": "task-linear-sync sync state",
+      "metadata": {
+        "__task-linear-sync": "{\"cursors\":{\"lastSyncAt\":\"2026-01-01T00:000:03.000Z\"},\"descriptionContentHash\":\"0000000000000000000000000000000000000000000000000000000000000000\",\"frameworkMetadata\":{\"featureName\":\"002-lightweight-pypi-release\",\"filePath\":\"kitty-specs/002-lightweight-pypi-release/tasks.md\",\"frameworkId\":\"spec-kitty\",\"localTaskId\":\"T002\"},\"history\":[],\"taskUuid\":\"70c78596-baf6-5520-be24-ef7823079b68\"}"
+      }
+    },
+    {
+      "issueId": "ac000000-0000-4000-8000-000000000513",
+      "id": "att-4",
+      "url": "https://sync.example.invalid/task-linear-sync/2154e6d3-0c73-5c6f-93ff-86ecf58b8b65",
+      "title": "task-linear-sync sync state",
+      "metadata": {
+        "__task-linear-sync": "{\"cursors\":{\"lastSyncAt\":\"2026-01-01T00:000:04.000Z\"},\"descriptionContentHash\":\"0000000000000000000000000000000000000000000000000000000000000000\",\"frameworkMetadata\":{\"featureName\":\"002-lightweight-pypi-release\",\"filePath\":\"kitty-specs/002-lightweight-pypi-release/tasks.md\",\"frameworkId\":\"spec-kitty\",\"localTaskId\":\"T003\"},\"history\":[],\"taskUuid\":\"2154e6d3-0c73-5c6f-93ff-86ecf58b8b65\"}"
+      }
+    },
+    {
+      "issueId": "ac000000-0000-4000-8000-000000000514",
+      "id": "att-5",
+      "url": "https://sync.example.invalid/task-linear-sync/b1213248-0512-56f2-8f09-5e36a4eb055e",
+      "title": "task-linear-sync sync state",
+      "metadata": {
+        "__task-linear-sync": "{\"cursors\":{\"lastSyncAt\":\"2026-01-01T00:000:05.000Z\"},\"descriptionContentHash\":\"0000000000000000000000000000000000000000000000000000000000000000\",\"frameworkMetadata\":{\"featureName\":\"002-lightweight-pypi-release\",\"filePath\":\"kitty-specs/002-lightweight-pypi-release/tasks.md\",\"frameworkId\":\"spec-kitty\",\"localTaskId\":\"T004\"},\"history\":[],\"taskUuid\":\"b1213248-0512-56f2-8f09-5e36a4eb055e\"}"
+      }
+    },
+    {
+      "issueId": "ac000000-0000-4000-8000-000000000515",
+      "id": "att-6",
+      "url": "https://sync.example.invalid/task-linear-sync/e35ccf0d-e933-5524-952e-b57c4face362",
+      "title": "task-linear-sync sync state",
+      "metadata": {
+        "__task-linear-sync": "{\"cursors\":{\"lastSyncAt\":\"2026-01-01T00:000:06.000Z\"},\"descriptionContentHash\":\"0000000000000000000000000000000000000000000000000000000000000000\",\"frameworkMetadata\":{\"featureName\":\"002-lightweight-pypi-release\",\"filePath\":\"kitty-specs/002-lightweight-pypi-release/tasks.md\",\"frameworkId\":\"spec-kitty\",\"localTaskId\":\"T005\"},\"history\":[],\"taskUuid\":\"e35ccf0d-e933-5524-952e-b57c4face362\"}"
+      }
+    },
+    {
+      "issueId": "ac000000-0000-4000-8000-000000000516",
+      "id": "att-7",
+      "url": "https://sync.example.invalid/task-linear-sync/bcefd257-941f-50fd-b572-3f35c5220724",
+      "title": "task-linear-sync sync state",
+      "metadata": {
+        "__task-linear-sync": "{\"cursors\":{\"lastSyncAt\":\"2026-01-01T00:000:07.000Z\"},\"descriptionContentHash\":\"0000000000000000000000000000000000000000000000000000000000000000\",\"frameworkMetadata\":{\"featureName\":\"002-lightweight-pypi-release\",\"filePath\":\"kitty-specs/002-lightweight-pypi-release/tasks.md\",\"frameworkId\":\"spec-kitty\"},\"history\":[],\"taskUuid\":\"bcefd257-941f-50fd-b572-3f35c5220724\"}"
+      }
+    },
+    {
+      "issueId": "ac000000-0000-4000-8000-000000000517",
+      "id": "att-8",
+      "url": "https://sync.example.invalid/task-linear-sync/4ad869cd-d9f6-50ee-a9cd-6e839eab8c44",
+      "title": "task-linear-sync sync state",
+      "metadata": {
+        "__task-linear-sync": "{\"cursors\":{\"lastSyncAt\":\"2026-01-01T00:000:08.000Z\"},\"descriptionContentHash\":\"0000000000000000000000000000000000000000000000000000000000000000\",\"frameworkMetadata\":{\"featureName\":\"002-lightweight-pypi-release\",\"filePath\":\"kitty-specs/002-lightweight-pypi-release/tasks.md\",\"frameworkId\":\"spec-kitty\",\"localTaskId\":\"T006\"},\"history\":[],\"taskUuid\":\"4ad869cd-d9f6-50ee-a9cd-6e839eab8c44\"}"
+      }
+    },
+    {
+      "issueId": "ac000000-0000-4000-8000-000000000518",
+      "id": "att-9",
+      "url": "https://sync.example.invalid/task-linear-sync/68fd3b0b-e898-59f5-9d22-fcff062be42c",
+      "title": "task-linear-sync sync state",
+      "metadata": {
+        "__task-linear-sync": "{\"cursors\":{\"lastSyncAt\":\"2026-01-01T00:000:09.000Z\"},\"descriptionContentHash\":\"0000000000000000000000000000000000000000000000000000000000000000\",\"frameworkMetadata\":{\"featureName\":\"002-lightweight-pypi-release\",\"filePath\":\"kitty-specs/002-lightweight-pypi-release/tasks.md\",\"frameworkId\":\"spec-kitty\",\"localTaskId\":\"T007\"},\"history\":[],\"taskUuid\":\"68fd3b0b-e898-59f5-9d22-fcff062be42c\"}"
+      }
+    },
+    {
+      "issueId": "ac000000-0000-4000-8000-000000000519",
+      "id": "att-10",
+      "url": "https://sync.example.invalid/task-linear-sync/34d0ef05-e90d-51bf-9819-536fa0fc6272",
+      "title": "task-linear-sync sync state",
+      "metadata": {
+        "__task-linear-sync": "{\"cursors\":{\"lastSyncAt\":\"2026-01-01T00:000:10.000Z\"},\"descriptionContentHash\":\"0000000000000000000000000000000000000000000000000000000000000000\",\"frameworkMetadata\":{\"featureName\":\"002-lightweight-pypi-release\",\"filePath\":\"kitty-specs/002-lightweight-pypi-release/tasks.md\",\"frameworkId\":\"spec-kitty\",\"localTaskId\":\"T008\"},\"history\":[],\"taskUuid\":\"34d0ef05-e90d-51bf-9819-536fa0fc6272\"}"
+      }
+    },
+    {
+      "issueId": "ac000000-0000-4000-8000-000000000520",
+      "id": "att-11",
+      "url": "https://sync.example.invalid/task-linear-sync/34d6c8a5-40cf-5f74-a812-6d27dd15c669",
+      "title": "task-linear-sync sync state",
+      "metadata": {
+        "__task-linear-sync": "{\"cursors\":{\"lastSyncAt\":\"2026-01-01T00:000:11.000Z\"},\"descriptionContentHash\":\"0000000000000000000000000000000000000000000000000000000000000000\",\"frameworkMetadata\":{\"featureName\":\"002-lightweight-pypi-release\",\"filePath\":\"kitty-specs/002-lightweight-pypi-release/tasks.md\",\"frameworkId\":\"spec-kitty\",\"localTaskId\":\"T009\"},\"history\":[],\"taskUuid\":\"34d6c8a5-40cf-5f74-a812-6d27dd15c669\"}"
+      }
+    },
+    {
+      "issueId": "ac000000-0000-4000-8000-000000000521",
+      "id": "att-12",
+      "url": "https://sync.example.invalid/task-linear-sync/6422f84a-b0a5-5fd7-a5b0-e0e467200ede",
+      "title": "task-linear-sync sync state",
+      "metadata": {
+        "__task-linear-sync": "{\"cursors\":{\"lastSyncAt\":\"2026-01-01T00:000:12.000Z\"},\"descriptionContentHash\":\"0000000000000000000000000000000000000000000000000000000000000000\",\"frameworkMetadata\":{\"featureName\":\"002-lightweight-pypi-release\",\"filePath\":\"kitty-specs/002-lightweight-pypi-release/tasks.md\",\"frameworkId\":\"spec-kitty\",\"localTaskId\":\"T010\"},\"history\":[],\"taskUuid\":\"6422f84a-b0a5-5fd7-a5b0-e0e467200ede\"}"
+      }
+    },
+    {
+      "issueId": "ac000000-0000-4000-8000-000000000522",
+      "id": "att-13",
+      "url": "https://sync.example.invalid/task-linear-sync/3b36d907-593e-58af-82be-f1e28a0ca682",
+      "title": "task-linear-sync sync state",
+      "metadata": {
+        "__task-linear-sync": "{\"cursors\":{\"lastSyncAt\":\"2026-01-01T00:000:13.000Z\"},\"descriptionContentHash\":\"0000000000000000000000000000000000000000000000000000000000000000\",\"frameworkMetadata\":{\"featureName\":\"002-lightweight-pypi-release\",\"filePath\":\"kitty-specs/002-lightweight-pypi-release/tasks.md\",\"frameworkId\":\"spec-kitty\",\"localTaskId\":\"T011\"},\"history\":[],\"taskUuid\":\"3b36d907-593e-58af-82be-f1e28a0ca682\"}"
+      }
+    },
+    {
+      "issueId": "ac000000-0000-4000-8000-000000000523",
+      "id": "att-14",
+      "url": "https://sync.example.invalid/task-linear-sync/56cbff63-3c02-5714-b236-ea9f386a7fa9",
+      "title": "task-linear-sync sync state",
+      "metadata": {
+        "__task-linear-sync": "{\"cursors\":{\"lastSyncAt\":\"2026-01-01T00:000:14.000Z\"},\"descriptionContentHash\":\"0000000000000000000000000000000000000000000000000000000000000000\",\"frameworkMetadata\":{\"featureName\":\"002-lightweight-pypi-release\",\"filePath\":\"kitty-specs/002-lightweight-pypi-release/tasks.md\",\"frameworkId\":\"spec-kitty\"},\"history\":[],\"taskUuid\":\"56cbff63-3c02-5714-b236-ea9f386a7fa9\"}"
+      }
+    },
+    {
+      "issueId": "ac000000-0000-4000-8000-000000000524",
+      "id": "att-15",
+      "url": "https://sync.example.invalid/task-linear-sync/b4904ec2-72db-5fef-b91e-83701d7d3495",
+      "title": "task-linear-sync sync state",
+      "metadata": {
+        "__task-linear-sync": "{\"cursors\":{\"lastSyncAt\":\"2026-01-01T00:000:15.000Z\"},\"descriptionContentHash\":\"0000000000000000000000000000000000000000000000000000000000000000\",\"frameworkMetadata\":{\"featureName\":\"002-lightweight-pypi-release\",\"filePath\":\"kitty-specs/002-lightweight-pypi-release/tasks.md\",\"frameworkId\":\"spec-kitty\",\"localTaskId\":\"T012\"},\"history\":[],\"taskUuid\":\"b4904ec2-72db-5fef-b91e-83701d7d3495\"}"
+      }
+    },
+    {
+      "issueId": "ac000000-0000-4000-8000-000000000525",
+      "id": "att-16",
+      "url": "https://sync.example.invalid/task-linear-sync/71e04ef8-0696-5d80-aafe-b927046dab81",
+      "title": "task-linear-sync sync state",
+      "metadata": {
+        "__task-linear-sync": "{\"cursors\":{\"lastSyncAt\":\"2026-01-01T00:000:16.000Z\"},\"descriptionContentHash\":\"0000000000000000000000000000000000000000000000000000000000000000\",\"frameworkMetadata\":{\"featureName\":\"002-lightweight-pypi-release\",\"filePath\":\"kitty-specs/002-lightweight-pypi-release/tasks.md\",\"frameworkId\":\"spec-kitty\",\"localTaskId\":\"T013\"},\"history\":[],\"taskUuid\":\"71e04ef8-0696-5d80-aafe-b927046dab81\"}"
+      }
+    },
+    {
+      "issueId": "ac000000-0000-4000-8000-000000000526",
+      "id": "att-17",
+      "url": "https://sync.example.invalid/task-linear-sync/75d493d1-efc0-56b5-b468-e50bdaa63c28",
+      "title": "task-linear-sync sync state",
+      "metadata": {
+        "__task-linear-sync": "{\"cursors\":{\"lastSyncAt\":\"2026-01-01T00:000:17.000Z\"},\"descriptionContentHash\":\"0000000000000000000000000000000000000000000000000000000000000000\",\"frameworkMetadata\":{\"featureName\":\"002-lightweight-pypi-release\",\"filePath\":\"kitty-specs/002-lightweight-pypi-release/tasks.md\",\"frameworkId\":\"spec-kitty\",\"localTaskId\":\"T014\"},\"history\":[],\"taskUuid\":\"75d493d1-efc0-56b5-b468-e50bdaa63c28\"}"
+      }
+    },
+    {
+      "issueId": "ac000000-0000-4000-8000-000000000527",
+      "id": "att-18",
+      "url": "https://sync.example.invalid/task-linear-sync/0fefc8b6-110b-5114-b3fc-8cac7852958a",
+      "title": "task-linear-sync sync state",
+      "metadata": {
+        "__task-linear-sync": "{\"cursors\":{\"lastSyncAt\":\"2026-01-01T00:000:18.000Z\"},\"descriptionContentHash\":\"0000000000000000000000000000000000000000000000000000000000000000\",\"frameworkMetadata\":{\"featureName\":\"002-lightweight-pypi-release\",\"filePath\":\"kitty-specs/002-lightweight-pypi-release/tasks.md\",\"frameworkId\":\"spec-kitty\",\"localTaskId\":\"T015\"},\"history\":[],\"taskUuid\":\"0fefc8b6-110b-5114-b3fc-8cac7852958a\"}"
+      }
+    },
+    {
+      "issueId": "ac000000-0000-4000-8000-000000000528",
+      "id": "att-19",
+      "url": "https://sync.example.invalid/task-linear-sync/514af266-0390-5bad-a545-45ec9d092e19",
+      "title": "task-linear-sync sync state",
+      "metadata": {
+        "__task-linear-sync": "{\"cursors\":{\"lastSyncAt\":\"2026-01-01T00:000:19.000Z\"},\"descriptionContentHash\":\"0000000000000000000000000000000000000000000000000000000000000000\",\"frameworkMetadata\":{\"featureName\":\"002-lightweight-pypi-release\",\"filePath\":\"kitty-specs/002-lightweight-pypi-release/tasks.md\",\"frameworkId\":\"spec-kitty\",\"localTaskId\":\"T016\"},\"history\":[],\"taskUuid\":\"514af266-0390-5bad-a545-45ec9d092e19\"}"
+      }
+    }
+  ],
+  "config": {
+    "teams": {
+      "TEAM-A": {
+        "projects": [
+          "proj-alpha"
+        ],
+        "workflowStates": {
+          "backlog": "Backlog",
+          "todo": "Todo",
+          "done": "Done",
+          "completedTypes": [
+            "completed"
+          ],
+          "ignoredTypes": [
+            "canceled",
+            "duplicate"
+          ]
+        }
+      }
+    },
+    "defaultTeamKey": "TEAM-A",
+    "defaultProject": "proj-alpha",
+    "confirmationKey": "SYNC",
+    "descriptionNormalizationProfile": "default"
+  },
+  "metadata": {
+    "scenario": "Roll-up era leftovers never pair onto document-kind tasks and are never deleted (022 FR-005/C5.2, quickstart step 6)."
+  }
+}

@@ -130,6 +130,23 @@ export function scorePair(
 
   const durableIdentity =
     candidate.durableTaskUuid !== undefined && candidate.durableTaskUuid === task.stableUuid;
+
+  // A-022-3 (022 C4.1/FR-005): document-kind tasks participate in matching ONLY
+  // through the durable-identity signal — the seven weighted heuristic signals
+  // never apply to them, at any weight or floor configuration.
+  if (task.kind === "document") {
+    if (durableIdentity) award(contributions, "durable-uuid", weights.durableUuid, weights.durableUuid);
+    const docTotal = contributions.reduce((sum, c) => sum + c.points, 0);
+    return {
+      taskUuid: task.stableUuid,
+      issueId: candidate.issueId,
+      total: docTotal,
+      contributions,
+      durableIdentity,
+      usable: false, // finalized by applyGate (FR-002/FR-003)
+    };
+  }
+
   if (durableIdentity) award(contributions, "durable-uuid", weights.durableUuid, weights.durableUuid);
 
   const keyNumber = issueKeyNumber(candidate.issueKey);

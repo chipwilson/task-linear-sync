@@ -25,6 +25,7 @@ import {
   genericFixtureAdapter,
   specKittyFixtureAdapter,
   readFrameworkFixture,
+  readFixture,
   makeTestConfig,
 } from "../helpers/parsing-fixtures.js";
 
@@ -128,48 +129,51 @@ test("parsing corpus — repeat-parse deep-equality determinism (Principle IV)",
   assert.deepEqual(first, second);
 });
 
-test("parsing corpus — spec-kitty sixth identity (017 SC-002): subtasks only, WP grouping, template purity (C3.1–C3.6)", () => {
-  // Mirror pin: the helper's literal grammars equal the built-in row's members.
+test("parsing corpus — spec-kitty sixth identity (022 re-base): zero roll-up tasks, one document per WP file (SC-002, C1–C3)", () => {
+  // Mirror pin: the helper's literal conventions equal the built-in row's members.
   assert.equal(specKittyFixtureAdapter.headingGrammar, specKittyConventions.headingGrammar);
-  assert.equal(specKittyFixtureAdapter.phasePattern, specKittyConventions.phasePattern);
-  assert.equal(specKittyFixtureAdapter.summaryPattern, specKittyConventions.summaryPattern);
-  assert.equal(specKittyFixtureAdapter.checklistIdPattern, specKittyConventions.checklistIdPattern);
-  assert.equal(specKittyFixtureAdapter.titleTagPattern, specKittyConventions.titleTagPattern);
+  assert.deepEqual(specKittyFixtureAdapter.documentTaskRule, specKittyConventions.documentTaskRule);
+  const retired = specKittyFixtureAdapter as unknown as Record<string, unknown>;
+  assert.equal(retired.checklistIdPattern, undefined, "017 grammar members retired from the row (and its mirror)");
+  assert.equal(retired.titleTagPattern, undefined);
+  assert.equal(retired.phasePattern, undefined);
+  assert.equal(retired.summaryPattern, undefined);
 
-  const result = parseTaskFile("kitty-specs/001-corpus/tasks.md", readFrameworkFixture("spec-kitty"), specKittyFixtureAdapter, cfg);
-  const { tasks } = result.file;
+  // The roll-up yields the EMPTY task set: checkbox lines, WP headings, the `## Inputs`
+  // illustrative checkbox and front matter are all documentation (FR-005) — zero line
+  // scanning means zero exclusion records too.
+  const rollUp = parseTaskFile("kitty-specs/001-corpus/tasks.md", readFrameworkFixture("spec-kitty"), specKittyFixtureAdapter, cfg);
+  assert.deepEqual(rollUp.file.tasks, [], "the planned task set is EMPTY — the roll-up is documentation (FR-005, C2.3)");
+  assert.deepEqual(rollUp.exclusions, []);
+  assert.deepEqual(rollUp.warnings, []);
+  assert.equal(rollUp.featureName, "001-corpus");
 
-  // SC-002 by count: exactly the three checkbox subtasks — nothing else.
-  assert.deepEqual(tasks.map((task) => task.lineNumber), [20, 21, 25]);
-  assert.equal(tasks.length, 3, "planned task set EQUALS the checkbox-subtask set");
-  assert.ok(tasks.every((task) => task.kind === "checklist"), "zero heading tasks (C3.1: WP/template/prose headings)");
-  assert.deepEqual(tasks.map((task) => task.localTaskId), ["T001", "T002", "T003"]);
-  assert.deepEqual(tasks.map((task) => task.title), ["[P] Create the auth module", "Wire the auth module into the app", "[US1] Ship the corpus mission"]);
-
-  // C3.6 grouping: each subtask carries its enclosing WPxx title; prose sections group nothing.
-  assert.deepEqual(tasks.map((task) => task.phase), [
-    "WP01: Create auth module",
-    "WP01: Create auth module",
-    "WP02: Ship the corpus mission",
-  ]);
-
-  // C3.1/C3.3: the `## Inputs` unfenced illustrative checkbox is an exclusion record, not a task.
-  assert.deepEqual(result.exclusions, [
-    { lineNumber: 16, kind: "checklist", reason: "summary-section", text: "- [ ] T099 Illustrative checkbox inside the Inputs section" },
-  ]);
-
-  // C3.2: front-matter lines are structure only — titles are pure subtask text.
-  assert.deepEqual(
-    tasks.map((task) => task.title),
-    ["[P] Create the auth module", "Wire the auth module into the app", "[US1] Ship the corpus mission"],
-  );
-  assert.equal(result.featureName, "001-corpus");
-  assert.deepEqual(result.conflictBlocks, []);
-  assert.deepEqual(result.warnings, []);
+  // Each tasks/WPnn-*.md yields exactly ONE document task (C1.1, C3.2).
+  const wpFiles: readonly (readonly [string, string, string])[] = [
+    ["WP01-auth.md", "WP01", "Create auth module"],
+    ["WP02-billing.md", "WP02", "Ship the corpus mission"],
+  ];
+  for (const [name, localTaskId, title] of wpFiles) {
+    const filePath = `kitty-specs/001-corpus/tasks/${name}`;
+    const content = readFixture(`parsing/frameworks/spec-kitty/tasks/${name}`);
+    const { file, exclusions } = parseTaskFile(filePath, content, specKittyFixtureAdapter, cfg);
+    assert.deepEqual(exclusions, [], `${name} — no line scanning`);
+    assert.equal(file.tasks.length, 1, `${name} — exactly one task`);
+    const task = file.tasks[0]!;
+    assert.equal(task.kind, "document", `${name} — document kind`);
+    assert.equal(task.localTaskId, localTaskId);
+    assert.equal(task.title, title, `${name} — front-matter title wins the cascade (C3.1)`);
+    assert.equal(file.featureName, "001-corpus", "the mission names the document (R3)");
+    const body = content.split("\n").slice(task.taskBody.startLine - 1, task.taskBody.endLine).join("\n");
+    assert.ok(body.startsWith("#"), "the slice starts at the leading heading (R11)");
+    assert.ok(body.includes("## Objectives & Success Criteria"), "Objectives section mirrored verbatim (SC-002)");
+    assert.match(body, /T\d{3}/u, "Tnnn subtask guidance mirrored verbatim (SC-002)");
+    assert.ok(!body.includes("work_package_id:"), "front matter excluded from content (C3.2)");
+  }
 
   // Determinism across repeats (Principle IV).
   const again = parseTaskFile("kitty-specs/001-corpus/tasks.md", readFrameworkFixture("spec-kitty"), specKittyFixtureAdapter, cfg);
-  assert.deepEqual(again, result);
+  assert.deepEqual(again, rollUp);
 });
 
 test("parsing corpus — five-framework shared fixture unchanged by 017; spec-kitty claims none of its paths (SC-005)", () => {

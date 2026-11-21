@@ -7,6 +7,40 @@ this preview — lives in [docs/versioning.md](docs/versioning.md).
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-11-21
+
+Defect correction — **spec-kitty work-package documents are the task source**
+(feature 022). The 0.5.x spec-kitty adapter synced the checkbox lines of the
+roll-up `kitty-specs/<mission>/tasks.md` and excluded the per-work-package
+`tasks/` folder — inverting Spec Kitty's actual convention. A roll-up line is
+an index fragment, not a task: syncing them produced issue swarms of
+context-free fragments while the fully detailed work-package prompts were
+never synced.
+
+- **Work-package document task source** (`src/discovery/adapters/spec-kitty.ts`,
+  `src/parsing/document.ts`) — each `kitty-specs/<mission>/tasks/**/*.md`
+  document is ONE task: identity is the mission plus the work-package id
+  (front-matter `work_package_id`, else the leading `WP<digits>` file-name
+  token), the title cascades front-matter `title:` → first body heading →
+  readable file slug, and the mirrored issue content is the document verbatim
+  minus its leading front matter. The roll-up stays claimed — as documentation
+  yielding zero tasks. Documents are never written back: no confirmation
+  prefix, no landed line.
+- **Durable-only pairing** (`src/matching/`) — document-kind tasks match a
+  tracker issue only through the durable sync-state anchor; title/local-id/
+  container heuristics never pair them, at any confidence configuration.
+- **Upgrade identity note (users of the roll-up-era syncs)** — every task
+  identity changes on the first sync after the upgrade: the previously synced
+  roll-up-line issues no longer match anything and are surfaced as
+  stale/unmapped for operator cleanup; nothing deletes them automatically.
+  The work-package documents create fresh issues with the corrected identities
+  and subsequent runs are idempotent. Two missions' `WP01` documents stay two
+  distinct tasks.
+- **Documentation** — README adapter row and Spec Kitty section,
+  [docs/framework-adapters.md](docs/framework-adapters.md) spec-kitty
+  narrative, and Requirement 7 in [specs/requirements.md](specs/requirements.md)
+  describe the corrected model (022 contracts C0–C8; amendments A-022-0…A-022-4).
+
 ## [0.5.0] - 2026-11-21
 
 Feature release — **per-task splitting of Kiro implementation-plan files**

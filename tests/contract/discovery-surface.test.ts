@@ -44,6 +44,7 @@ const EXPECTED_FOUNDATIONAL: readonly string[] = [
   "Refusal",
   "canonicalizeRepositoryRoot",
   "compileNamePattern",
+  "compilePathPattern", // A-022-1 (022) — path-scoped candidate matcher
   "isBuiltInFrameworkId",
   "verifyInsideRoot",
 ];

@@ -26,8 +26,14 @@ export function applyGate(
   let exclusion: PairExclusion | undefined;
 
   if (!pair.durableIdentity) {
+    // A-022-3 (022 C4.3/FR-011): an unanchored document-kind task is never
+    // selectable — the veto outranks the container gates and the plausible floor,
+    // so no floor/margin configuration can resurrect heuristic pairing.
+    if (input.task.kind === "document") {
+      exclusion = "document-kind-not-durable";
+    }
     const routing = input.routing;
-    if (routing !== undefined && routing.unassigned !== true) {
+    if (exclusion === undefined && routing !== undefined && routing.unassigned !== true) {
       if (routing.teamKey !== candidate.teamKey) {
         exclusion = "gated-team";
       } else if (routing.project !== candidate.projectRef) {

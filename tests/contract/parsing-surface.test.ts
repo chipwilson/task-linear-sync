@@ -16,7 +16,9 @@ const pkgRoot = fileURLToPath(new URL("../../../", import.meta.url));
 const snapshotPath = new URL("file://" + pkgRoot + "tests/contract/snapshots/parsing-surface.json");
 
 /** Every module of src/parsing (src/parsing/index.ts is the consumer-facing barrel). */
-const PARSING_MODULES = ["adapter", "conflict", "content", "depth", "extract", "extent", "identity", "index", "render", "taskfile", "title", "warnings"] as const;
+// 022 A-022-2 adds `document` (internal document-unit core — not barrel-exported; the
+// snapshot still enumerates it: internal modules are part of the audited surface).
+const PARSING_MODULES = ["adapter", "conflict", "content", "depth", "document", "extract", "extent", "identity", "index", "render", "taskfile", "title", "warnings"] as const;
 
 const EXPORT_RE =
   /\bexport\s+(?:declare\s+)?(?:abstract\s+)?(?:async\s+)?(?:interface|type|function|const|let|class|enum)\s+([A-Za-z0-9_$]+)/g;

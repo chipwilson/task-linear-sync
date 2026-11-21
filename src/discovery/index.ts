@@ -33,7 +33,7 @@ export type {
   FrameworkAdapter,
   DiscoveryOverrides,
 } from "./adapter.js";
-export { compileNamePattern } from "./patterns.js";
+export { compileNamePattern, compilePathPattern } from "./patterns.js";
 export { canonicalizeRepositoryRoot, verifyInsideRoot } from "./root.js";
 
 // ── US1 discovery tier (T021): the entry point, git context, registry + selection, and

@@ -52,4 +52,26 @@ export interface TaskFileAdapter {
    * bare id; adapters omitting this member keep byte-identical seed inputs (SC-005).
    */
   readonly identityFileScope?: boolean;
+  /**
+   * 022 amendment A-022-2 (whitelisted member): selects DOCUMENT-UNIT task mode. When
+   * present, `parseTaskFile` runs the document pipeline INSTEAD of heading/checklist
+   * extraction (contracts/parsing-api.md document-mode rules): a file whose path matches
+   * `collectionPattern` yields 0-or-1 draft of kind `document` per recognition
+   * (non-empty front-matter `idKey` scalar wins; else `fileNameIdPattern` on the
+   * basename); the title cascades `titleKey` → body's leading ATX heading → readable
+   * file-name slug; content is the body verbatim minus front matter with
+   * `taskBody = { startLine: first body line, endLine: last line }`. Every member is a
+   * regex SOURCE string or key name (declarative — the parser stays framework-blind).
+   * Absent ⇒ extraction unchanged for every other adapter, byte-identical.
+   */
+  readonly documentTaskRule?: {
+    /** Regex source tested against the root-relative POSIX file path (the collection gate). */
+    readonly collectionPattern: string;
+    /** Front-matter scalar key carrying the stable local id (e.g. `work_package_id`). */
+    readonly idKey: string;
+    /** Front-matter scalar key carrying the human title (e.g. `title`). */
+    readonly titleKey: string;
+    /** Regex source (leading `(?i)` = case-insensitive convention) tested on the BASENAME; digits form the normalized id. */
+    readonly fileNameIdPattern: string;
+  };
 }

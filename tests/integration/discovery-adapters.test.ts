@@ -50,25 +50,33 @@ test("discovery adapters: five-frameworks — every file carries its correct ide
   }
 });
 
-// 017 extended the parameterized identity table to the new built-in identities: the
-// spec-kitty row's claims come from `kitty-specs/` alone (C2.1), and the fixture's
-// non-mission Markdown (spec.md siblings, tasks/ prompts, .kittify/) stays unclaimed.
+// 022 re-base of the identity-table case: the spec-kitty row's claims come from
+// `kitty-specs/` alone (017 C2.1 retained) and the collection (022 C1.1) joins the
+// roll-ups; the fixture's non-mission Markdown (spec.md siblings, tasks/img.png,
+// .kittify/) stays unclaimed (C1.2).
 const KITTY = fixtureRepoPath("spec-kitty");
 
-test("discovery adapters: spec-kitty identity row over the 017 fixture — path-only claim, mission features, spec.md siblings (SC-001)", async () => {
+test("discovery adapters: spec-kitty identity row over the 022 fixture — path-only claim, mission features, spec.md siblings (SC-001)", async () => {
   const result = await discoverTaskFiles({ repositoryRoot: KITTY, config: builtInDefaults, gitContext: false });
   const files = byPath(result);
 
   const expectations: readonly [string, string, string | undefined, readonly string[]][] = [
     ["kitty-specs/001-demo/tasks.md", "spec-kitty", "001-demo", ["kitty-specs/001-demo/spec.md"]],
+    ["kitty-specs/001-demo/tasks/WP01-scaffold.md", "spec-kitty", "001-demo", []],
+    ["kitty-specs/001-demo/tasks/WP03-no-title.md", "spec-kitty", "001-demo", []],
+    ["kitty-specs/001-demo/tasks/front-matter-only.md", "spec-kitty", "001-demo", []],
+    ["kitty-specs/001-demo/tasks/notes.md", "spec-kitty", "001-demo", []],
+    ["kitty-specs/001-demo/tasks/review-feedback.md", "spec-kitty", "001-demo", []],
     ["kitty-specs/002-billing/tasks.md", "spec-kitty", "002-billing", ["kitty-specs/002-billing/spec.md"]],
+    ["kitty-specs/002-billing/tasks/planned/WP01-billing.md", "spec-kitty", "002-billing", []],
+    ["kitty-specs/003-plan-only/tasks.md", "spec-kitty", "003-plan-only", []],
   ];
-  assert.equal(result.files.length, expectations.length, "0 missed, 0 false — nothing else in the fixture is claimed");
+  assert.equal(result.files.length, expectations.length, "0 missed, 0 false — nothing else in the fixture is claimed (the .md collection, no png, no .kittify/)");
   for (const [filePath, frameworkId, featureName, siblingDocuments] of expectations) {
     const file = files.get(filePath);
     assert.ok(file, `${filePath} discovered`);
     assert.equal(file.frameworkId, frameworkId, `${filePath} identity`);
-    assert.equal(file.featureName, featureName, `${filePath} Feature_Name — mission directory (C2.3)`);
+    assert.equal(file.featureName, featureName, `${filePath} Feature_Name — the segment beneath the base (022 R3)`);
     assert.deepEqual(file.siblingDocuments, siblingDocuments, `${filePath} existing configured siblings in list order`);
   }
 });

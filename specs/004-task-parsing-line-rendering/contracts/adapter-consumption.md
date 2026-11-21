@@ -27,6 +27,12 @@ export interface TaskFileAdapter {
   readonly checklistIdPattern?: string; // 017 amendment 2 — leading local-ID span on CHECKLIST lines (named group: id)
   readonly titleTagPattern?: string;    // 017 amendment 2 — capability tags dropped from DERIVED titles only
   readonly identityFileScope?: boolean;  // 018 A-018-2: seed-input composition (see rule 2)
+  readonly documentTaskRule?: {          // 022 A-022-2: document-unit task mode (see rule 2)
+    readonly collectionPattern: string;  // regex source over the root-relative POSIX path (collection gate)
+    readonly idKey: string;              // front-matter scalar key for the stable local id
+    readonly titleKey: string;           // front-matter scalar key for the human title
+    readonly fileNameIdPattern: string;  // regex source on the BASENAME (leading `(?i)` = case-insensitive); digits → normalized id
+  };
 }
 ```
 
@@ -52,6 +58,13 @@ export interface TaskFileAdapter {
    `` `${basename(filePath)}\u0000${localTaskId}` ``; `taskStableSeed` and its frozen layout
    are unchanged, `Task.localTaskId` stays the bare id, and adapters omitting the member
    (or setting it false) keep byte-identical seed inputs.
+   **Amendment A-022-2** (logged in `docs/contract-amendments.md`, feature 022) whitelists
+   `documentTaskRule?` — the four-member document-mode rule (regex SOURCE strings / key
+   names, consumed as `adapter.documentTaskRule.<member>`). PRESENT ⇒ the document pipeline
+   runs INSTEAD of heading/checklist extraction for that adapter (see
+   [parsing-api.md](./parsing-api.md) document-mode rules); ABSENT ⇒ extraction unchanged,
+   byte-identical for every other adapter. It has no `ResolvedConfig` key (017 C5.1
+   precedent, three-layer merge carries it from the row/overrides only).
 3. **Override precedence** (research R2): per convention,
    `adapter.<member> ?? config.<grammar key>` — the merged `ResolvedConfig` already
    carries built-in defaults, so the parser needs no third fallback. The two 017 members are

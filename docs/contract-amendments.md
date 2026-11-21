@@ -262,3 +262,88 @@ lineage; no schema break, and the behavior change is called out in the CHANGELOG
   migration: the new name fires only for the key this feature adds — consumers setting
   `maxTaskIssueDepth: 64` keep pre-020 behavior and never reach the new exit-3 path
 
+
+## Feature 022 amendments — the `spec-kitty` work-package task source
+
+Feature 022 corrects the 017 defect: the `spec-kitty` task source is the
+per-work-package **document collection** under `kitty-specs/<mission>/tasks/`, not the
+roll-up's checkbox lines. Five frozen-surface amendments landed, each with its
+contract-doc edit, module change, and (where applicable) regenerated snapshot in the
+same change; the corrected behavior itself is owned by
+[specs/022-spec-kitty-wp-tasks/contracts/spec-kitty-work-packages.md](../specs/022-spec-kitty-wp-tasks/contracts/spec-kitty-work-packages.md).
+
+- 2026-11-19 · domain · `TaskKind` · `"heading" | "checklist"` → widened union with
+  `"document"` · A-022-0 (research R7/R8: one work-package document is one task, and
+  duplicate ids inside one mission are a hard refusal, never a silent collision) ·
+  artifacts: `specs/002-core-domain-contracts/contracts/task-model.md`,
+  `src/domain/task.ts`, the frozen-surface snapshot (regenerated with
+  `UPDATE_FROZEN_SNAPSHOT=1`) · gate: `tests/contract/frozen-surface.test.ts` and the
+  022 unit tier · migration: additive union member — existing consumers that branch
+  exhaustively on `kind` must handle the new member, and no other identity ever emits it
+
+- 2026-11-19 · discovery · `FrameworkAdapter` / `AdapterConventions` · two optional
+  members: `taskPathPatterns` (repository-root-relative POSIX globs claiming task files
+  by FULL path, `*` one segment / `**` zero-or-more, joined into the candidate union)
+  and the `Feature_Name` rule kind `segment-under-base` · A-022-1 (research R2/R3: the
+  collection lives under the adapter's base path and the mission — not the intermediate
+  directory — names the feature) · artifacts:
+  `specs/003-task-discovery-framework-adapters/contracts/framework-adapter.md`,
+  `docs/discovery.md`, `src/discovery/{adapter,conventions,patterns,traverse,registry}.ts` ·
+  gate: `tests/unit/discovery-traverse.test.ts`, `tests/unit/discovery-adapter-plumbing.test.ts` ·
+  migration: both members are absent on the other six built-in rows, whose selection
+  decisions are byte-identical (SC-005, pinned by the discovery contract snapshots)
+
+- 2026-11-19 · parsing · adapter member whitelist + `parseTaskFile` lane · optional
+  `documentTaskRule` `{ collectionPattern, idKey, titleKey, fileNameIdPattern }` (regex
+  **source** strings; `(?i)` prefix compiles to the `i` flag) selects the document-unit
+  pipeline INSTEAD of heading/checklist extraction for claimed files (0-or-1
+  `document`-kind draft per file, zero line scanning, title cascade, body-minus-front-
+  matter extent) · A-022-2 (research R4–R7: front matter without a YAML dependency;
+  identity = mission + normalized `WP<digits>` id, stable across renames) · artifacts:
+  `specs/004-task-parsing-line-rendering/contracts/parsing-api.md` (rule 13) and
+  `adapter-consumption.md`, `src/parsing/{document,taskfile,adapter}.ts`,
+  `src/discovery/{adapter,conventions}.ts` (pass-through of the member, same-amendment
+  follow-up in 003's `framework-adapter.md`) · gate: `tests/unit/parsing-document.test.ts`,
+  `tests/unit/discovery-spec-kitty.test.ts` · migration: the rule is declared ONLY by the
+  built-in `spec-kitty` row; every other row keeps heading/checklist extraction unchanged
+
+- 2026-11-21 · matching · pairing-signal rules · a `kind: "document"` task is scored
+  through the durable-identity signal ONLY (no other signal is evaluated at any weight
+  configuration), and every unanchored document pair is excluded with the new
+  `PairExclusion` member `document-kind-not-durable`, which outranks the container gates
+  and the plausible floor · A-022-3 (research R9: roll-up-era titles are index prose about
+  the work package — heuristic title pairing onto documents is the recurrence of the
+  defect, FR-011 is absolute) · artifacts:
+  `specs/006-task-issue-matching/contracts/confidence-scoring.md` (§1 scope note, §2 veto
+  bullet) and `matching-api.md` (invariant 10), `src/matching/{scoring,gating,types}.ts` ·
+  gate: `tests/unit/matching-document-kind.test.ts` + the untouched 006 suites +
+  `tests/integration/sync-spec-kitty-rollup-leftovers.test.ts` · migration: heading/
+  checklist scoring is byte-identical; consumers switching exhaustively over
+  `PairExclusion` must handle the new member
+
+- 2026-11-20 · engine · plan-build and apply lanes for document-kind units · duplicate
+  document identities inside one mission refuse plan build with a deterministic
+  `DocumentIdentityCollisionError` finding (precedent: `DurableIdentityCollisionError`);
+  the mirror region is kind-conditional (`document` slices `startLine..endLine`
+  inclusive); an empty mirrored document carries the `no-content` entry label; document
+  units take zero render assignments (empty `expectedMarkdownChanges`; `renderTaskLines`
+  rejects a document-kind assignment defensively) · A-022-4 (research R8/R10/R11) ·
+  artifacts: `specs/022-spec-kitty-wp-tasks/contracts/spec-kitty-work-packages.md`
+  (C2.3/C2.4/C6), `src/engine/{build,apply,errors}.ts`, `src/parsing/render.ts` ·
+  gate: `tests/integration/engine-spec-kitty-world.test.ts`,
+  `tests/integration/sync-spec-kitty-lifecycle.test.ts`,
+  `tests/unit/engine-collision-022.test.ts` · migration: only document-kind units change
+  lanes; the other six identities' build/apply bytes are untouched (SC-005)
+
+**017 supersession.** Feature 017's task-shaping rules — C2.4/C2.5 (the roll-up as task
+file and the `kitty-specs/*/tasks/` exclusion), C3.1–C3.8 (the roll-up line/heading
+grammars, capability-tag title stripping, checklist-id capture), and the C4 seed
+*inputs* (roll-up line identity) — are SUPERSEDED by
+`specs/022-spec-kitty-wp-tasks/contracts/spec-kitty-work-packages.md`. Retained and
+still owned by 017: C1 (path-only detection, scaffold-request refusal), C2.1–C2.3/C2.6
+(base-directory claiming, mission-level feature attribution, precedence, disable
+parity), the C4.2 stance (identity never re-derives from content), C5 (override lanes:
+programmatic-only adapter members, no new `ResolvedConfig` keys), and C6 (sibling
+documentation). The generic whole-segment `*` exclusion grammar added by 017 remains
+available to every adapter — only `spec-kitty` stops declaring it (an empty
+`frameworkSpecificExclusions` set; see C8.3 and the README/docs re-bases in 022 T032/T033).

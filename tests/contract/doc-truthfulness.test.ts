@@ -393,12 +393,12 @@ test("doc-truthfulness: GUARD-25 README adapter counts match the adapter table",
   );
 });
 
-test("doc-truthfulness: GUARD-26 framework-adapters counts the other built-in rows correctly", () => {
+test("doc-truthfulness: GUARD-26 framework-adapters states the 022 retirement of the 017 grammar members", () => {
   const doc = AUDITED[1]![1];
   assert.match(
     doc,
-    /the other six rows/,
-    "GUARD-26 (C-094): docs/framework-adapters.md must say the 017 grammar defaults stay inert for the other SIX built-in rows (seven built-ins minus spec-kitty)",
+    /no built-in row declares the two 017 members anymore \(022 A-022-2\)/i,
+    "GUARD-26 (C-094, 022 re-base): docs/framework-adapters.md must state the 017 grammar members are RETIRED from the built-in spec-kitty row and inert everywhere else (022 A-022-2)",
   );
   assert.doesNotMatch(
     doc,
@@ -422,11 +422,11 @@ test("doc-truthfulness: GUARD-27 spec-kitty feature-name cell states the parent-
   );
 });
 
-test("doc-truthfulness: GUARD-28 017 grammar members are programmatic overrides only", () => {
+test("doc-truthfulness: GUARD-28 the document rule is a programmatic override only", () => {
   assert.doesNotMatch(
     readme,
     /both grammars are configuration or/,
-    "GUARD-28 (C-090): README.md must not call checklistIdPattern/titleTagPattern configuration keys — src/config/schema.ts has no such key",
+    "GUARD-28 (C-090, 022 re-base): README.md must not call the retired 017 grammar members configuration keys — src/config/schema.ts has no such key",
   );
   const start = readme.indexOf("### Spec Kitty");
   const para = readme.slice(start, readme.indexOf("### Generic Markdown"));
@@ -434,11 +434,11 @@ test("doc-truthfulness: GUARD-28 017 grammar members are programmatic overrides 
   assert.match(
     para,
     /overrides\.adapters\["spec-kitty"\][\s\S]{0,200}programmatic|programmatic[\s\S]{0,200}overrides\.adapters\["spec-kitty"\]/,
-    'GUARD-28 (C-090): README.md spec-kitty section must attribute the two grammar members to the PROGRAMMATIC overrides.adapters["spec-kitty"] lane (src/discovery/adapter.ts AdapterConventions)',
+    'GUARD-28 (C-090, 022 re-base): README.md spec-kitty section must attribute the document rule to the PROGRAMMATIC overrides.adapters["spec-kitty"] lane (src/discovery/adapter.ts AdapterConventions)',
   );
   assert.match(
     para,
-    /no config-file key/,
-    "GUARD-28 (C-090): README.md spec-kitty section must state the two grammar members have no config-file key (docs/framework-adapters.md 017 C5.1 note)",
+    /no config-file[\s\S]{0,8}key/,
+    "GUARD-28 (C-090, 022 re-base): README.md spec-kitty section must state the document rule has no config-file key (docs/framework-adapters.md 017 C5.1 stance retained)",
   );
 });
