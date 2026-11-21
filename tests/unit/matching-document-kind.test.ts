@@ -101,7 +101,7 @@ test("c: document tasks stay unmatched under zero floors; headings still match",
   const permissive = {
     ...structuredClone(config),
     confidenceFloors: { medium: 0, plausible: 0 },
-    minimumMatchMargin: 0,
+    minimumMatchMargin: 1, // the minimum allowed — as permissive as config permits
   };
   const cands = [candidate(), candidate({ issueId: "issue-2", issueKey: "KIT-8" })];
   const docRun = matchAllTasks(

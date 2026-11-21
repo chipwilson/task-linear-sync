@@ -71,3 +71,8 @@ export function serializeMatchingResult(r: MatchingResult): string;
 9. **No new shared-file surface**: the only non-`src/matching` change ever made by 006's
    implementation is the additive `"./matching"` key in `package.json` `exports` (research
    R10); the 002 frozen-surface snapshot must remain untouched and green.
+10. **Document-kind durable-only** (A-022-3, amended by 022 FR-005/FR-011): a task with
+    `Unit_Kind` `document` appears in `matches` only when some candidate carries
+    `durableTaskUuid === task.stable_uuid`; unanchored document tasks surface in
+    `unresolved` with band `unmatched` under every configuration, and never in
+    `alternatives` of another task's match.

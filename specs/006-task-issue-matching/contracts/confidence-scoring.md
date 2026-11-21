@@ -27,6 +27,12 @@ parameter = `MatchingWeightOverrides`, data-model §5):
 | same-project | task routed project known ∧ equals `candidate.projectRef` | 10 or override | 10 | `same-project` |
 | same-framework | both sides carry a known `Framework_Id` and they are equal | 10 or override | 10 | `same-framework` |
 
+**Document-kind scope** (A-022-3, amended by 022 FR-005/C4.1): a task whose `Unit_Kind`
+is `document` participates in scoring through the **durable identity** signal only — the
+other seven signals are never evaluated for it, at any weight configuration (no anchor ⇒
+`total = 0` with no positive contribution; anchor ⇒ `total = durableUuid` alone).
+Heading/checklist-kind scoring is unaffected.
+
 Title credit: exact, else contained, else fuzzy — the strictest satisfied form only (R1);
 all other signals sum independently. Integer weights, integer points (`round` half-up on the
 scaled/derived values), total unbounded and ≥ 0. Normalization + tokenization exactly per
@@ -48,6 +54,11 @@ whitespace collapse; Dice = `2·|common multiset| / (|A|+|B|)`, 0.0 when either 
 - **Durable bypass** (constitution II): "a durable-identity match bypasses team/project/
   framework gating and margin downgrade so an issue moved or renamed across containers is
   never orphaned." Durable pairs are never gated out.
+- **Document-kind veto** (A-022-3, amended by 022 C4.3/FR-011): a non-durable pair whose
+  task has `Unit_Kind` `document` is excluded with reason `document-kind-not-durable`,
+  taking precedence over the container gates and the plausible floor — no floor or
+  margin configuration can make such a pair selectable. The anchor pair keeps the durable
+  bypass unchanged.
 - Selectability (FR-002): "selectable candidates are restricted to at least the
   plausible-match floor" — `PairScore.usable ⇔ total ≥ confidenceFloors.plausible ∧ not
   gated`. Below-plausible and gated-out pairs may still surface as alternatives (§5), never
