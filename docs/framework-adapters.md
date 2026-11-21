@@ -17,7 +17,7 @@ Everything below is the 003 realization of 001 R7.2/R7.5; the normative contract
 | `open-spec` | `openspec/`, `open-spec/` | path contains `openspec/`/`open-spec/` **OR** sibling `openspec.json`/`proposal.md` | segment after `openspec/`, `changes/`, or `specs/` | `spec.md`, `proposal.md`, `tasks.md` | — |
 | `bmad` | `bmad/`, `bmad-method/`, `docs/` | path contains `bmad/`/`bmad-method/` **OR** sibling `prd.md`/`architecture.md` | parent dir, or task-file basename when no feature dir | `requirements.md`, `design.md`, `architecture.md`, `prd.md`, `spec.md` | — |
 | `spec-superpower` | `docs/superpowers/plans/` | path beneath the plans root (path-only — no sibling markers; the dated-filename convention lives in `taskFilePatterns`) | date-stripped task-file basename (`2026-11-09-auth.md` → `auth`) | none | — |
-| `spec-kitty` | `kitty-specs/` | path beneath `kitty-specs/` (no sibling requirement) | immediate parent dir beneath `kitty-specs/` (the mission) | from config `siblingDocuments` (`spec.md`, `plan.md`, `research.md`) | — |
+| `spec-kitty` | `kitty-specs/` | path beneath `kitty-specs/` (no sibling requirement); tasks are the work-package documents under `kitty-specs/*/tasks/` claimed by `taskPathPatterns` — the roll-up yields none | immediate parent dir beneath `kitty-specs/` (the mission) — `segment-under-base` | from config `siblingDocuments` (`spec.md`, `plan.md`, `research.md`) | — |
 | `generic` | from config `specsBaseDirectories` | none — detection matches nothing | parent dir beneath a configured base, else absent | from config `siblingDocuments` | `.task-linear-sync/hooks/` · `command-json` |
 
 Notes:
@@ -25,24 +25,29 @@ Notes:
 - `generic` carries **no framework-specific exclusions** (`frameworkSpecificExclusions: []`,
   FR-010): when it is selected, downstream features must read that empty set rather than any
   framework's list.
-- `spec-kitty` excludes `kitty-specs/*/tasks/` — the directory of generated per-work-package
-  agent prompts. A whole-segment `*` in an exclusion entry means "exactly one path segment"
-  (017 amendment 3), the match is repository-root-relative, and a matching **directory** skips
-  its whole subtree. Disabling the adapter removes the exclusion again (FR-011).
+- `spec-kitty` carries **no framework-specific exclusions** (`frameworkSpecificExclusions: []`)
+  since feature 022: the 017-era `kitty-specs/*/tasks/` exclusion is REMOVED — that folder
+  is the work-package collection, claimed by the row's `taskPathPatterns` glob (supersedes
+  017 C2.5). The roll-up `kitty-specs/<mission>/tasks.md` stays claimed as documentation and
+  yields zero tasks.
 - Base directories are **discovery hints**, not selection markers. `docs/` is a `bmad` base
   directory, but a `docs/**` task file with no bmad markers resolves to `generic` — directory
   names are generic discovery defaults, never routing values (001 R7.8).
-- `spec-kitty`'s two extra grammar members follow the same override lanes as every other
-  convention — `overrides.adapters["spec-kitty"]` (deep-merged, arrays replace) beats the
-  built-in row — but neither has a config-file key, so `adapter.<member> ?? built-in default`
-  is the whole resolution (017 C5.1). Their defaults stay inert for the other six rows
-  (017 C5.3): only `spec-kitty` declares the two members, and the 021 amendment below touches
-  only the shared built-in defaults, not these override lanes.
+- `spec-kitty`'s document rule (`documentTaskRule`: collection pattern, `work_package_id`
+  and `title` recognition keys, file-name id pattern) follows the same override lane as every
+  other convention — `overrides.adapters["spec-kitty"]` (deep-merged, arrays replace) beats
+  the built-in row — but it has no config-file key, so `adapter.<member> ?? built-in default`
+  is the whole resolution (017 C5.1 stance retained). The 017-era roll-up grammar members
+  (`checklistIdPattern`, `titleTagPattern`, `phasePattern`, `summaryPattern`) are RETIRED
+  from the row (022 A-022-2): the whitelist members remain available to custom adapters, but
+  the built-in `spec-kitty` row no longer declares them and the parser never consults them
+  in document mode.
 - Grammar fields (`headingGrammar`, `phasePattern`, `summaryPattern`, `rollupPattern`,
   `titleBehavior.stripPrefixes`, plus the optional `checklistIdPattern` and `titleTagPattern`
-  of 017 amendment 2) are regex-source strings consumed downstream (004/005). Only
-  `spec-kitty` declares the two new members; the rest inherit the built-in defaults.
-  003 never parses task content.
+  of 017 amendment 2) are regex-source strings consumed downstream (004/005). Since feature
+  022, no built-in row declares the two 017 members anymore (022 A-022-2): the whitelist
+  members stay available to custom adapters, and the rest of the field set inherits the
+  built-in defaults. 003 never parses task content.
 - **022 amendment A-022-1** adds two optional convention members, both absent-everywhere
   by default (the other rows' behavior is byte-identical when they are omitted, pinned by
   the discovery contract snapshots): `taskPathPatterns` — repository-root-relative POSIX
@@ -70,11 +75,11 @@ Notes:
   public API change).
 - The two override rows are unchanged by 021 and structurally immune, pinned by
   `tests/unit/parsing-adapter-immunity.test.ts`: `spec-kitty`'s never-matching heading grammar
-  `(?!` yields zero heading tasks, so the document-title rule can never bind (its own
-  `checklistIdPattern` still captures dotted ids like `4.1`), and in `spec-superpower` every
-  checkbox is a rollup-excluded body line its narrow `#{2,4} Task N:` grammar never claims —
-  a title-headed checkbox plan yields zero tasks (never one giant task) and `Task N:` headings
-  bound each other.
+  `(?!` yields zero heading tasks (in document mode since 022 the grammar is never consulted
+  at all — `documentTaskRule` replaces heading/checklist extraction wholesale for claimed
+  files), and in `spec-superpower` every checkbox is a rollup-excluded body line its narrow
+  `#{2,4} Task N:` grammar never claims — a title-headed checkbox plan yields zero tasks
+  (never one giant task) and `Task N:` headings bound each other.
 - `builtInAdapters` (`task-linear-sync/discovery`) is the frozen seven-key record
   (`kiro`, `spec-kit`, `open-spec`, `bmad`, `spec-superpower`, `spec-kitty`, `generic`) of immutable
   `FrameworkAdapter` values.
