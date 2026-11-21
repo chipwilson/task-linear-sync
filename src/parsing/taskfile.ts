@@ -11,6 +11,13 @@
  * Validation (data-model § 1): conflict spans never overlap (scan invariant); no task
  * start line lies inside a block (frozen lines are never extracted); exclusions are
  * non-fenced lines (the scan only excludes unfenced lines).
+ *
+ * A-022-2 (022, T019): when the consumed adapter carries `documentTaskRule`, the file
+ * goes through the document-unit pipeline INSTEAD of heading/checklist extraction
+ * (contracts/parsing-api.md rule 13): 0-or-1 `document`-kind draft, zero line-scanning
+ * for files that fail recognition (claimed documentation). The conflict scan and the
+ * depth-cap refusal run unchanged upstream of the branch; 020 folding is inert for a
+ * single parentless depth-1 draft (R4).
  */
 import { taskStableSeed } from "../domain/task.js";
 import type { Task, TaskFile } from "../domain/task.js";
@@ -22,6 +29,7 @@ import type { ConflictBlock } from "./conflict.js";
 import { extractTasks } from "./extract.js";
 import type { ExclusionRecord } from "./extract.js";
 import { validateTaskDepthCap, foldDraftsOverCap } from "./depth.js";
+import { deriveDocumentTask } from "./document.js";
 import { deriveExtents } from "./extent.js";
 import { collectDuplicateWarnings } from "./warnings.js";
 import type { ParseWarning } from "./warnings.js";
@@ -38,6 +46,22 @@ export interface ParseResult {
   readonly warnings: readonly ParseWarning[];
   /** Adapter-derived file-level `Feature_Name` (FR-008); ABSENT when underivable. */
   readonly featureName?: string;
+}
+
+/**
+ * 018 A-018-2: an `identityFileScope` adapter composes the file basename into the local-id
+ * SEED INPUT only — `taskStableSeed`, its frozen layout, and every other adapter's seeds
+ * stay byte-identical; `Task.localTaskId` stays the bare id. Shared by the extraction and
+ * document pipelines (A-022-2).
+ */
+function composeSeedLocalTaskId(
+  adapter: TaskFileAdapter,
+  filePath: string,
+  localTaskId: string | undefined,
+): string | undefined {
+  return localTaskId !== undefined && adapter.identityFileScope === true
+    ? `${filePath.slice(filePath.lastIndexOf("/") + 1)}\u0000${localTaskId}`
+    : localTaskId;
 }
 
 /**
@@ -58,6 +82,54 @@ export function parseTaskFile(
   const lines = splitLines(content, config.tabWidth);
   const conflictBlocks = scanConflictBlocks(lines);
   const frozen = frozenLineSet(conflictBlocks);
+
+  // A-022-2 (T019): the document-unit pipeline replaces heading/checklist extraction
+  // wholesale for document-mode adapters (parsing-api rule 13) — 0-or-1 draft per file,
+  // and NO line scanning at all for files that fail recognition (claimed documentation).
+  // The conflict scan above runs unchanged (R4); the depth-cap refusal ran before this
+  // branch, and 020 folding is inert for a single parentless depth-1 draft.
+  if (adapter.documentTaskRule !== undefined) {
+    const document = deriveDocumentTask(filePath, lines.map((line) => line.text), adapter.documentTaskRule);
+    const featureName = adapter.featureName(filePath);
+    const tasks: Task[] =
+      document === null
+        ? []
+        : [
+            {
+              stableUuid: deriveStableUuid(
+                taskStableSeed(
+                  {
+                    frameworkId: adapter.id,
+                    featureName,
+                    localTaskId: composeSeedLocalTaskId(adapter, filePath, document.localTaskId),
+                  },
+                  { ordinal: 0, filePath },
+                ),
+                config.toolId,
+              ),
+              kind: document.kind,
+              filePath,
+              lineNumber: document.lineNumber,
+              frameworkId: adapter.id,
+              ...(featureName !== undefined ? { featureName } : {}),
+              localTaskId: document.localTaskId,
+              title: document.title,
+              childUuids: [],
+              taskBody: { startLine: document.startLine, endLine: document.endLine },
+              unresolvedConflict: blocksIntersecting(document.startLine, document.endLine, conflictBlocks),
+            },
+          ];
+    const file: TaskFile = {
+      filePath,
+      frameworkId: adapter.id,
+      ...(featureName !== undefined ? { featureName } : {}),
+      // Same zero-I/O posture as the extraction lane: sibling probing is discovery's job.
+      siblingDocuments: [],
+      tasks,
+    };
+    return { file, exclusions: [], conflictBlocks, warnings: [], ...(featureName !== undefined ? { featureName } : {}) };
+  }
+
   const { drafts: allDrafts, exclusions: grammarExclusions } = extractTasks(lines, frozen, adapter, config);
 
   // 020 C3/C5: prune over-cap drafts BEFORE uuid/index/extent building. A folded draft
@@ -82,17 +154,15 @@ export function parseTaskFile(
 
   // Stable_UUID: the seed comes ONLY from the frozen taskStableSeed (002 R11); the
   // ordinal is the 0-based position in ascending-line (tasks) order (parsing-api rule 11).
-  // 018 A-018-2: an `identityFileScope` adapter composes the file basename into the local-id
-  // SEED INPUT only — `taskStableSeed`, its frozen layout, and every other adapter's seeds
-  // stay byte-identical; `Task.localTaskId` below stays the bare id.
-  const seedLocalTaskId = (localTaskId: string | undefined): string | undefined =>
-    localTaskId !== undefined && adapter.identityFileScope === true
-      ? `${filePath.slice(filePath.lastIndexOf("/") + 1)}\u0000${localTaskId}`
-      : localTaskId;
+  // The identityFileScope seed composition is shared with the document lane (A-022-2).
   const uuids = drafts.map((draft, ordinal) =>
     deriveStableUuid(
       taskStableSeed(
-        { frameworkId: adapter.id, featureName, localTaskId: seedLocalTaskId(draft.localTaskId) },
+        {
+          frameworkId: adapter.id,
+          featureName,
+          localTaskId: composeSeedLocalTaskId(adapter, filePath, draft.localTaskId),
+        },
         { ordinal, filePath },
       ),
       config.toolId,
