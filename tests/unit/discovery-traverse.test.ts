@@ -279,19 +279,15 @@ test("022 traverse: the task-file matcher predicate receives (name, relPath); pa
     ],
     async (tree) => {
       const seenArgs: Array<[string, string]> = [];
-      // The predicate widens to (name, relPath) with A-022-1 (T012); the cast keeps the
-      // red-first suite compiling against the current single-argument type.
-      type WidenedMatcher = (name: string, relPath: string) => boolean;
-      const matchers: ((name: string) => boolean)[] = [
-        ((name: string, relPath: string) => {
-          seenArgs.push([name, relPath]);
-          return name === "tasks.md";
-        }) as WidenedMatcher,
-        ((_name: string, relPath: string) => relPath === "collect/a.xyz") as WidenedMatcher,
-      ].map((m) => m as unknown as (name: string) => boolean);
       const output = await traverseRepository({
         root: tree,
-        taskFileMatchers: matchers,
+        taskFileMatchers: [
+          (name: string, relPath: string) => {
+            seenArgs.push([name, relPath]);
+            return name === "tasks.md";
+          },
+          (_name: string, relPath: string) => relPath === "collect/a.xyz",
+        ],
         skipDirectoryMatchers: [],
       });
       assert.deepEqual(

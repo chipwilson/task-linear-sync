@@ -26,8 +26,13 @@ export interface WalkCandidate {
 export interface TraversalInput {
   /** Canonical absolute root (pre-flight already passed). */
   readonly root: string;
-  /** Effective task-file matchers over file BASENAMES (union over enabled adapters). */
-  readonly taskFileMatchers: readonly ((name: string) => boolean)[];
+  /**
+   * Effective task-file matchers (union over enabled adapters). A-022-1 (022): the
+   * predicate widened from `(name)` to `(name, relPath)` — basename-only matchers ignore
+   * the second argument (byte-identical candidate sets for adapters that do not carry
+   * `taskPathPatterns`); path-scoped matchers consume the root-relative POSIX path.
+   */
+  readonly taskFileMatchers: readonly ((name: string, relPath: string) => boolean)[];
   /** Skip predicates over (root-relative directory path, directory NAME). */
   readonly skipDirectoryMatchers: readonly ((dirPath: string, dirName: string) => boolean)[];
   /** Open observer for every directory opened (SC-003 proof, research R12). */
@@ -115,7 +120,7 @@ export async function traverseRepository(input: TraversalInput): Promise<Travers
       }
       if (!isFile) continue;
       listing.push(entry.name);
-      if (taskFileMatchers.some((matches) => matches(entry.name))) {
+      if (taskFileMatchers.some((matches) => matches(entry.name, relPath))) {
         candidates.push({ filePath: relPath, dir: relDir });
       }
     }

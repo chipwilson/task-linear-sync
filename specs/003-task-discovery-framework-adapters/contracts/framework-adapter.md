@@ -39,6 +39,7 @@ export type FeatureNameRule =
   | { readonly kind: "parent-dir" }                       // immediate parent beneath a base dir (kiro, spec-kit)
   | { readonly kind: "parent-or-basename" }               // bmad
   | { readonly kind: "segment-after"; readonly markers: readonly string[] } // open-spec: ["openspec/","changes/","specs/"]
+  | { readonly kind: "segment-under-base" }               // 022 A-022-1: the FIRST path segment after the row's EFFECTIVE base directory (spec-kitty: the mission — never the `tasks` folder, never a lane sub-folder); derived from the merged baseDirectories, so consumer-overridden roots keep working (Principle III)
   | { readonly kind: "none" };
 
 /**
@@ -50,6 +51,16 @@ export type FeatureNameRule =
 export interface FrameworkAdapter {
   readonly id: FrameworkIdentity;
   readonly taskFilePatterns: readonly string[];         // basename globs (research R2)
+  /**
+   * Amended 2026-11-21 by feature 022 (docs/contract-amendments.md, A-022-1): optional
+   * PATH-scoped candidate globs over the full root-relative POSIX path — `*` exactly one
+   * segment, `**` zero or more (segment semantics of the 017 A-3 exclusion grammar),
+   * anchored. They join the traversal candidate union ALONGSIDE `taskFilePatterns`
+   * (basename) matchers; the traversal task-file predicate widens to
+   * `(name, relPath)` and basename-only matchers ignore the second argument, so an
+   * adapter without this member sees a byte-identical candidate set (FR-013).
+   */
+  readonly taskPathPatterns?: readonly string[];
   readonly baseDirectories: readonly string[];          // repo-root-relative POSIX, e.g. ".kiro/specs/"
   readonly detection: {
     readonly pathPrefixes?: readonly string[];          // POSIX path startsWith any
@@ -145,6 +156,7 @@ export interface CustomAdapterDescriptor {
 
 export interface AdapterConventions {   // FR-011 overridable-convention subset for a known adapter
   readonly taskFilePatterns?: readonly string[];
+  readonly taskPathPatterns?: readonly string[];        // 022 A-022-1 — path-scoped candidates (arrays replace wholesale, like every list member)
   readonly baseDirectories?: readonly string[];
   readonly detection?: Partial<FrameworkAdapter["detection"]>;
   readonly headingGrammar?: string; readonly phasePattern?: string;

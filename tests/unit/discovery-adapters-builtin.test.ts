@@ -157,8 +157,7 @@ import { createAdapterRegistry } from "task-linear-sync/discovery";
 import type { FeatureNameRule } from "task-linear-sync/discovery";
 import { applyFeatureNameRule } from "../../src/discovery/conventions.js";
 
-/** The new kind is a type error until A-022-1 lands — cast keeps the red-first suite compiling. */
-const segmentUnderBase = { kind: "segment-under-base" } as unknown as FeatureNameRule;
+const segmentUnderBase: FeatureNameRule = { kind: "segment-under-base" };
 
 test("022 feature names: segment-under-base returns the mission beneath the base (R3)", () => {
   assert.equal(
