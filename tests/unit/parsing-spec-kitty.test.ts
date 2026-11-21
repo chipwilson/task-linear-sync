@@ -95,13 +95,25 @@ test("022 document mode: a claimed non-recognizing file (notes.md) yields zero d
 });
 
 test("022 document mode: Tnnn ids and DoD checkboxes are never extraction inputs (FR-004)", () => {
-  const { file } = parseTaskFile("kitty-specs/001-demo/tasks/wp02-lane/WP02-payments.md", WP_DOC, kitty, cfg);
-  assert.equal(file.tasks.length, 1, "five checkboxes, still ONE task");
+  const laneDoc = [
+    "# Work Package WP02: Payments",
+    "",
+    "Guidance for the payments lane:",
+    "- [ ] T003 Add payouts",
+    "- [ ] T004 [P] List transactions",
+    "",
+    "## Definition of Done",
+    "- [ ] Checks green",
+    "",
+  ].join("\n");
+  const { file } = parseTaskFile("kitty-specs/001-demo/tasks/wp02-lane/WP02-payments.md", laneDoc, kitty, cfg);
+  assert.equal(file.tasks.length, 1, "four checkboxes, still ONE task");
   assert.deepEqual(
     file.tasks.map((t) => t.localTaskId),
     ["WP02"],
     "lane directory + file-name token: WP02 identifies via fileNameIdPattern (C2.1)",
   );
+  assert.equal(file.tasks[0].title, "Work Package WP02: Payments", "leading heading wins the cascade");
 });
 
 test("022 document mode: a front-matter-only document yields one draft with an EMPTY body (C3.3)", () => {
