@@ -38,9 +38,10 @@ a file and never echoing it into any output.
 - **Version posture**: the package is in its 0.x line — under the
   [0.x posture](docs/versioning.md) breaking changes may ride minor bumps until
   the documented 1.0.0 condition is met. Surface-level stability guarantees
-  (below) hold throughout. Current release: **v0.5.0** — per-task
-  splitting of title-headed implementation plans (each checkbox task gets
-  its own issue and region); every release ships its own section in
+  (below) hold throughout. Current release: **v0.6.0** — spec-kitty
+  work-package documents are the task source (one document = one fully
+  detailed task; the mission roll-up yields zero tasks); every release ships
+  its own section in
   [CHANGELOG.md](CHANGELOG.md).
 - **Requires** Node 20 or newer wherever the tool runs; nothing else to install.
 

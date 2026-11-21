@@ -7,6 +7,8 @@ this preview — lives in [docs/versioning.md](docs/versioning.md).
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-11-21
+
 Defect correction — **spec-kitty work-package documents are the task source**
 (feature 022). The 0.5.x spec-kitty adapter synced the checkbox lines of the
 roll-up `kitty-specs/<mission>/tasks.md` and excluded the per-work-package
