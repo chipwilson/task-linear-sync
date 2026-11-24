@@ -78,6 +78,16 @@ export interface FrameworkAdapter {
     readonly idKey: string;
     readonly titleKey: string;
     readonly fileNameIdPattern: string;
+    /**
+     * A-023-2 (023): optional subtask-recognition rule (roster key + anchor/stop regex
+     * sources) carried to the 004 document lane verbatim — discovery never interprets
+     * it; absent ⇒ the pre-023 single-draft lane is byte-identical for every adapter.
+     */
+    readonly subtaskRule?: {
+      readonly rosterKey: string;
+      readonly anchorPattern: string;
+      readonly anchorRegionStopPattern: string;
+    };
   };
   /**
    * Amended 2026-11-24 by feature 023 (docs/contract-amendments.md, A-023-1): optional

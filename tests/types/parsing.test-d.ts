@@ -143,10 +143,11 @@ void depthOverride;
 const badDepthOverride: ConfigOverrides = { maxTaskIssueDepth: "2" };
 void badDepthOverride;
 
-// (c/d) ExclusionRecord["reason"] is EXACTLY the three-member 020-amended union (A-020-2):
-// assignability both ways — no fourth reason may join, none may vanish.
-type ReasonUnionIsExact = [ExclusionRecord["reason"]] extends ["summary-section" | "rollup" | "depth-folded"]
-  ? ["summary-section" | "rollup" | "depth-folded"] extends [ExclusionRecord["reason"]]
+// (c/d) ExclusionRecord["reason"] is EXACTLY the four-member union after A-023-2 (023):
+// 020's three members plus `"subtask-no-anchor"` — assignability both ways, no fifth
+// reason may join, none may vanish. (020 pin updated as part of the A-023-2 amendment.)
+type ReasonUnionIsExact = [ExclusionRecord["reason"]] extends ["summary-section" | "rollup" | "depth-folded" | "subtask-no-anchor"]
+  ? ["summary-section" | "rollup" | "depth-folded" | "subtask-no-anchor"] extends [ExclusionRecord["reason"]]
     ? true
     : false
   : false;

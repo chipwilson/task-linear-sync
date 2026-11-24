@@ -17,11 +17,38 @@ export interface DocumentTaskRule {
   readonly idKey: string;
   readonly titleKey: string;
   readonly fileNameIdPattern: string;
+  /**
+   * A-023-2 (023, optional): subtask recognition for the document lane (feature
+   * contract C2). All members are regex SOURCE strings (the `(?i)` prefix convention
+   * applies); absent ⇒ the pre-023 single-draft path stays byte-identical (inert for
+   * every adapter that does not declare it).
+   */
+  readonly subtaskRule?: {
+    /** Front-matter list key carrying the subtask roster (e.g. `subtasks`). */
+    readonly rosterKey: string;
+    /** Anchor line grammar: an ATX heading or checklist line opening with the subtask token. */
+    readonly anchorPattern: string;
+    /** Heading that ENDS the anchor region (restatements beyond it are content, never anchors). */
+    readonly anchorRegionStopPattern: string;
+  };
+}
+
+/** One captured single-level front-matter list entry (A-023-2). `line` is 1-based. */
+export interface FrontMatterListEntry {
+  readonly value: string;
+  readonly line: number;
 }
 
 export interface FrontMatterScan {
   /** Top-level scalar keys only (`key: value` lines at zero indentation); quoted scalars unwrapped. */
   readonly scalars: Readonly<Record<string, string>>;
+  /**
+   * A-023-2 (additive): top-level keys whose value is a SINGLE-LEVEL list — block form
+   * (`key:` then indented `- value` lines) or flow form (`key: [a, b]`). Scalars keep
+   * their byte-identical capture (a flow value stays a scalar string too); nested or
+   * otherwise malformed lists stay fully ignored, exactly as before.
+   */
+  readonly lists: Readonly<Record<string, readonly FrontMatterListEntry[]>>;
   /** 1-based line number of the CLOSING fence line. */
   readonly closingLine: number;
 }
@@ -78,6 +105,7 @@ export function scanFrontMatter(lines: readonly string[]): FrontMatterScan | nul
   }
   if (close < 0) return null; // unterminated fence — no front matter (R5)
   const scalars: Record<string, string> = {};
+  const lists: Record<string, readonly FrontMatterListEntry[]> = {};
   for (let i = open + 1; i < close; i += 1) {
     const raw = lines[i] ?? "";
     if (raw.trim() === "") continue;
@@ -88,10 +116,47 @@ export function scanFrontMatter(lines: readonly string[]): FrontMatterScan | nul
     const key = raw.slice(0, colon).trim();
     const value = raw.slice(colon + 1).trim();
     if (key === "" || !/^[A-Za-z_][A-Za-z0-9_-]*$/u.test(key)) continue;
-    if (value === "") continue; // nested-collection openers (`dependencies:`) carry no scalar
-    scalars[key] = unquote(value);
+    if (value === "") {
+      // Nested-collection openers (`dependencies:`) carry no scalar — unchanged (R5).
+      // A-023-2: the SAME opener may open a single-level BLOCK list; capture it when the
+      // following lines are plain scalar items, ignore everything else exactly as before.
+      const block = captureBlockList(lines, close, i + 1);
+      if (block !== null) lists[key] = block;
+      continue;
+    }
+    scalars[key] = unquote(value); // scalar capture byte-identical (A-023-2)
+    // A-023-2: a FLOW value additionally captures as a single-level list; the scalar
+    // above stays exactly what 0.6.0 recorded.
+    const flow = /^\[(.*)\]$/u.exec(value);
+    if (flow !== null) {
+      const inner = (flow[1] ?? "").trim();
+      const items = inner === "" ? [] : inner.split(",").map((part) => unquote(part.trim())).filter((p) => p !== "");
+      lists[key] = items.map((v) => ({ value: v, line: i + 1 }) satisfies FrontMatterListEntry);
+    }
   }
-  return { scalars, closingLine: close + 1 };
+  return { scalars, lists, closingLine: close + 1 };
+}
+
+/**
+ * A-023-2: single-level block list beneath a top-level key — consecutive `- value`
+ * items (indented OR flush-left, both are real upstream shapes), stopping at the first
+ * non-item line or the closing fence. Returns `null` — list IGNORED, everything else
+ * unchanged — when the structure is not a plain scalar list: map-style items
+ * (`- key: value`), nested dashes, or no items at all.
+ */
+function captureBlockList(lines: readonly string[], close: number, from: number): readonly FrontMatterListEntry[] | null {
+  const entries: FrontMatterListEntry[] = [];
+  for (let i = from; i < close; i += 1) {
+    const raw = lines[i] ?? "";
+    if (raw.trim() === "") continue; // blank lines keep the list alive
+    const item = /^[ \t]*-[ \t]+(.*)$/u.exec(raw);
+    if (item === null) break; // any non-item line closes the list
+    const value = unquote((item[1] ?? "").trim());
+    if (value === "") return null; // `- - x`-style nesting: not a plain scalar list
+    if (/^[A-Za-z_][A-Za-z0-9_-]*[ \t]*:/u.test(value)) return null; // map-style item
+    entries.push({ value, line: i + 1 });
+  }
+  return entries.length > 0 ? entries : null;
 }
 
 /**

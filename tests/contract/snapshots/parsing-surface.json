@@ -35,6 +35,7 @@
   "parsing/document": [
     "DocumentDraft",
     "DocumentTaskRule",
+    "FrontMatterListEntry",
     "FrontMatterScan",
     "compileRuleSource",
     "deriveDocumentTask",
