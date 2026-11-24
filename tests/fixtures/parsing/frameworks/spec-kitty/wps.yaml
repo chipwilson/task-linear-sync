@@ -1,0 +1,8 @@
+# Mission work-package manifest (Spec Kitty artifact — NEVER a sync input).
+wps:
+  WP01:
+    title: Auth
+    lane: planned
+  WP02:
+    title: Flow persistence
+    lane: planned

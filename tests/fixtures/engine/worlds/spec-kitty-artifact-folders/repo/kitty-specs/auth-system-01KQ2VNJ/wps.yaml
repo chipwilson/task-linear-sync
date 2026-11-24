@@ -1,0 +1,5 @@
+# Never consumed as a sync input (023 C8).
+wps:
+  WP01:
+    title: Gateway wiring
+    lane: planned
