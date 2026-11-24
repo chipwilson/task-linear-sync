@@ -347,3 +347,49 @@ programmatic-only adapter members, no new `ResolvedConfig` keys), and C6 (siblin
 documentation). The generic whole-segment `*` exclusion grammar added by 017 remains
 available to every adapter — only `spec-kitty` stops declaring it (an empty
 `frameworkSpecificExclusions` set; see C8.3 and the README/docs re-bases in 022 T032/T033).
+
+## Feature 023 amendments — `spec-kitty` sub-task depth & status authority
+
+Sub-task depth, the artifact-folder collection gate, and the event-log status
+authority for the `spec-kitty` identity, measured against the upstream reference
+repository. The normative feature contract is
+[specs/023-spec-kitty-subtask-depth/contracts/spec-kitty-subtask-status.md](../specs/023-spec-kitty-subtask-depth/contracts/spec-kitty-subtask-status.md)
+(C0–C9). Amendments land test-first, one change each, with the three-artifact rule
+where a frozen surface is touched.
+
+- 2026-11-24 · domain · `TaskBodyExtent` · additive optional
+  `promotedRanges?: ReadonlyArray<readonly [number, number]>` (inclusive line spans
+  promoted OUT of a document task) · A-023-0(a) (research R2: contiguous
+  `startLine..endLine` cannot express the holes left by promoted subtask sections; a
+  segment-list rework would churn every kind — FR-013 violation) · artifacts:
+  `specs/002-core-domain-contracts/contracts/task-model.md`, `src/domain/task.ts`,
+  the regenerated `tests/contract/snapshots/frozen-surface.json` (no name-set drift:
+  the member is additive to an existing interface) · gate:
+  `tests/unit/domain-task.test.ts` (absence renders the contiguous slice byte-for-byte;
+  seeds untouched) · migration: consumed ONLY by the document-kind mirror slice; every
+  other kind and every absent/empty case renders exactly as 0.6.0
+
+- 2026-11-24 · domain+config · `WorkflowStateIdentities` / config-init gate · additive
+  optional `lanes?: Record<LaneName, string>` (per-team lane → workflow-state NAME) +
+  new frozen exports `LANE_VOCABULARY` and `LaneMapError` · A-023-0(b) (research R6:
+  state names are per-team routing data — NO built-in default ships, the
+  `workflowStates` consumer-required class; malformed maps fail the config-init gate
+  naming every offending team key, never partially applied) · artifacts:
+  `specs/002-core-domain-contracts/data-model.md` §4, `src/domain/routing.ts`,
+  `src/config/{schema,validate}.ts`, the regenerated frozen-surface snapshot · gate:
+  `tests/unit/config-lanes.test.ts` · migration: an absent map validates and behaves
+  exactly as 0.6.0; unmapped lanes leave tracker state untouched + reported
+
+- 2026-11-24 · discovery (003 contract) · `FrameworkAdapter` / `AdapterConventions` /
+  `CustomAdapterDescriptor` · additive optional `statusEventFileName?: string` (file
+  sought directly beneath each mission directory; built-in `spec-kitty` ships
+  `"status.events.jsonl"`) · A-023-1 (research R5/R7: the append-only lane-event log is
+  mission-scoped status material, never a task source — it joins no candidate union and
+  is read during plan build only; `taskPathPatterns` semantics unchanged so artifact
+  files stay claimed, never `generic`) · artifacts:
+  `specs/003-task-discovery-framework-adapters/contracts/framework-adapter.md`,
+  `docs/framework-adapters.md`, `src/discovery/{adapter,conventions}.ts`,
+  `src/discovery/adapters/spec-kitty.ts` · gate:
+  `tests/contract/discovery-surface.test.ts` (member-level pin; barrel name set
+  unchanged) · migration: absent on every other row; the engine consumes built-in row
+  values only (022 engine-registry precedent)

@@ -46,6 +46,8 @@ export interface ResolvedConventions {
   readonly taskPathPatterns?: readonly string[];
   /** A-022-2 (022): optional document-unit task rule, passed through untouched (see `FrameworkAdapter.documentTaskRule`). */
   readonly documentTaskRule?: FrameworkAdapter["documentTaskRule"];
+  /** A-023-1 (023): optional status-event file name (see `FrameworkAdapter.statusEventFileName`). */
+  readonly statusEventFileName?: string;
   readonly baseDirectories: readonly string[];
   readonly detection: FrameworkAdapter["detection"];
   readonly featureNameRule: FeatureNameRule;
@@ -237,6 +239,7 @@ export function defineFrameworkAdapter(c: ResolvedConventions): FrameworkAdapter
     taskFilePatterns: [...c.taskFilePatterns],
     ...(c.taskPathPatterns !== undefined ? { taskPathPatterns: [...c.taskPathPatterns] } : {}),
     ...(c.documentTaskRule !== undefined ? { documentTaskRule: { ...c.documentTaskRule } } : {}),
+    ...(c.statusEventFileName !== undefined ? { statusEventFileName: c.statusEventFileName } : {}),
     baseDirectories: [...c.baseDirectories],
     detection: c.detection,
     featureNameRule: c.featureNameRule,
@@ -307,6 +310,8 @@ export function customDescriptorConventions(descriptor: CustomAdapterDescriptor,
     ...(descriptor.siblingDocuments ? { siblingDocuments: [...descriptor.siblingDocuments] } : {}),
     ...(descriptor.agentHooksDirectory !== undefined ? { agentHooksDirectory: descriptor.agentHooksDirectory } : {}),
     ...(descriptor.agentHookTemplate !== undefined ? { agentHookTemplate: descriptor.agentHookTemplate } : {}),
+    // A-023-1 (023): the status-event file name passes through like every other scalar member.
+    ...(descriptor.statusEventFileName !== undefined ? { statusEventFileName: descriptor.statusEventFileName } : {}),
   };
   const merged = deepMerge(base as unknown, declared as unknown) as ResolvedConventions;
   return merged;

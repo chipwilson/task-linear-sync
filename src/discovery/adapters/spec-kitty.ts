@@ -31,6 +31,9 @@ export const specKittyConventions: ResolvedConventions = {
     titleKey: "title",
     fileNameIdPattern: "(?i)^WP(\\d+)[^/]*\\.md$",
   },
+  // A-023-1 (023): the mission's append-only lane-event log — the SOLE status authority
+  // (feature contract C6). Read by the engine during plan build ONLY; never a task source.
+  statusEventFileName: "status.events.jsonl",
   titleBehavior: { stripPrefixes: [...builtInDefaults.titleStripPrefixes] },
   siblingDocuments: [...builtInDefaults.siblingDocuments],
   // C1.3 — no agentHooksDirectory and no template: scaffold requests refuse with zero writes.

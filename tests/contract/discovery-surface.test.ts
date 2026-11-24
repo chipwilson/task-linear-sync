@@ -119,6 +119,20 @@ test("discovery surface: runtime exports match the value subset of the snapshot 
   assert.equal(typeof mod.isBuiltInFrameworkId, "function");
 });
 
+/**
+ * A-023-1 (feature 023): the adapter member whitelist gains the OPTIONAL
+ * `statusEventFileName` on all three surfaces (FrameworkAdapter, AdapterConventions,
+ * CustomAdapterDescriptor). The barrel NAME set is unchanged (no new exports) — the
+ * member-level pin below is the deliberate amendment gate.
+ */
+test("discovery surface: the A-023-1 statusEventFileName member is present and optional on all three whitelist surfaces", () => {
+  const adapterDts = readFileSync(fileURLToPath(barrelDts.href.replace("index.d.ts", "adapter.d.ts")), "utf8");
+  for (const iface of ["FrameworkAdapter", "CustomAdapterDescriptor", "AdapterConventions"]) {
+    const body = new RegExp(`export interface ${iface} \\{([\\s\\S]*?)\\n\\}`).exec(adapterDts)?.[1] ?? "";
+    assert.match(body, /readonly statusEventFileName\?: string;/, `${iface} must carry the optional statusEventFileName member (A-023-1)`);
+  }
+});
+
 test("discovery surface: snapshot tier lists are well-formed (sorted, disjoint) — amendments guard", () => {
   const tiers = [EXPECTED_FOUNDATIONAL, EXPECTED_US1, EXPECTED_US2];
   for (const tier of tiers) {

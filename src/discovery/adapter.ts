@@ -79,6 +79,17 @@ export interface FrameworkAdapter {
     readonly titleKey: string;
     readonly fileNameIdPattern: string;
   };
+  /**
+   * Amended 2026-11-24 by feature 023 (docs/contract-amendments.md, A-023-1): optional
+   * file name sought DIRECTLY BENEATH each mission directory as the identity's status
+   * event log. Built-in `spec-kitty` ships `"status.events.jsonl"`; absent ⇒ the
+   * identity has no status-event source. The file is NOT a task-file pattern: it never
+   * joins the candidate union and stays claimed-inert; discovery never reads it (the
+   * engine consumes the built-in row value during plan build ONLY — feature contract
+   * C6.3). `taskPathPatterns` semantics are UNCHANGED by this member: claims stay
+   * broad so artifact files remain claimed by the identity, never `generic`.
+   */
+  readonly statusEventFileName?: string;
   /** Repo-root-relative POSIX dir patterns; also discovery hints + rank material. */
   readonly baseDirectories: readonly string[];
   /** Declarative markers driving detection (001 R7.2). */
@@ -190,6 +201,8 @@ export interface CustomAdapterDescriptor {
   readonly titleTagPattern?: string;
   /** A-022-2 (022): document-unit task rule — carried verbatim onto the custom row when declared. */
   readonly documentTaskRule?: FrameworkAdapter["documentTaskRule"];
+  /** A-023-1 (023): status-event file name — carried verbatim onto the custom row when declared. */
+  readonly statusEventFileName?: string;
   readonly titleBehavior?: { readonly stripPrefixes: readonly string[] };
   /** Defaults to the configured `siblingDocuments` when absent. */
   readonly siblingDocuments?: readonly string[];
@@ -206,6 +219,8 @@ export interface AdapterConventions {
   readonly taskPathPatterns?: readonly string[];
   /** A-022-2 (022): document-unit task rule; the whole object replaces wholesale (scalars replace). */
   readonly documentTaskRule?: FrameworkAdapter["documentTaskRule"];
+  /** A-023-1 (023): status-event file name; scalar replaces wholesale. */
+  readonly statusEventFileName?: string;
   readonly baseDirectories?: readonly string[];
   readonly detection?: Partial<FrameworkAdapter["detection"]>;
   readonly headingGrammar?: string;

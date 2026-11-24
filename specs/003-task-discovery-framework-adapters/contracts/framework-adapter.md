@@ -75,6 +75,16 @@ export interface FrameworkAdapter {
     readonly titleKey: string;
     readonly fileNameIdPattern: string;
   };
+  /**
+   * Amended 2026-11-24 by feature 023 (docs/contract-amendments.md, A-023-1): optional
+   * file name sought DIRECTLY BENEATH each mission directory as the identity's status
+   * event log. Built-in `spec-kitty` ships `"status.events.jsonl"`; absent ⇒ no
+   * status-event source. The file never joins the traversal candidate union and stays
+   * claimed-inert; discovery never reads it (the engine consumes built-in row values
+   * during plan build ONLY). `taskPathPatterns` semantics UNCHANGED: claims stay broad
+   * so artifact files remain claimed by the identity, never `generic` (FR-009/FR-015).
+   */
+  readonly statusEventFileName?: string;
   readonly baseDirectories: readonly string[];          // repo-root-relative POSIX, e.g. ".kiro/specs/"
   readonly detection: {
     readonly pathPrefixes?: readonly string[];          // POSIX path startsWith any
@@ -166,6 +176,7 @@ export interface CustomAdapterDescriptor {
   readonly titleBehavior?: { readonly stripPrefixes: readonly string[] };
   readonly siblingDocuments?: readonly string[];
   readonly agentHooksDirectory?: string; readonly agentHookTemplate?: "kiro-json" | "command-json" | "none";
+  readonly statusEventFileName?: string;                // 023 A-023-1 — carried verbatim onto the custom row when declared
 }
 
 export interface AdapterConventions {   // FR-011 overridable-convention subset for a known adapter
@@ -179,6 +190,7 @@ export interface AdapterConventions {   // FR-011 overridable-convention subset 
   readonly siblingDocuments?: readonly string[];
   readonly featureNameRule?: FeatureNameRule;
   readonly agentHooksDirectory?: string; readonly agentHookTemplate?: "kiro-json" | "command-json" | "none";
+  readonly statusEventFileName?: string;                // 023 A-023-1 — scalar replaces wholesale
 }
 
 /** Programmatic override layer (highest precedence, research R7). */
