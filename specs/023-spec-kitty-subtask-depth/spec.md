@@ -50,31 +50,47 @@ Four deltas against the v0.6.0 implementation, per the feature description:
    issue per work package). Subtasks (`Txxx`) are folded into the work package's issue body
    when the configured maximum task-issue depth is 1 (the built-in default, 020), and are
    created as sub-issues of the work package's Linear issue when the depth is greater than 1.
-2. **Front-matter metadata reaches the board readably.** Raw front-matter YAML stays out of
-   the issue body (0.6.0 behavior), but the lifecycle metadata it carries (lane, dependencies,
-   subtask roster, agent/assignee, review state) must be presented in human-readable form in
-   the mirrored content instead of being dropped.
+2. **Status authority: the event log, expressed as board state.** Each work package's
+   current lane comes solely from its last lane event in the mission's append-only
+   `status.events.jsonl`; that lane moves the issue to the mapped Linear workflow state.
+   Front-matter `lane` and `status.json` are never state sources; raw front-matter YAML
+   stays out of the issue body and status is never copied into the description.
 3. **Mission-slug variants are first-class.** Mission directories named with a numeric prefix
    (`042-auth-system`), an identifier suffix (`auth-system-01KQ2VNJ`), or a bare slug all
    attribute correctly.
 4. **Non-task mission artifacts stay inert.** `meta.json`, `spec.md`, `plan.md`, the `tasks.md`
    roll-up, `wps.yaml`, `status.events.jsonl`, and `status.json` yield zero tasks in all
    configurations and never fall through to the `generic` identity.
+5. **Per-work-package artifacts are never documents.** Files inside per-work-package
+   sub-folders (review cycles, reviewer feedback) cannot claim a work-package identity, even
+   when stamped with the canonical document's front matter (see FR-015).
 
 **Owns**: subtask extraction from work-package documents, subtask-to-sub-issue promotion under
-the depth cap, two-level identity and count parity for `spec-kitty`, readable rendering of
-work-package front-matter metadata in mirrored content, and the inertness guarantee for mission
-artifacts beyond `tasks/`.
+the depth cap, two-level identity and count parity for `spec-kitty`, current-status
+derivation from the mission's append-only event log, and the inertness guarantee for mission
+artifacts beyond the event log's status role.
 
 **Consumes unchanged**: the depth-cap folding mechanism and its configuration key
 (`maxTaskIssueDepth`, 020); durable-identity matching (002/006, document-kind durable-only
 pairing from 022); stale/leftover reporting (008); detection ranking and configuration
-layering (003); the 022 work-package task source, title cascade, and roll-up inertness.
+layering (003); the teams' workflow-state routing configuration for tracker state names;
+the 022 work-package task source, title cascade, and roll-up inertness.
 
-**Out of scope** (unchanged from the 017/022 stance unless noted): mapping `lane` values to
-Linear workflow states; consuming `wps.yaml`, `status.events.jsonl`, or `status.json` as sync
-inputs (dependency edges and lane state remain mirrored content only); auto-removal of
-leftover issues; scaffold/agent-hooks for Spec Kitty; other framework identities.
+**Out of scope** (unchanged from the 017/022 stance unless noted): consuming `wps.yaml`,
+`status.json`, or `meta.json` as sync inputs; mapping dependency front matter to tracker
+relations (dependencies remain mirrored content only); copying status text into issue
+descriptions; auto-removal of leftover issues; scaffold/agent-hooks for Spec Kitty; other
+framework identities. Status capture is IN scope this release: the mission event log drives
+each issue's workflow state (delta 2, FR-007).
+
+## Clarifications
+
+### Session 2026-11-24
+
+- Q: How should nested review artifacts that carry a work-package id be treated? → A: Only direct children of the mission's `tasks/` folder can be canonical work-package documents; files inside per-work-package sub-folders (review cycles, reviewer feedback, attachments) are claimed-inert content whatever their front matter, so they can never duplicate a canonical id or inflate the board.
+- Q: What board granularity should the reference-scale repository produce? → A: Keep one issue per work package — a large mission tree legitimately yields thousands of level-1 issues; the depth configuration folds nesting only and is never an issue-volume control. Per-line/per-heading splitting remains the only forbidden granularity.
+- Q: How should each work package's status appear on its Linear issue? → A: State transitions only — the sync moves the issue to the workflow state mapped from the work package's current lane; the description remains the document body with no synthesized status block.
+- Q: Which file is the authoritative source of a work package's current status? → A: `status.events.jsonl` is the SOLE authoritative source — the last lane event per work package wins; `status.json` and the front-matter `lane` field are never state sources.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -140,33 +156,41 @@ subtask anchor's text present inside its parent's mirrored content.
 
 ---
 
-### User Story 3 - Work-package metadata is readable on the board (Priority: P2)
+### User Story 3 - Current status lands on the right board column (Priority: P2)
 
-A developer opens a synced work-package issue in Linear. Raw YAML front matter is nowhere in
-the description, but the front matter's operational state is legible: the current Kanban lane,
-prerequisite work packages, the bundled subtask roster, the acting agent/assignee, and the
-review state (status and reviewer) appear as a readable metadata region ahead of the document
-body, updated as the repository evolves.
+A coordinator glances at Linear and trusts the columns: each work-package issue sits in the
+workflow state mapped from that work package's current Kanban lane, and the lane comes from
+the mission's append-only status event log — Spec Kitty's canonical record of every lane
+transition. As agents move a work package through `planned → claimed → in_progress →
+for_review → in_review → approved → done` (or to `blocked`/`canceled`), later syncs move the
+issue accordingly. The issue description stays the work-package document's body: status lives
+in the board state, never in copied text.
 
-**Why this priority**: the description lists the frontmatter schema as state that "drives the
-Kanban dashboard" — a board reader should not lose it just because raw YAML must not be
-mirrored. It refines, not enables, the level-1 sync, so it ranks below the depth behavior.
+**Why this priority**: the v0.7.0 requirement demands the status of each work item be
+captured accurately from the appropriate file — the event log — and board placement is where
+that accuracy is visible; it ranks below the depth behavior because the board remains usable
+on content sync alone.
 
-**Independent Test**: Sync a fixture whose WP front matter sets `lane: in_progress`,
-`dependencies: ["WP01"]`, `subtasks: ["T004","T005"]`, `assignee`, and `review_status`; assert
-the mirrored content contains those five values in human-readable form and contains no raw
-front-matter block (`---`-delimited YAML).
+**Independent Test**: Sync a fixture whose `status.events.jsonl` carries lane-transition
+events for its work packages while `status.json` and the documents' front-matter `lane`
+deliberately contradict with older values; assert every issue's state equals the state mapped
+from the latest event for its work package — never from the stale sources.
 
 **Acceptance Scenarios**:
 
-1. **Given** a work-package document with the full front-matter schema, **When** its task is
-   presented, **Then** lane, dependencies, subtask roster, agent/assignee, and review state
-   each appear in readable text and no raw YAML block appears in the title or content.
-2. **Given** a synced work package whose `lane` flips and `reviewed_by` populates, **When**
-   the sync re-runs, **Then** the same task's content is updated to the new values — no second
-   task is created.
-3. **Given** a document with no front matter at all, **When** its task is presented, **Then**
-   it syncs with body content only and no empty or placeholder metadata region.
+1. **Given** a mission whose event log's last event for `WP02` is `in_progress` and a team
+   configuration mapping that lane, **When** a sync runs, **Then** the `WP02` issue's state is
+   the mapped state.
+2. **Given** the same mission with `status.json` and the front-matter `lane` claiming
+   `planned`, **When** the sync re-runs, **Then** the event log remains the sole authority and
+   the issue stays in the state mapped from its latest event.
+3. **Given** a work package with no lane events, or a mission with no event log at all,
+   **When** a sync runs, **Then** no state is derived and the issue's state is untouched.
+4. **Given** a lane value the team configuration does not map, **When** a sync plan is
+   produced, **Then** no state change is proposed for it and the unmapped lane is reported.
+5. **Given** descriptions already synced under 0.6.0, **When** the sync re-runs with no
+   document change, **Then** descriptions are unchanged — status is never appended to
+   mirrored content, and no raw front-matter block ever appears in one.
 
 ---
 
@@ -223,6 +247,16 @@ files contribute zero tasks at any depth, and mission attribution names match di
   duplicated sub-issues.
 - **Legacy lane sub-folder layouts** (`tasks/planned/WPnn-*.md`): accepted as the same
   collection (022 assumption retained); subtask handling applies identically.
+- **Per-work-package artifact sub-folders** (`tasks/WP04-doctor-coordination-check/` holding
+  `review-cycle-1.md`, `reviewer-feedback-cycle-2.md`, etc., some of which upstream stamps
+  with the owning document's `work_package_id` front matter): never canonical documents and
+  never tasks — inert content, whatever front matter they carry; the duplicate-identifier
+  collision check still applies between two CANONICAL documents at the same collection level.
+- **Event log referencing an unknown work-package identifier** (document deleted or renamed
+  id): the event is ignored with a reported finding; the log never conjures an issue or state
+  for a document that no longer exists.
+- **Many lane events between two syncs**: the issue converges straight to the state mapped
+  from the LAST event — intermediate lanes are not replayed as activity on the tracker.
 - **Depth configured above 2** (e.g. 64): behaves exactly like 2 for this framework — there is
   no deeper level to fold.
 - **Missions without a `tasks/` folder, or WP files that are front matter only**: zero tasks /
@@ -259,20 +293,26 @@ files contribute zero tasks at any depth, and mission attribution names match di
   roll-up-line identifier, and MUST be stable across lane flips, history/Activity Log appends,
   Review Report additions, other body edits, and renames or lane-style moves of the owning
   document within its mission's collection.
-- **FR-007**: The mirrored content of a work-package task MUST present the document's
-  front-matter state in human-readable form — at minimum the current lane, dependency work
-  packages, subtask roster, acting agent/assignee, and review state — and MUST NOT mirror raw
-  front-matter YAML blocks in title or content. Documents without front matter MUST mirror body
-  content only, with no placeholder metadata region.
+- **FR-007**: The mission's `status.events.jsonl` MUST be the SOLE authoritative source of a
+  work package's current status: the last lane event for the work-package identifier (in
+  append/file order) MUST determine the status, and MUST set the issue's tracker workflow
+  state through the teams' lane→state mapping. The front-matter `lane` field and
+  `status.json` MUST never act as state sources. A work package with no lane events MUST have
+  its issue state untouched; a lane value absent from the mapping MUST leave the state
+  untouched and be reported; malformed event lines MUST be skipped with a reported finding
+  without poisoning later events. Raw front-matter content MUST NOT appear in any mirrored
+  title or content, and status MUST NOT be written into the mirrored description.
 - **FR-008**: The mission directory beneath the specs root MUST attribute tasks to the mission
   whatever its naming style: numeric-prefixed (`042-auth-system`), identifier-suffixed
   (`auth-system-01KQ2VNJ`), or bare slug.
 - **FR-009**: The mission artifacts `meta.json`, `spec.md`, `plan.md`, the `tasks.md`/`TASKS.md`
   roll-up, `wps.yaml`, `status.events.jsonl`, and `status.json` MUST yield zero tasks at every
-  depth setting, MUST remain claimed by the `spec-kitty` identity when inside a mission (no
-  fall-through to `generic`), and MUST NOT be consumed as sync inputs: dependency edges, lane
-  state, and manifest data remain mirrored content only, with no mapping to tracker states or
-  tracker relations in this release.
+  depth setting and MUST remain claimed by the `spec-kitty` identity when inside a mission (no
+  fall-through to `generic`). Beyond yielding no tasks they are inert sync content, except
+  `status.events.jsonl`, which is consumed solely for the FR-007 status derivation;
+  `meta.json`, `wps.yaml`, and `status.json` MUST NOT be consumed as sync inputs in this
+  release, and dependency front matter MUST remain mirrored content only — no tracker
+  relation mapping.
 - **FR-010**: Changing the depth configuration MUST converge the board: raising the cap from 1
   to 2 or more creates the sub-tasks; lowering it back folds subtask content into the parents,
   stops maintaining the sub-issues, and reports the previously created sub-issues through the
@@ -290,10 +330,25 @@ files contribute zero tasks at any depth, and mission attribution names match di
   folding, or plan output for any other built-in framework identity (byte-identical fixtures).
 - **FR-014**: Documentation that describes the `spec-kitty` adapter (README adapter table and
   subsection, framework-adapters doc, configuration reference for the depth key's interaction
-  with document sources, requirements ledger, CHANGELOG) MUST describe the two-level model —
-  work packages at level 1, subtasks at level 2 with folding at depth 1 — replacing the
-  "subtasks are always content" description; the documentation-consistency suite's pins MUST be
+  with document sources and for lane→state mapping, requirements ledger, CHANGELOG) MUST
+  describe the two-level model — work packages at level 1, subtasks at level 2 with folding at
+  depth 1 — and the event-log status authority, replacing the "subtasks are always content"
+  and "lane is content only" descriptions; the documentation-consistency suite's pins MUST be
   satisfied by the corrected text, not relaxed.
+- **FR-015**: Canonical work-package documents MUST be recognized only as files directly
+  inside the mission's `tasks/` collection (with the legacy lane sub-folder variant retained,
+  022). Any file inside a per-work-package artifact sub-folder (a `tasks/` sub-folder named
+  after a work package, holding review cycles, reviewer feedback, or attachments) MUST yield
+  zero tasks and MUST remain claimed by the `spec-kitty` identity REGARDLESS of front matter
+  it carries — including a `work_package_id` duplicating the canonical document's — so such
+  artifacts can never add fine-grained issues nor trigger the same-mission duplicate-
+  identifier collision abort between a canonical document and its own artifacts.
+- **FR-016**: Work-package-per-issue IS the sync's granularity contract: a repository's
+  level-1 task count MUST equal its canonical work-package document count at every depth
+  setting, and the depth configuration MUST only fold nesting below level 1 — it MUST NEVER
+  merge work packages into coarser issues or split them into finer ones, however large the
+  resulting board (thousands of level-1 sibling issues on a big mission tree is correct
+  behavior, not a defect).
 
 ### Key Entities
 
@@ -310,12 +365,20 @@ files contribute zero tasks at any depth, and mission attribution names match di
   work package's task when the depth cap allows, otherwise folded content; `[P]` markers are
   plain content.
 - **Sync Task (work-package-sourced)**: the level-1 task seeded from framework + mission +
-  work-package id; content = readable metadata region + document body minus promoted sections.
+  work-package id; content = document body minus promoted sections; tracker state = mapped
+  from the work package's latest status event.
 - **Sync Task (subtask-sourced)**: the level-2 task seeded from framework + mission +
   work-package id + subtask id; parented to its work-package task; content = the subtask's
   anchored section.
-- **Mission Manifest/State Artifacts** (`wps.yaml`, `status.events.jsonl`, `status.json`):
-  claimed-inert documentation in this release — never task sources, never sync inputs.
+- **Work-Package Artifact**: a file in a per-work-package sub-folder (review cycles, reviewer
+  feedback, attachments); carries lifecycle detail about its work package but is never a
+  canonical document, never a task, and never a duplicate-identifier collision.
+- **Status Event**: one appended line in the mission's `status.events.jsonl` recording a work
+  package's lane transition; the SOLE authoritative status source — last event per work
+  package wins; malformed lines are skipped-with-report, unknown ids ignored-with-report.
+- **Mission Manifest/State Artifacts** (`wps.yaml`, `status.json`, `meta.json`): claimed-inert
+  documentation in this release — never task sources, never sync inputs
+  (`status.events.jsonl` is consumed, but only for FR-007 status derivation).
 
 ## Success Criteria *(mandatory)*
 
@@ -328,9 +391,11 @@ files contribute zero tasks at any depth, and mission attribution names match di
 - **SC-002**: At the shipped default configuration, 0 sub-issues are ever created for
   `spec-kitty` files, task counts match the 0.6.0 baseline exactly, and every subtask's text
   is present inside its parent's mirrored content.
-- **SC-003**: 100% of mirrored work-package contents expose lane, dependencies, subtask roster,
-  agent/assignee, and review state in readable text, and 0 mirrored titles or contents contain
-  a raw front-matter block.
+- **SC-003**: On a fixture where `status.json` and the front-matter `lane` deliberately
+  contradict the event log, 100% of work-package issues carry the state mapped from each work
+  package's LATEST event-log entry; work packages without events keep their state untouched in
+  100% of runs; 0 mirrored titles or contents ever contain a raw front-matter block or
+  appended status text.
 - **SC-004**: A re-run after only lifecycle edits (lane flip, history append, review report,
   in-collection rename) produces 0 new issues and 0 identity changes at both depth settings,
   including the children of renamed work packages.
@@ -339,30 +404,43 @@ files contribute zero tasks at any depth, and mission attribution names match di
   automatically deleted or silently kept.
 - **SC-006**: Zero behavior drift for the other six built-in identities — existing discovery,
   parse, depth-folding, and plan fixtures are byte-identical before and after this change.
+- **SC-007**: On a fixture reproducing the reference repository's per-work-package artifact
+  sub-folders (review cycles carrying duplicated `work_package_id` front matter), a plan
+  completes with zero collision refusals and task counts equal to the canonical work-package
+  document count — artifact files contribute 0 tasks at every depth.
 
 ## Assumptions
 
-- Lane-to-tracker-state mapping, dependency-edge creation, and consumption of `wps.yaml` /
-  `status.events.jsonl` / `status.json` remain out of scope, continuing the 017/022 stance;
-  the description documents these artifacts but requests no sync role for them, so this
-  release guarantees only their inertness and the readability of the metadata the WP files
-  themselves carry.
+- Status capture is scoped exactly as clarified: the event log is the sole lane-state
+  authority, and the lane→tracker-state table is resolved through the teams' existing
+  workflow-state routing configuration at plan level — no new required configuration ships,
+  and lanes with no mapping simply never move issues. Dependency-edge creation and any
+  consumption of `wps.yaml`, `status.json`, or `meta.json` remain out of scope, continuing
+  the 017/022 stance.
 - This feature amends the 022 assumption that subtasks are never separate tracker tasks: at
   depth greater than 1 they are. Contract amendments will be recorded during planning; the 022
   level-1 contracts (task source, title cascade, durable-only pairing, roll-up inertness)
   carry forward unchanged.
+- This feature likewise amends the 022 recognition edge case ("a file counts as a
+  work-package document if it identifies itself, anywhere in the collection"): measured on
+  the upstream reference repository, that rule let per-work-package review artifacts stamped
+  with the canonical `work_package_id` create duplicate-identity tasks and refuse every
+  plan; FR-015 replaces collection-wide self-identification with canonical = directly inside
+  the collection (lane sub-folders retained).
 - Subtask promotion requires a body anchor: a front-matter-only roster entry creates no empty
   issue (consistent with the 022 "empty-but-reported, never silent" and no-empty-content
   stance). The default anchor token is `T` + digits, configurable via adapter layering.
 - Promoted subtask sections are removed from the parent's mirrored content at depth greater
   than 1 to avoid duplication, mirroring how 020 treats promoted nested tasks for checklist
   sources; folded at depth 1 they return verbatim.
-- The readable metadata region is a one-time content change on upgrade: existing work-package
-  issues keep their identities but receive updated descriptions on the next sync. No
-  repository files are ever rewritten by this feature.
+- Upgrade impact: existing issues keep their identities; at the flat default, descriptions
+  are unchanged (status arrives as board-state transitions only, and the corrected
+  document/artifact recognition merely stops creating spurious issues). No repository files
+  are ever rewritten by this feature.
 - Work-package documents, roll-ups, and mission artifacts are never written back: no
   confirmation prefix, no landed line, no status markers appended to Spec Kitty files.
 - Missions keep the documented flat `tasks/` collection (legacy lane sub-folders accepted);
   `.kittify/` and `.worktrees/` contain no sync-relevant task sources.
 - The depth cap remains a single global configuration key (020); no Spec-Kitty-specific depth
-  setting is introduced.
+  setting is introduced. It is a nesting-fold control, not a board-volume control: the board
+  size is the work-package count.

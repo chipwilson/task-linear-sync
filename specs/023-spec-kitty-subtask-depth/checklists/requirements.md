@@ -37,7 +37,8 @@
   domain vocabulary of this repository's spec suite, not implementation leakage; file/dir
   names (`kitty-specs/`, `wps.yaml`, `WPnn`, `Tnnn`) are the upstream framework's data model,
   which is the subject being specified.
-- Three judgment calls were made as documented assumptions instead of blocking
-  clarifications (each recorded in the spec's Assumptions section): lane→state mapping stays
-  out of scope; front-matter-only roster entries do not create empty sub-issues; promoted
-  subtask sections are de-duplicated out of the parent body.
+- Clarification session 2026-11-24 (4 questions asked/answered, recorded in spec.md
+  Clarifications): per-WP artifact sub-folders are inert (FR-015); one-issue-per-work-package
+  is the granularity contract (FR-016); status is expressed as board-state transitions only;
+  `status.events.jsonl` is the sole status authority (FR-007). All checklist items re-verified
+  against the updated spec — all pass.
