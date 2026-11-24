@@ -15,6 +15,8 @@
     "MatchAlternative"
   ],
   "domain/routing": [
+    "LANE_VOCABULARY",
+    "LaneName",
     "ProjectByPathEntry",
     "RoutingResolution",
     "TeamIdentity",
@@ -63,6 +65,7 @@
     "ConfigOverrides",
     "CredentialEnvVarNames",
     "DeepPartial",
+    "LaneMapError",
     "LoadConfigOptions",
     "McpSurfaceConfig",
     "MissingIdentityError",
