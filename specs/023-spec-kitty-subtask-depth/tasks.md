@@ -105,13 +105,13 @@ description: "Task list for feature 023 — Spec Kitty Sub-Task Depth & Front-Ma
 
 ### Tests for User Story 2 ⚠️
 
-- [ ] T017 [P] [US2] Byte-pin `tests/integration/spec-kitty-flat-default-bytes.test.ts`: re-pin the 0.6.0 baseline outputs for the spec-kitty fixtures/corpus at default config and assert byte-identical plan output (task count = WP-document count, zero parented entries, subtask sections present verbatim inside parent descriptions); assert `[P]` parallel markers and `#### Subtask …` restatements are plain content.
+- [X] T017 [P] [US2] Byte-pin `tests/integration/spec-kitty-flat-default-bytes.test.ts`: re-pin the 0.6.0 baseline outputs for the spec-kitty fixtures/corpus at default config and assert byte-identical plan output (task count = WP-document count, zero parented entries, subtask sections present verbatim inside parent descriptions); assert `[P]` parallel markers and `#### Subtask …` restatements are plain content.
 
-- [ ] T018 [P] [US2] Cap-toggle convergence test `tests/integration/engine-spec-kitty-cap-toggle.test.ts`: apply at depth 2 (children created), reconfigure to 1, plan+apply — children fold verbatim into parents (bodies byte-equal to the flat baseline), the 7 former child issues surface in `plan.unmappedIssues` with zero archive/delete calls; reconfigure to 2 again — durable anchors re-match the SAME child issues, no re-creation (SC-005, FR-010).
+- [X] T018 [P] [US2] Cap-toggle convergence test `tests/integration/engine-spec-kitty-cap-toggle.test.ts`: apply at depth 2 (children created), reconfigure to 1, plan+apply — children fold verbatim into parents (bodies byte-equal to the flat baseline), the 7 former child issues surface in `plan.unmappedIssues` with zero archive/delete calls; reconfigure to 2 again — durable anchors re-match the SAME child issues, no re-creation (SC-005, FR-010).
 
 ### Implementation for User Story 2
 
-- [ ] T019 [US2] Complete the depth-1 posture in `src/parsing/taskfile.ts` + `src/parsing/depth.ts` interplay: at cap 1 no child draft survives and NO `promotedRanges` are ever set (parent extent already spans the whole body — folded verbatim by omission, exactly the 020 mechanism); emit exclusion records kind `subtask`, reason `depth-folded` for visibility; confirm zero write-back: document parents AND children stay out of `expectedMarkdownChanges` (022 C6 extended by C5).
+- [X] T019 [US2] Complete the depth-1 posture in `src/parsing/taskfile.ts` + `src/parsing/depth.ts` interplay: at cap 1 no child draft survives and NO `promotedRanges` are ever set (parent extent already spans the whole body — folded verbatim by omission, exactly the 020 mechanism); emit exclusion records kind `subtask`, reason `depth-folded` for visibility; confirm zero write-back: document parents AND children stay out of `expectedMarkdownChanges` (022 C6 extended by C5).
 
 **Checkpoint**: Default posture provably flat and byte-stable; toggle round-trips.
 
@@ -125,19 +125,19 @@ description: "Task list for feature 023 — Spec Kitty Sub-Task Depth & Front-Ma
 
 ### Tests for User Story 3 ⚠️
 
-- [ ] T020 [P] [US3] Unit tests `tests/unit/parsing-status.test.ts` for the (to-be-created) `src/parsing/status.ts`: qualifying line = valid JSON with string `wp_id` AND string `to_lane` at top level; envelope/annotation/other lines skipped without poisoning order; LAST qualifying line per `wp_id` in FILE ORDER wins; malformed lines counted (one finding, content never propagates); unknown `wp_id` reported; nine-lane vocabulary recognized, `genesis`/anything else known-unmapped.
+- [X] T020 [P] [US3] Unit tests `tests/unit/parsing-status.test.ts` for the (to-be-created) `src/parsing/status.ts`: qualifying line = valid JSON with string `wp_id` AND string `to_lane` at top level; envelope/annotation/other lines skipped without poisoning order; LAST qualifying line per `wp_id` in FILE ORDER wins; malformed lines counted (one finding, content never propagates); unknown `wp_id` reported; nine-lane vocabulary recognized, `genesis`/anything else known-unmapped.
 
-- [ ] T021 [P] [US3] Integration test `tests/integration/engine-spec-kitty-event-status.test.ts` driving world T004: only WP02 plans `changedFields += "state"` with label `lane:in_progress`; apply patches `stateTypeId` = "Doing" id and history records append-only `"lane-changed"`; WP01 (no events) state untouched; WP03 (`canceled`, unmapped) untouched + `lane-state-unmapped` reported; contradiction fixture: stale `status.json`/front-matter values NEVER win; mirrored descriptions contain no status text and no `---` block; second apply is a no-op (live state matches); read-only lanes never read status files outside plan build (Principle I).
+- [X] T021 [P] [US3] Integration test `tests/integration/engine-spec-kitty-event-status.test.ts` driving world T004: only WP02 plans `changedFields += "state"` with label `lane:in_progress`; apply patches `stateTypeId` = "Doing" id and history records append-only `"lane-changed"`; WP01 (no events) state untouched; WP03 (`canceled`, unmapped) untouched + `lane-state-unmapped` reported; contradiction fixture: stale `status.json`/front-matter values NEVER win; mirrored descriptions contain no status text and no `---` block; second apply is a no-op (live state matches); read-only lanes never read status files outside plan build (Principle I).
 
 ### Implementation for User Story 3
 
-- [ ] T022 [US3] Implement `src/parsing/status.ts` (pure, dependency-free): lines in → `Map<wpId, lane>` + findings out, exactly per C6.1 and the T020 rules.
+- [X] T022 [US3] Implement `src/parsing/status.ts` (pure, dependency-free): lines in → `Map<wpId, lane>` + findings out, exactly per C6.1 and the T020 rules.
 
-- [ ] T023 [US3] Implement `src/engine/status-load.ts`: read-only loader invoked ONLY from plan build — for each mission featureName present in parsed `spec-kitty` units, read `<base>/<mission>/<adapter.statusEventFileName>` when it exists; missing file ⇒ empty map, never an error; cache per mission for entry assembly.
+- [X] T023 [US3] Implement `src/engine/status-load.ts`: read-only loader invoked ONLY from plan build — for each mission featureName present in parsed `spec-kitty` units, read `<base>/<mission>/<adapter.statusEventFileName>` when it exists; missing file ⇒ empty map, never an error; cache per mission for entry assembly.
 
-- [ ] T024 [US3] Lane-state resolver in `src/engine/completion.ts` beside `desiredCompletionStateName`: map lane → state NAME via the ROUTED team's `workflowStates.lanes` (no default, no `defaultTeamKey` fallback), resolve NAME→id through the existing `resolveWorkflowStateId` on the captured snapshot; unmapped lane / unresolvable name ⇒ untouched + reported finding with the conflict posture of `build.ts:420-429`.
+- [X] T024 [US3] Lane-state resolver in `src/engine/completion.ts` beside `desiredCompletionStateName`: map lane → state NAME via the ROUTED team's `workflowStates.lanes` (no default, no `defaultTeamKey` fallback), resolve NAME→id through the existing `resolveWorkflowStateId` on the captured snapshot; unmapped lane / unresolvable name ⇒ untouched + reported finding with the conflict posture of `build.ts:420-429`.
 
-- [ ] T025 [US3] Entry-assembly integration in `src/engine/build.ts` (beside the completion path 408-430): evaluate the status map per matched/created WP task, add `"state"` drift + `lane:<lane>` label, creates carry the mapped state; apply side reuses the existing `IssueUpdatePatch.stateTypeId` path (`src/engine/apply.ts:1133-1146`) and adds history event kind `"lane-changed"` in `src/engine/ops.ts` (append-only additive kind); sub-task (child) tasks derive NO state (C6 keys on work-package ids only).
+- [X] T025 [US3] Entry-assembly integration in `src/engine/build.ts` (beside the completion path 408-430): evaluate the status map per matched/created WP task, add `"state"` drift + `lane:<lane>` label, creates carry the mapped state; apply side reuses the existing `IssueUpdatePatch.stateTypeId` path (`src/engine/apply.ts:1133-1146`) and adds history event kind `"lane-changed"` in `src/engine/ops.ts` (append-only additive kind); sub-task (child) tasks derive NO state (C6 keys on work-package ids only).
 
 **Checkpoint**: Board columns follow the event log; every contradiction fixture resolves to the last event.
 

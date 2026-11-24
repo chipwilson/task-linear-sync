@@ -13,6 +13,7 @@ export type SyncHistoryEventKind =
   | "title-updated"
   | "description-updated"
   | "checkbox-changed"
+  | "lane-changed"
   | "conflict-detected"
   | "rollback";
 

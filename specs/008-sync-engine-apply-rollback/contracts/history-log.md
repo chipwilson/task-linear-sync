@@ -35,6 +35,7 @@ One `SyncHistoryEvent` per sync-affecting action that *lands* (screened descript
 | title update | `title-updated` | issue id |
 | description update (any `overwrite-linear` effect) | `description-updated` | content hash |
 | checkbox/workflow state change | `checkbox-changed` | state name |
+| lane-driven state change (`workflow.lanes`, 023) | `lane-changed` | lane id + state name |
 | conflict detection (`report-only`, `skip` excluded, `overwrite-spec`, degraded `prefer-newer`) | `conflict-detected` | conflict type + action |
 | rollback | `rollback` | reversed `opId`s |
 

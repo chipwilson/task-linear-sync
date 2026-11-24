@@ -137,7 +137,7 @@ export interface Checkpoint {
 
 export type SyncHistoryEventKind =
   | "discovered" | "issue-created" | "matched" | "title-updated"
-  | "description-updated" | "checkbox-changed" | "conflict-detected" | "rollback";
+  | "description-updated" | "checkbox-changed" | "lane-changed" | "conflict-detected" | "rollback";
 
 export interface SyncHistoryEvent {
   readonly kind: SyncHistoryEventKind;

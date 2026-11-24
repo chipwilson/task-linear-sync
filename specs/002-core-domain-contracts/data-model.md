@@ -144,7 +144,7 @@ under `metadataNamespaceKey` in the page-0 attachment's `Attachment_Metadata`:
 | `history` | `SyncHistoryEvent[]` | Append-only page of the `Sync_History_Log` |
 
 `SyncHistoryEvent`: `{ kind: "discovered" | "issue-created" | "matched" | "title-updated" |
-"description-updated" | "checkbox-changed" | "conflict-detected" | "rollback", at: ISO-8601,
+"description-updated" | "checkbox-changed" | "lane-changed" | "conflict-detected" | "rollback", at: ISO-8601,
 description: screened string, references?: string[] }` — immutable once appended; rollback
 appends rather than rewinds (Principle IV).
 

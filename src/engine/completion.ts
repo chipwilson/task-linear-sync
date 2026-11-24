@@ -91,3 +91,54 @@ export function resolveWorkflowStateId(
   }
   return state.id;
 }
+
+// ─────────────────────────── 023 A-023-0/A-023-3: lane → workflow-state resolution
+
+/** A resolved lane state: id (patch material), name (config value), type (live no-op check
+ *  and create input — `IssueView.stateType` carries the state TYPE). */
+export interface LaneState {
+  readonly stateId: string;
+  readonly stateName: string;
+  readonly stateType: string;
+}
+
+/**
+ * Resolve a work-package lane to the ROUTED team's workflow state (feature 023 contract
+ * C6.2; amendment A-023-0). `teams[teamKey].workflowStates.lanes` is OPTIONAL with NO
+ * built-in default — an unmapped lane (absent map, absent key, blank value) resolves to
+ * `null`: the caller leaves the state UNTOUCHED and reports `lane-state-unmapped` (never
+ * a silent guess, no `defaultTeamKey` fallback on this seam — the completion-path rule).
+ * A MAPPED name resolves through the same snapshot path as the completion lane; an
+ * unresolvable name throws the sanitized `EngineError` (conflict posture of the
+ * completion path). Messages name only identities — never map or snapshot content.
+ */
+export function resolveLaneState(
+  config: ResolvedConfig,
+  snapshot: ReadonlyArray<TeamMetadataCollections>,
+  teamKey: string,
+  lane: string,
+): LaneState | null {
+  const team = config.teams?.[teamKey];
+  if (team === undefined) {
+    throw new EngineError(
+      `lane-state mapping: unknown team '${teamKey}' — configuration.teams carries no such team, ` +
+        `so lane '${lane}' cannot be resolved (no default-team fallback applies to lane mapping)`,
+    );
+  }
+  // The config schema keys lanes by the nine-lane vocabulary; the event log may carry ANY
+  // token (bootstrap `genesis`, custom names) — an out-of-vocabulary key reads undefined,
+  // i.e. unmapped, which is exactly the C6.2 posture.
+  const lanes = team.workflowStates?.lanes as Readonly<Record<string, string>> | undefined;
+  const mapped = lanes?.[lane];
+  if (mapped === undefined || mapped.trim().length === 0) return null; // untouched + reported (C6.2)
+  const snapTeam = snapshot.find((collections) => collections.teamKey === teamKey);
+  const state = snapTeam?.workflowStates.find((candidate) => candidate.name === mapped);
+  if (state === undefined) {
+    throw new EngineError(
+      `lane-state mapping: configured lane state name '${mapped}' does not exist in team ` +
+        `'${teamKey}' (exact, case-sensitive match required) — plan-time validation failure, ` +
+        `not a mutation-time surprise (C6.2, R7 posture)`,
+    );
+  }
+  return { stateId: state.id, stateName: state.name, stateType: state.type };
+}

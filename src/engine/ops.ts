@@ -540,3 +540,13 @@ export function historyKindForUpdatedField(field: keyof IssueUpdatePatch): SyncH
       return "checkbox-changed";
   }
 }
+
+/**
+ * 023 A-023-3 (append-only additive kind): a `stateTypeId` patch driven by the mission's
+ * lane event (contract C6.3) records `lane-changed`, NOT `checkbox-changed` — the entry's
+ * `lane:<lane>` label is the discriminator; the checkbox/completion lane keeps its frozen
+ * kind. Vocabulary additive: no existing kind changes meaning.
+ */
+export function historyKindForStateChange(laneDriven: boolean): SyncHistoryEventKind {
+  return laneDriven ? "lane-changed" : "checkbox-changed";
+}
