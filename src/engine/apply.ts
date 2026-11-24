@@ -620,6 +620,17 @@ function mirrorRegion(rawLines: readonly string[], task: Task): string {
   const start = task.kind === "document" ? task.taskBody.startLine : task.taskBody.startLine + 1; // 1-based first mirrored line
   const end = task.taskBody.endLine; // inclusive
   if (start > end) return "";
+  // 023 A-023-0/A-023-3 (C2.4): the document-kind slice is the hole-slice of its extent
+  // — promoted subtask spans appear ONLY on the child issues. Every other kind and the
+  // empty/absent-ranges case stay the contiguous slice byte-for-byte (FR-013).
+  const promoted = task.taskBody.promotedRanges;
+  if (task.kind === "document" && promoted !== undefined && promoted.length > 0) {
+    const kept: string[] = [];
+    for (let line = start; line <= end; line += 1) {
+      if (!promoted.some(([from, to]) => line >= from && line <= to)) kept.push(rawLines[line - 1] ?? "");
+    }
+    return kept.join("\n");
+  }
   return rawLines.slice(start - 1, end).join("\n");
 }
 

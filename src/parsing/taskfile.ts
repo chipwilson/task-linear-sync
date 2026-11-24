@@ -27,9 +27,9 @@ import { splitLines } from "./content.js";
 import { scanConflictBlocks, frozenLineSet, blocksIntersecting } from "./conflict.js";
 import type { ConflictBlock } from "./conflict.js";
 import { extractTasks } from "./extract.js";
-import type { ExclusionRecord } from "./extract.js";
+import type { ExclusionRecord, TaskDraft } from "./extract.js";
 import { validateTaskDepthCap, foldDraftsOverCap } from "./depth.js";
-import { deriveDocumentTask } from "./document.js";
+import { deriveDocumentTasks } from "./document.js";
 import { deriveExtents } from "./extent.js";
 import { collectDuplicateWarnings } from "./warnings.js";
 import type { ParseWarning } from "./warnings.js";
@@ -88,37 +88,117 @@ export function parseTaskFile(
   // and NO line scanning at all for files that fail recognition (claimed documentation).
   // The conflict scan above runs unchanged (R4); the depth-cap refusal ran before this
   // branch, and 020 folding is inert for a single parentless depth-1 draft.
+  // A-023-2 (023, T013): when the rule declares `subtaskRule`, in-region anchors become
+  // depth-2 child drafts (kind `document`, compose-slot seed `${wpId}\0${subtaskId}`),
+  // run through the SAME `foldDraftsOverCap` mechanism via a synthetic two-level draft
+  // tree; surviving children are promoted spans on the parent extent, folded ones earn
+  // `depth-folded` exclusions, and roster-only ids always earn `subtask-no-anchor`.
   if (adapter.documentTaskRule !== undefined) {
-    const document = deriveDocumentTask(filePath, lines.map((line) => line.text), adapter.documentTaskRule);
+    const derivation = deriveDocumentTasks(filePath, lines.map((line) => line.text), adapter.documentTaskRule);
     const featureName = adapter.featureName(filePath);
-    const tasks: Task[] =
-      document === null
-        ? []
-        : [
-            {
-              stableUuid: deriveStableUuid(
-                taskStableSeed(
-                  {
-                    frameworkId: adapter.id,
-                    featureName,
-                    localTaskId: composeSeedLocalTaskId(adapter, filePath, document.localTaskId),
-                  },
-                  { ordinal: 0, filePath },
-                ),
-                config.toolId,
-              ),
-              kind: document.kind,
-              filePath,
-              lineNumber: document.lineNumber,
-              frameworkId: adapter.id,
-              ...(featureName !== undefined ? { featureName } : {}),
-              localTaskId: document.localTaskId,
-              title: document.title,
-              childUuids: [],
-              taskBody: { startLine: document.startLine, endLine: document.endLine },
-              unresolvedConflict: blocksIntersecting(document.startLine, document.endLine, conflictBlocks),
-            },
-          ];
+    const tasks: Task[] = [];
+    const exclusions: ExclusionRecord[] = [];
+    if (derivation !== null) {
+      const { document, subtasks, rosterMisses } = derivation;
+      const parentSeedId = composeSeedLocalTaskId(adapter, filePath, document.localTaskId);
+      const parentUuid = deriveStableUuid(
+        taskStableSeed(
+          { frameworkId: adapter.id, featureName, localTaskId: parentSeedId },
+          { ordinal: 0, filePath },
+        ),
+        config.toolId,
+      );
+
+      // Depth decision (020 mechanism reused): the document is the synthetic heading
+      // draft (depth 1), every anchor a synthetic checklist draft under it (depth 2) —
+      // `foldDraftsOverCap` then folds all children exactly at cap 1.
+      const parentDraft: TaskDraft = {
+        kind: "heading",
+        lineNumber: document.lineNumber,
+        title: document.title,
+        indentWidth: 0,
+        parent: null,
+        children: [],
+      };
+      const childDrafts: TaskDraft[] = subtasks.map((subtask) => ({
+        kind: "checklist",
+        lineNumber: subtask.lineNumber,
+        title: subtask.title,
+        indentWidth: 0,
+        parent: parentDraft,
+        children: [],
+      }));
+      const { surviving } = foldDraftsOverCap([parentDraft, ...childDrafts], depthCap);
+      const survivorLines = new Set(surviving.map((draft) => draft.lineNumber));
+      const promoted = subtasks.filter((subtask) => survivorLines.has(subtask.lineNumber));
+      const folded = subtasks.filter((subtask) => !survivorLines.has(subtask.lineNumber));
+
+      tasks.push({
+        stableUuid: parentUuid,
+        kind: document.kind,
+        filePath,
+        lineNumber: document.lineNumber,
+        frameworkId: adapter.id,
+        ...(featureName !== undefined ? { featureName } : {}),
+        localTaskId: document.localTaskId,
+        title: document.title,
+        childUuids: promoted.map((subtask) =>
+          deriveStableUuid(
+            taskStableSeed(
+              {
+                frameworkId: adapter.id,
+                featureName,
+                localTaskId: `${parentSeedId}\u0000${subtask.localTaskId}`, // compose-slot precedent (C3.1)
+              },
+              { ordinal: 0, filePath },
+            ),
+            config.toolId,
+          ),
+        ),
+        taskBody: {
+          startLine: document.startLine,
+          endLine: document.endLine,
+          // A-023-0: promoted spans exist ONLY when children survive the cap (C2.4);
+          // the flat default never sets the key — the contiguous mirror slice stays
+          // byte-identical to 0.6.0 (folded verbatim by omission, the 020 posture).
+          ...(promoted.length > 0 ? { promotedRanges: promoted.map((s) => [s.startLine, s.endLine] as const) } : {}),
+        },
+        unresolvedConflict: blocksIntersecting(document.startLine, document.endLine, conflictBlocks),
+      });
+
+      promoted.forEach((subtask, index) => {
+        tasks.push({
+          stableUuid: tasks[0]!.childUuids[index]!,
+          kind: "document",
+          filePath,
+          lineNumber: subtask.lineNumber,
+          frameworkId: adapter.id,
+          ...(featureName !== undefined ? { featureName } : {}),
+          localTaskId: subtask.localTaskId,
+          title: subtask.title,
+          parentUuid,
+          childUuids: [],
+          taskBody: { startLine: subtask.startLine, endLine: subtask.endLine },
+          unresolvedConflict: blocksIntersecting(subtask.startLine, subtask.endLine, conflictBlocks),
+        });
+      });
+
+      // Exclusions (C2.5): folded anchors ride the reused `depth-folded` reason, anchor-
+      // less roster ids the new `subtask-no-anchor` reason — kind `subtask` throughout,
+      // recognized-but-never-issues (no empty issue ever).
+      for (const subtask of folded) {
+        exclusions.push({
+          lineNumber: subtask.lineNumber,
+          kind: "subtask",
+          reason: "depth-folded",
+          text: lines[subtask.lineNumber - 1]?.text ?? "",
+        });
+      }
+      for (const miss of rosterMisses) {
+        exclusions.push({ lineNumber: miss.line, kind: "subtask", reason: "subtask-no-anchor", text: miss.text });
+      }
+      exclusions.sort((a, b) => a.lineNumber - b.lineNumber);
+    }
     const file: TaskFile = {
       filePath,
       frameworkId: adapter.id,
@@ -127,7 +207,7 @@ export function parseTaskFile(
       siblingDocuments: [],
       tasks,
     };
-    return { file, exclusions: [], conflictBlocks, warnings: [], ...(featureName !== undefined ? { featureName } : {}) };
+    return { file, exclusions, conflictBlocks, warnings: [], ...(featureName !== undefined ? { featureName } : {}) };
   }
 
   const { drafts: allDrafts, exclusions: grammarExclusions } = extractTasks(lines, frozen, adapter, config);

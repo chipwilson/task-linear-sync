@@ -192,7 +192,7 @@ test("parsing round-trip (property) — parse → render → parse reproduces id
   }
 });
 
-test("parsing round-trip (spec-kitty, 022 re-base) — zero roll-up tasks means zero assignments and untouched bytes; collection docs are never render targets", () => {
+test("parsing round-trip (spec-kitty, 023 corpus) — zero roll-up tasks means zero assignments and untouched bytes; collection docs are never render targets", () => {
   // The 017 C3.8 case is superseded: the roll-up yields no tasks, so the write-back lane
   // never touches a spec-kitty file (R10 — repository `tasks/` files are never written,
   // and the roll-up produces no render assignments either). Document-kind render
@@ -205,12 +205,14 @@ test("parsing round-trip (spec-kitty, 022 re-base) — zero roll-up tasks means 
   const rendered = renderTaskLines(KITTY_PATH, content, [], cfg);
   assert.equal(rendered.content, content, "render with no assignments is the identity — every byte of the roll-up survives (R10)");
 
-  // A collection document parses to one document task and round-trips the same way: the
-  // engine never assigns render lines to document tasks, so re-render stays the identity.
+  // A collection document parses to one document task plus its promoted subtasks (023)
+  // and round-trips the same way: the engine never assigns render lines to document-kind
+  // tasks at either level, so re-render stays the identity.
   const docPath = "kitty-specs/001-corpus/tasks/WP01-auth.md";
   const docContent = readFixture("parsing/frameworks/spec-kitty/tasks/WP01-auth.md");
   const doc = parseTaskFile(docPath, docContent, specKittyFixtureAdapter, cfg);
-  assert.equal(doc.file.tasks.length, 1);
+  assert.equal(doc.file.tasks.length, 3, "one document + two promoted subtasks (023 C0.1)");
+  assert.ok(doc.file.tasks.every((t) => t.kind === "document"), "both levels inherit the no-render posture (C5)");
   assert.equal(doc.file.tasks[0]!.kind, "document");
   assert.equal(renderTaskLines(docPath, docContent, [], cfg).content, docContent, "document bytes are never rewritten (R10)");
 });

@@ -25,11 +25,23 @@ export const specKittyConventions: ResolvedConventions = {
   featureNameRule: { kind: "segment-under-base" }, // the mission beneath the specs root (R3)
   headingGrammar: "(?!)", // never-matching placeholder retained; document mode never consults it
   documentTaskRule: {
-    // A-022-2 (data-model §3, verbatim): collection gate + recognition keys + file-name id.
-    collectionPattern: "^kitty-specs/[^/]+/tasks/.+\\.md$",
+    // A-023-2 / C1.2' (023, data-model §3 verbatim): canonical gate = DIRECT children of
+    // the mission `tasks/` folder plus the legacy one-level lane-folder variant — `[^/]+`
+    // no longer spans `/`, so per-WP artifact sub-folders (review cycles, reviewer
+    // feedback, attachments) derive ZERO drafts whatever their front matter (FR-015)
+    // while `taskPathPatterns` keeps them claimed. Recognition keys + file-name id unchanged.
+    collectionPattern:
+      "^kitty-specs/[^/]+/tasks/(?:(?:planned|claimed|in_progress|for_review|in_review|approved|done|blocked|canceled)/)?[^/]+\\.md$",
     idKey: "work_package_id",
     titleKey: "title",
     fileNameIdPattern: "(?i)^WP(\\d+)[^/]*\\.md$",
+    // A-023-2 (023, data-model §3 verbatim): subtask recognition inside the anchor
+    // region — roster key + anchor grammar + region stop (contract C2).
+    subtaskRule: {
+      rosterKey: "subtasks",
+      anchorPattern: "^(?:[-*+] \\[[ xX]\\] |#{1,6} )[ \\t]*(?:Subtask[ \\t]+)?(T\\d+)\\b[ \\t]*[:–—-]?[ \\t]*(.*)$",
+      anchorRegionStopPattern: "^#{1,6}[ \\t]+(Activity Log|Review Report)[ \\t]*$",
+    },
   },
   // A-023-1 (023): the mission's append-only lane-event log — the SOLE status authority
   // (feature contract C6). Read by the engine during plan build ONLY; never a task source.

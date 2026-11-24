@@ -393,3 +393,25 @@ where a frozen surface is touched.
   `tests/contract/discovery-surface.test.ts` (member-level pin; barrel name set
   unchanged) · migration: absent on every other row; the engine consumes built-in row
   values only (022 engine-registry precedent)
+
+- 2026-11-24 · parsing (004 contract) · `DocumentTaskRule` / `parseTaskFile` document
+  lane / `ExclusionRecord` / `scanFrontMatter` · additive subtask derivation
+  (rule 13 widening): optional `subtaskRule = { rosterKey, anchorPattern,
+  anchorRegionStopPattern }`; new exports `deriveDocumentTasks`, `DocumentDerivation`,
+  `SubtaskDraft`, `SubtaskRosterMiss`; `scanFrontMatter` gains the additive `lists`
+  capture (single-level block/flow; scalars byte-identical); `ExclusionRecord` kind
+  `subtask` + reason `subtask-no-anchor` (`depth-folded` reused) · A-023-2
+  (feature contract C2: roster ∪ in-region anchors derive depth-2 `document` drafts
+  with the compose-slot seed `${wpId}\u0000${subtaskId}`; anchor-less roster ids are
+  recognized-but-excluded, never empty issues; duplicate anchors keep identical seeds
+  for the EXISTING collision guard; the `collectionPattern` narrowing (C1.2') makes
+  per-WP artifact sub-folders derive zero drafts while staying claimed) · artifacts:
+  `specs/004-task-parsing-line-rendering/contracts/parsing-api.md` (rule 13),
+  `src/parsing/{document,taskfile,extract,adapter}.ts`,
+  `src/discovery/adapters/spec-kitty.ts`, the regenerated
+  `tests/contract/snapshots/parsing-surface.json` (+4 names) · gates:
+  `tests/unit/parsing-document-frontmatter.test.ts`,
+  `tests/unit/parsing-spec-kitty-subtasks.test.ts`,
+  `tests/integration/engine-spec-kitty-two-level.test.ts` (collision refusal included) ·
+  migration: absent `subtaskRule` ⇒ the single-draft document path and the contiguous
+  mirror slice stay byte-identical to 0.6.0 for every adapter

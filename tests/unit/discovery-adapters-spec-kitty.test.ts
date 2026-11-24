@@ -32,12 +32,21 @@ test("022 row: exact member values per data-model §3 (taskPathPatterns + docume
   assert.deepEqual(
     kittyRow.documentTaskRule,
     {
-      collectionPattern: "^kitty-specs/[^/]+/tasks/.+\\.md$",
+      // 023 C1.2'/A-023-2: canonical gate narrowed to direct children + the legacy lane
+      // variant (artifact sub-folders derive ZERO), plus the new subtaskRule — all values
+      // VERBATIM per 023 data-model §3.
+      collectionPattern:
+        "^kitty-specs/[^/]+/tasks/(?:(?:planned|claimed|in_progress|for_review|in_review|approved|done|blocked|canceled)/)?[^/]+\\.md$",
       idKey: "work_package_id",
       titleKey: "title",
       fileNameIdPattern: "(?i)^WP(\\d+)[^/]*\\.md$",
+      subtaskRule: {
+        rosterKey: "subtasks",
+        anchorPattern: "^(?:[-*+] \\[[ xX]\\] |#{1,6} )[ \\t]*(?:Subtask[ \\t]+)?(T\\d+)\\b[ \\t]*[:–—-]?[ \\t]*(.*)$",
+        anchorRegionStopPattern: "^#{1,6}[ \\t]+(Activity Log|Review Report)[ \\t]*$",
+      },
     },
-    "A-022-2 document rule verbatim (data-model §3)",
+    "document rule verbatim (022 §3 amended by 023 §3)",
   );
   assert.equal(kittyRow.headingGrammar, "(?!)", "never-matching placeholder retained; document mode never consults it");
   assert.equal(kittyRow.checklistIdPattern, undefined, "retired from the row — the members stay available to custom adapters");

@@ -108,7 +108,16 @@ test("discovery spec-kitty (022): parse parity per mission — zero tasks from e
     const content = readFileSync(join(KITTY, filePath), "utf8");
     const { file, exclusions, warnings } = parseTaskFile(filePath, content, kitty, builtInDefaults);
     assert.equal(file.tasks.length, taskCount, `${filePath} — 0-or-1 document task`);
-    assert.deepEqual(exclusions, [], `${filePath} — no line scanning`);
+    // 023 A-023-2: line scanning stays zero; the ONLY exclusions a document parse can
+    // produce are front-matter roster records with no anchor (recognized-but-never-issue).
+    const expectedExclusions =
+      filePath === "kitty-specs/001-demo/tasks/WP01-scaffold.md"
+        ? [
+            { lineNumber: 7, kind: "subtask", reason: "subtask-no-anchor", text: "T001" },
+            { lineNumber: 8, kind: "subtask", reason: "subtask-no-anchor", text: "T002" },
+          ]
+        : [];
+    assert.deepEqual(exclusions, expectedExclusions, `${filePath} — no line scanning, roster misses only`);
     assert.deepEqual(warnings, []);
     if (taskCount === 1) {
       const task = file.tasks[0]!;
