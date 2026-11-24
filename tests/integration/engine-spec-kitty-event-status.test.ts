@@ -84,7 +84,7 @@ function walk(dir: string, prefix = ""): Record<string, string> {
   return out;
 }
 
-test("023 event-status: the log is the SOLE status authority — one lane move, two untouched WPs, findings reported, second run no-op", async () => {
+test("spec-kitty-event-status: the log is the SOLE status authority — one lane move, two untouched WPs, findings reported, second run no-op", async () => {
   const w = await buildWorld("spec-kitty-event-status");
   try {
     const preRun = walk(w.repositoryRoot);
@@ -186,7 +186,7 @@ test("023 event-status: the log is the SOLE status authority — one lane move, 
   }
 });
 
-test("023 event-status: a fresh document with a mapped lane CREATES straight into the mapped state", async () => {
+test("spec-kitty-event-status: a fresh document with a mapped lane CREATES straight into the mapped state", async () => {
   const w = await buildWorld("spec-kitty-event-status");
   try {
     // Un-seed WP02's pre-existing issue: the same document now bootstraps.

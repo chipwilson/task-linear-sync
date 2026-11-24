@@ -57,7 +57,7 @@ function readLatestReport(world: EngineWorld): ReportJson {
   return JSON.parse(readFileSync(join(reportsDir, runDirs[runDirs.length - 1]!, "report.json"), "utf8")) as ReportJson;
 }
 
-test("023 reference (stock defaults): count parity, zero collisions, the log alone moves the mapped lane, findings reported, second pass quiescent", async () => {
+test("spec-kitty 023 reference reproduction (stock defaults): count parity, zero collisions, the log alone moves the mapped lane, findings reported, second pass quiescent", async () => {
   const w = await buildWorld(WORLD);
   try {
     const engine = attachEngine(w, createSyncEngine, { keyProvider: w.keyProvider });
@@ -115,7 +115,7 @@ test("023 reference (stock defaults): count parity, zero collisions, the log alo
   }
 });
 
-test("023 reference (depth 2): children equal the anchors, parented; parent bodies hole out promoted spans; children mirror verbatim", async () => {
+test("spec-kitty 023 reference reproduction (depth 2): children equal the anchors, parented; parent bodies hole out promoted spans; children mirror verbatim", async () => {
   const w = await buildWorld(WORLD, { config: { maxTaskIssueDepth: 2 } });
   try {
     const engine = attachEngine(w, createSyncEngine, { keyProvider: w.keyProvider });
@@ -145,7 +145,7 @@ test("023 reference (depth 2): children equal the anchors, parented; parent bodi
   }
 });
 
-test("023 reference (cap toggle 2→1→converge): former children unmapped with zero archive, parents re-converge, toggle back re-matches", async () => {
+test("spec-kitty 023 reference reproduction (cap toggle 2→1→converge): former children unmapped with zero archive, parents re-converge, toggle back re-matches", async () => {
   const w = await buildWorld(WORLD, { config: { maxTaskIssueDepth: 2 } });
   try {
     const engine = attachEngine(w, createSyncEngine, { keyProvider: w.keyProvider });

@@ -117,7 +117,7 @@ const WP02_CHILDREN: readonly ChildPin[] = [
 
 // ─────────────────────────────────────────────────────────────── plan boundary
 
-test("023 two-level plan: 2 document parents + 7 document children, parented with exact extents (C0/C2)", async () => {
+test("spec-kitty-two-level: 023 plan: 2 document parents + 7 document children, parented with exact extents (C0/C2)", async () => {
   const w = await buildWorld("spec-kitty-two-level");
   try {
     const engine = attachEngine(w, createSyncEngine, { keyProvider: w.keyProvider });
@@ -181,7 +181,7 @@ test("023 two-level plan: 2 document parents + 7 document children, parented wit
   }
 });
 
-test("023 two-level plan: child identity is the frozen seed layout spec-kitty\\0mission\\0WPnn\\0Tnnn (C3.1)", async () => {
+test("spec-kitty-two-level: 023 plan: child identity is the frozen seed layout spec-kitty\\0mission\\0WPnn\\0Tnnn (C3.1)", async () => {
   const w = await buildWorld("spec-kitty-two-level");
   try {
     const engine = attachEngine(w, createSyncEngine, { keyProvider: w.keyProvider });
@@ -216,7 +216,7 @@ test("023 two-level plan: child identity is the frozen seed layout spec-kitty\\0
 
 // ─────────────────────────────────────────────────────────────── apply boundary
 
-test("023 two-level apply: parent-before-child creates, child bodies are sections, parent bodies drop promoted spans only (C2.3/C2.4)", async () => {
+test("spec-kitty-two-level: 023 apply: parent-before-child creates, child bodies are sections, parent bodies drop promoted spans only (C2.3/C2.4)", async () => {
   const w = await buildWorld("spec-kitty-two-level");
   try {
     const engine = attachEngine(w, createSyncEngine, { keyProvider: w.keyProvider });
@@ -275,7 +275,7 @@ test("023 two-level apply: parent-before-child creates, child bodies are section
 
 // ───────────────────────────────────────────────── T016: duplicate-anchor refusal
 
-test("023 T016: duplicate in-region anchors refuse the plan through the EXISTING document collision guard (C2.6)", async () => {
+test("spec-kitty-two-level: T016 duplicate in-region anchors refuse the plan through the EXISTING document collision guard (C2.6)", async () => {
   const w = await buildWorld("spec-kitty-two-level");
   try {
     // Temp-copy mutation (harness-sanctioned): one document, TWO in-region T004 anchors.

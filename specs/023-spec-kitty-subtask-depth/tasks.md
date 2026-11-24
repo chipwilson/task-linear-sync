@@ -173,11 +173,11 @@ description: "Task list for feature 023 — Spec Kitty Sub-Task Depth & Front-Ma
 
 - [X] T032 [P] Governance + release records: rewrite Requirement 7 in `specs/requirements.md`; add the `[0.7.0]` entry to `CHANGELOG.md` (headline: sub-task depth + event-log status; upgrade note: artifact sub-folders stop counting, no identity changes, zero description churn at the flat default); record A-023-0…A-023-3 + the supersession ledger (022 C1.1 pattern clause; the 022 "subtasks are never tasks" assumption) in `docs/contract-amendments.md`.
 
-- [ ] T033 Contract-tier green: `tests/contract/discovery-surface.test.ts`, regenerated `tests/contract/snapshots/frozen-surface.json`, report-schema scan, and the documentation-consistency suite pass against the corrected text.
+- [X] T033 Contract-tier green: `tests/contract/discovery-surface.test.ts`, regenerated `tests/contract/snapshots/frozen-surface.json`, report-schema scan, and the documentation-consistency suite pass against the corrected text.
 
-- [ ] T034 Full pyramid: `node scripts/run-tests.mjs` — all tiers + coverage threshold; the other six identities' discovery/parse/depth/plan fixtures byte-identical (SC-006); `spec-kitty` disabled restores pre-017 fall-through (022 C9 pin).
+- [X] T034 Full pyramid: `node scripts/run-tests.mjs` — all tiers + coverage threshold; the other six identities' discovery/parse/depth/plan fixtures byte-identical (SC-006); `spec-kitty` disabled restores pre-017 fall-through (022 C9 pin).
 
-- [ ] T035 Run every scenario in `specs/023-spec-kitty-subtask-depth/quickstart.md` (1–7) and check the Definition-of-done list; final commit, no self-attribution trailers.
+- [X] T035 Run every scenario in `specs/023-spec-kitty-subtask-depth/quickstart.md` (1–7) and check the Definition-of-done list; final commit, no self-attribution trailers.
 
 ---
 
