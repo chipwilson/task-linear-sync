@@ -101,10 +101,18 @@ export const specKittyFixtureAdapter = {
   featureName: (taskFilePath: string): string | undefined => /^kitty-specs\/([^/]+)\/.+/.exec(taskFilePath)?.[1],
   headingGrammar: "(?!)",
   documentTaskRule: {
-    collectionPattern: "^kitty-specs/[^/]+/tasks/.+\\.md$",
+    // 023 A-023-2/C1.2' — canonical gate narrowed to direct children + lane variant,
+    // plus the subtaskRule; verbatim mirror of the amended built-in row (023 §3).
+    collectionPattern:
+      "^kitty-specs/[^/]+/tasks/(?:(?:planned|claimed|in_progress|for_review|in_review|approved|done|blocked|canceled)/)?[^/]+\\.md$",
     idKey: "work_package_id",
     titleKey: "title",
     fileNameIdPattern: "(?i)^WP(\\d+)[^/]*\\.md$",
+    subtaskRule: {
+      rosterKey: "subtasks",
+      anchorPattern: "^(?:[-*+] \\[[ xX]\\] |#{1,6} )[ \\t]*(?:Subtask[ \\t]+)?(T\\d+)\\b[ \\t]*[:–—-]?[ \\t]*(.*)$",
+      anchorRegionStopPattern: "^#{1,6}[ \\t]+(Activity Log|Review Report)[ \\t]*$",
+    },
   },
 } satisfies TaskFileAdapter;
 /** open-spec: `openspec/<feature>/tasks.md` → `<feature>`; no grammar overrides. */

@@ -81,7 +81,7 @@ Regex sources are compiled by the parser/renderer lane (004/005).
 | `rollupPattern` | regex source | `\b(?:parent\|roll-?up)\b` | Lines mentioning a parent/roll-up are rollup labels, not tasks. |
 | `flatChecklistMarkers` | string[] | `["- [ ]", "- [x]", "- [X]", "* [ ]", "* [x]", "* [X]"]` | Checkbox markers recognized as task lines (both bullet styles, both case spellings of checked); also the marker trigger of the flat-document pre-scan. Flat-document detection (021 amendment A-021-3): a document is flat when **no** grammar-matching heading exists **or** its only grammar-matching heading is the **document-title heading** — the first non-blank, non-fenced line at level 1 that the grammar yields no id for (the amended default grammar makes `# Implementation Plan`-style titles qualify) — that title heading is disregarded as a task parent, so top-level checkboxes beneath it are parentless depth-1 tasks, which the default `maxTaskIssueDepth: 1` flat board keeps. |
 | `tabWidth` | integer | `2` | Column width used when normalizing indentation. |
-| `maxTaskIssueDepth` | integer | `1` (flat board; set `64` for effectively unlimited) | 1..64, named refusal at the parsing entry (`TaskDepthConfigError` names the key and the offending value; CLI exit 3) — an out-of-range value is never silently clamped or ignored. Default `1`: only depth-1 tasks (top-level checklists and all heading tasks) become issues; deeper checklists fold verbatim into the nearest surviving ancestor's body. `64` restores the pre-020 behavior; validation is shared by every lane at `parseTaskFile`, never inside `loadConfig` (merge-only) — 020 amendment A-020-1. |
+| `maxTaskIssueDepth` | integer | `1` (flat board; set `64` for effectively unlimited) | 1..64, named refusal at the parsing entry (`TaskDepthConfigError` names the key and the offending value; CLI exit 3) — an out-of-range value is never silently clamped or ignored. Default `1`: only depth-1 tasks (top-level checklists and all heading tasks) become issues; deeper checklists fold verbatim into the nearest surviving ancestor's body. `64` restores the pre-020 behavior; validation is shared by every lane at `parseTaskFile`, never inside `loadConfig` (merge-only) — 020 amendment A-020-1. Document sources (023): for `spec-kitty` work-package documents the same cap governs SUB-TASK promotion — at `1` every `### Subtask Tnnn` section folds verbatim into the document's mirrored body (byte-identical to the v0.6 posture), at `≥ 2` each anchored sub-task becomes a child issue of its work-package issue; roster ids without a body anchor are excluded (`subtask-no-anchor`) at every depth. |
 
 Checklist local-id capture is **not a configuration key**: it is governed by the
 built-in module-local span grammar `LOCAL_ID_SPAN_RE` (`src/parsing/content.ts`),
@@ -105,6 +105,18 @@ The intelligent default is "never guess a workspace identity":
 | `projectByPath` | array | `[]` (empty is legal, but each entry then must carry both fields) | every entry: non-empty `teamKey` **and** `project` |
 | `defaultTeamKey` | string | `""` (invalid) | non-empty |
 | `defaultProject` | string | `""` (invalid) | non-empty |
+
+Per team, `teams[<key>].workflowStates.lanes` is an **optional** map from the
+nine Spec Kitty lane names (`planned`, `claimed`, `in_progress`, `for_review`,
+`in_review`, `approved`, `done`, `blocked`, `canceled`) to workflow-state
+**names** — the bridge from the mission's `status.events.jsonl` lanes to
+tracker states (023 amendment A-023-0). It has **no default**: absent or
+missing an entry, that lane leaves issue state untouched and the run reports
+`lane-state-unmapped` (never a guessed state). Keys outside the vocabulary
+and blank state names are refused by `validateWorkspaceIdentity()`
+(`LaneMapError`) whenever the map is present; a mapped name that the
+team's live workflow states do not contain is a plan-time conflict finding,
+not a silent skip.
 
 ## Matching (task ↔ issue pairing)
 
@@ -257,7 +269,11 @@ The three tool-owned names re-derive from `toolId` automatically.
 `syncAttachmentIconUrl`, `historyLogMaxBytes` — and the four routing
 identities, whose empty values fail validation. Absent means "platform-
 computed", "adapter-supplied", or "feature not configured", never a silent
-guess.
+guess. The per-team `workflowStates.lanes` map and the adapter row's
+`statusEventFileName` member (023) are likewise absent-by-default: lane
+mapping is opt-in, and the status-event file name ships only on the built-in
+`spec-kitty` row (re-pointable through the programmatic
+`overrides.adapters["spec-kitty"]` lane — no config-file key).
 
 `maxTaskIssueDepth` is deliberately **not** in this list: like the 014
 resource bounds, it ships a built-in default (`1`) rather than defaulting to

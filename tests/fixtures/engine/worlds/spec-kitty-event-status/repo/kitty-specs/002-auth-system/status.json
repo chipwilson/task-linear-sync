@@ -1,0 +1,7 @@
+{
+  "work_packages": {
+    "WP01": { "lane": "planned", "event_count": 1 },
+    "WP02": { "lane": "planned", "event_count": 2 },
+    "WP03": { "lane": "planned", "event_count": 1 }
+  }
+}

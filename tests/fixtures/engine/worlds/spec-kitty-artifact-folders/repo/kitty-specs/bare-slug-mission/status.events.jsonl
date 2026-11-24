@@ -1,0 +1,2 @@
+{"aggregate_type": "work_package", "event_type": "WPCreated", "payload": {"wp_id": "WP01"}, "schema_version": "5.0.0", "at": "2026-11-01T09:00:00Z"}
+{"wp_id": "WP01", "from_lane": "genesis", "to_lane": "planned", "at": "2026-11-01T09:00:01Z", "actor": "ops-placeholder"}

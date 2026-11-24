@@ -210,6 +210,21 @@ export class MissingIdentityError extends Error {
   }
 }
 
+/**
+ * Thrown by validateWorkspaceIdentity for a malformed `workflowStates.lanes` map
+ * (023 amendment A-023-0): EVERY offending entry named at once, keyed
+ * `teams[<teamKey>].workflowStates.lanes[...]`. Keys outside the nine-lane vocabulary
+ * and blank values fail; NO built-in default ships and nothing is partially applied.
+ */
+export class LaneMapError extends Error {
+  override readonly name = "LaneMapError";
+  readonly offenders: readonly string[];
+  constructor(offenders: readonly string[]) {
+    super(`invalid workflowStates.lanes mapping: ${offenders.join(", ")} — lane keys must be within the vocabulary (planned, claimed, in_progress, for_review, in_review, approved, done, blocked, canceled) and values must be non-empty workflow-state names`);
+    this.offenders = offenders;
+  }
+}
+
 export interface LoadConfigOptions {
   /** Programmatic layer (highest precedence). */
   readonly overrides?: ConfigOverrides;

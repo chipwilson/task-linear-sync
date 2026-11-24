@@ -129,7 +129,7 @@ test("parsing corpus — repeat-parse deep-equality determinism (Principle IV)",
   assert.deepEqual(first, second);
 });
 
-test("parsing corpus — spec-kitty sixth identity (022 re-base): zero roll-up tasks, one document per WP file (SC-002, C1–C3)", () => {
+test("parsing corpus — spec-kitty sixth identity (023 corpus): zero roll-up tasks, canonical documents plus promoted subtasks per file (SC-002, C1–C3)", () => {
   // Mirror pin: the helper's literal conventions equal the built-in row's members.
   assert.equal(specKittyFixtureAdapter.headingGrammar, specKittyConventions.headingGrammar);
   assert.deepEqual(specKittyFixtureAdapter.documentTaskRule, specKittyConventions.documentTaskRule);
@@ -148,28 +148,107 @@ test("parsing corpus — spec-kitty sixth identity (022 re-base): zero roll-up t
   assert.deepEqual(rollUp.warnings, []);
   assert.equal(rollUp.featureName, "001-corpus");
 
-  // Each tasks/WPnn-*.md yields exactly ONE document task (C1.1, C3.2).
-  const wpFiles: readonly (readonly [string, string, string])[] = [
-    ["WP01-auth.md", "WP01", "Create auth module"],
-    ["WP02-billing.md", "WP02", "Ship the corpus mission"],
+  // Each canonical tasks/WPnn-*.md yields one document task; at this cfg cap (64) its
+  // in-region anchors materialize as depth-2 children (023 C0.1) and anchor-less roster
+  // ids surface as `subtask-no-anchor` exclusions (C2.5).
+  interface ChildPin {
+    readonly id: string;
+    readonly title: string;
+    readonly extent: readonly [number, number];
+  }
+  interface WpPin {
+    readonly name: string;
+    readonly localTaskId: string;
+    readonly title: string;
+    readonly children: readonly ChildPin[];
+    readonly misses: readonly (readonly [number, string])[]; // [roster line, token]
+  }
+  const wpFiles: readonly WpPin[] = [
+    {
+      name: "WP01-auth.md",
+      localTaskId: "WP01",
+      title: "Auth",
+      children: [
+        { id: "T001", title: "Implement validator CLI", extent: [20, 22] },
+        { id: "T002", title: "Add pytest coverage", extent: [24, 26] },
+      ],
+      misses: [[8, "T099"]],
+    },
+    {
+      name: "WP02-flow.md",
+      localTaskId: "WP02",
+      title: "Flow persistence",
+      children: [
+        { id: "T003", title: "Open the flow", extent: [14, 14] },
+        { id: "T004", title: "Persist state", extent: [15, 15] },
+      ],
+      misses: [],
+    },
+    {
+      name: "WP03-noanchors.md",
+      localTaskId: "WP03",
+      title: "Telemetry",
+      children: [],
+      misses: [
+        [5, "T005"],
+        [5, "T006"],
+      ],
+    },
   ];
-  for (const [name, localTaskId, title] of wpFiles) {
-    const filePath = `kitty-specs/001-corpus/tasks/${name}`;
-    const content = readFixture(`parsing/frameworks/spec-kitty/tasks/${name}`);
+  for (const pin of wpFiles) {
+    const filePath = `kitty-specs/001-corpus/tasks/${pin.name}`;
+    const content = readFixture(`parsing/frameworks/spec-kitty/tasks/${pin.name}`);
     const { file, exclusions } = parseTaskFile(filePath, content, specKittyFixtureAdapter, cfg);
-    assert.deepEqual(exclusions, [], `${name} — no line scanning`);
-    assert.equal(file.tasks.length, 1, `${name} — exactly one task`);
     const task = file.tasks[0]!;
-    assert.equal(task.kind, "document", `${name} — document kind`);
-    assert.equal(task.localTaskId, localTaskId);
-    assert.equal(task.title, title, `${name} — front-matter title wins the cascade (C3.1)`);
+    assert.equal(file.tasks.length, pin.children.length + 1, `${pin.name} — parent + ${pin.children.length} children`);
+    assert.equal(task.kind, "document", `${pin.name} — document kind`);
+    assert.equal(task.localTaskId, pin.localTaskId);
+    assert.equal(task.title, pin.title, `${pin.name} — front-matter title wins the cascade (C3.1)`);
     assert.equal(file.featureName, "001-corpus", "the mission names the document (R3)");
+    for (const child of pin.children) {
+      const sub = file.tasks.find((t) => t.localTaskId === child.id);
+      assert.ok(sub, `${pin.name}: ${child.id} derived`);
+      assert.equal(sub.parentUuid, task.stableUuid, `${child.id} parented to ${pin.localTaskId}`);
+      assert.deepEqual([sub.taskBody.startLine, sub.taskBody.endLine], child.extent);
+      assert.equal(sub.title, child.title);
+    }
+    assert.deepEqual(
+      task.taskBody.promotedRanges ?? [],
+      pin.children.map((c) => c.extent),
+      `${pin.name} — promoted ranges are the child spans, source order`,
+    );
+    assert.deepEqual(
+      exclusions,
+      pin.misses.map(([line, token]) => ({ lineNumber: line, kind: "subtask", reason: "subtask-no-anchor", text: token })),
+      `${pin.name} — anchor-less roster ids excluded (C2.5)`,
+    );
     const body = content.split("\n").slice(task.taskBody.startLine - 1, task.taskBody.endLine).join("\n");
     assert.ok(body.startsWith("#"), "the slice starts at the leading heading (R11)");
     assert.ok(body.includes("## Objectives & Success Criteria"), "Objectives section mirrored verbatim (SC-002)");
-    assert.match(body, /T\d{3}/u, "Tnnn subtask guidance mirrored verbatim (SC-002)");
+    assert.match(body, /T\d{3}/u, "Tnnn subtask ids mirrored verbatim (SC-002)");
     assert.ok(!body.includes("work_package_id:"), "front matter excluded from content (C3.2)");
   }
+
+  // Legacy lane-folder document: canonical under the amended gate, zero children.
+  const legacy = parseTaskFile(
+    "kitty-specs/001-corpus/tasks/planned/WP04-legacy.md",
+    readFixture("parsing/frameworks/spec-kitty/tasks/planned/WP04-legacy.md"),
+    specKittyFixtureAdapter,
+    cfg,
+  );
+  assert.equal(legacy.file.tasks.length, 1, "the lane-folder variant stays a canonical document (C1.2')");
+  assert.equal(legacy.file.tasks[0]?.localTaskId, "WP04");
+
+  // Per-WP artifact sub-folder with a DUPLICATED front-matter id: zero tasks, claimed
+  // inert (C1.2', FR-015) — the collection gate never even reads its front matter.
+  const artifact = parseTaskFile(
+    "kitty-specs/001-corpus/tasks/WP01-auth/review-cycle-1.md",
+    readFixture("parsing/frameworks/spec-kitty/tasks/WP01-auth/review-cycle-1.md"),
+    specKittyFixtureAdapter,
+    cfg,
+  );
+  assert.deepEqual(artifact.file.tasks, [], "artifact sub-folders derive ZERO drafts whatever their front matter");
+  assert.deepEqual(artifact.exclusions, []);
 
   // Determinism across repeats (Principle IV).
   const again = parseTaskFile("kitty-specs/001-corpus/tasks.md", readFrameworkFixture("spec-kitty"), specKittyFixtureAdapter, cfg);

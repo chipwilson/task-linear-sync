@@ -27,6 +27,11 @@ export type TaskKind = "heading" | "checklist" | "document";
 export interface TaskBodyExtent {
   readonly startLine: number; // 1-based, the task's own line
   readonly endLine: number;   // inclusive; last line before next task / sibling-or-shallower heading
+  // A-023-0 (feature 023, additive): inclusive line spans promoted to child issues.
+  // Present only on document tasks with promoted children (depth >= 2); consumed ONLY
+  // by the document-kind mirror slice. Every other kind — and every absent/empty case —
+  // keeps the contiguous startLine..endLine slice byte-for-byte.
+  readonly promotedRanges?: ReadonlyArray<readonly [number, number]>;
 }
 
 export interface IssueRef {
@@ -132,7 +137,7 @@ export interface Checkpoint {
 
 export type SyncHistoryEventKind =
   | "discovered" | "issue-created" | "matched" | "title-updated"
-  | "description-updated" | "checkbox-changed" | "conflict-detected" | "rollback";
+  | "description-updated" | "checkbox-changed" | "lane-changed" | "conflict-detected" | "rollback";
 
 export interface SyncHistoryEvent {
   readonly kind: SyncHistoryEventKind;

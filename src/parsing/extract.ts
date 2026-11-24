@@ -17,8 +17,10 @@ import type { ContentLine } from "./content.js";
 /** 004-local exclusion record (data-model § 2; FR-004). */
 export interface ExclusionRecord {
   readonly lineNumber: number;
-  readonly kind: "heading" | "checklist";
-  readonly reason: "summary-section" | "rollup" | "depth-folded"; // "depth-folded" — 020 amendment A-020-2
+  /** A-023-2 (023): `"subtask"` — document-mode roster/anchor records; extraction kinds unchanged. */
+  readonly kind: "heading" | "checklist" | "subtask";
+  /** A-023-2 (023): `"subtask-no-anchor"` added; `"depth-folded"` (020) is REUSED for folded subtasks. */
+  readonly reason: "summary-section" | "rollup" | "depth-folded" | "subtask-no-anchor";
   readonly text: string;
 }
 

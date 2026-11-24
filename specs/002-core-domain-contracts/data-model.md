@@ -82,10 +82,12 @@ Per-framework convention bundle; 003 implements, 004 consumes the *interface* on
 |---|---|---|
 | `ProjectByPath` entry | `{ prefix: string; teamKey: string; project: string }` | Both `teamKey` and `project` required (project-only shape unsupported); longest-character-length match wins; deterministic first-by-map-order tie-break |
 | `defaultTeamKey` / `defaultProject` | `string` | Consumer-required; unmatched paths fall back; both-absent ⇒ task left unassigned with indication |
-| team identity | `teamKey → { projects: string[], workflowStates: { done, backlog, … , completedTypes, ignoredTypes } }` | Consumer-required, no defaults |
+| team identity | `teamKey → { projects: string[], workflowStates: { done, backlog, … , completedTypes, ignoredTypes, lanes? } }` | Consumer-required, no defaults. `lanes` (A-023-0, feature 023, optional): per-team lane → workflow-state NAME map; keys ⊆ the nine-lane vocabulary (`planned, claimed, in_progress, for_review, in_review, approved, done, blocked, canceled`), values non-empty state names; NO built-in default ships — absent map or unmapped lane ⇒ tracker state untouched + reported finding |
 
 Validation (at config init, FR-007): every required identity present and non-empty;
-each `ProjectByPath` entry complete. Full-listing abort.
+each `ProjectByPath` entry complete. Full-listing abort. A present-but-malformed
+`workflowStates.lanes` map fails the same gate (`LaneMapError`, A-023-0): unknown lane
+keys and blank state names are listed per team key; nothing partially applies.
 
 ## 5. Match
 
@@ -142,7 +144,7 @@ under `metadataNamespaceKey` in the page-0 attachment's `Attachment_Metadata`:
 | `history` | `SyncHistoryEvent[]` | Append-only page of the `Sync_History_Log` |
 
 `SyncHistoryEvent`: `{ kind: "discovered" | "issue-created" | "matched" | "title-updated" |
-"description-updated" | "checkbox-changed" | "conflict-detected" | "rollback", at: ISO-8601,
+"description-updated" | "checkbox-changed" | "lane-changed" | "conflict-detected" | "rollback", at: ISO-8601,
 description: screened string, references?: string[] }` — immutable once appended; rollback
 appends rather than rewinds (Principle IV).
 

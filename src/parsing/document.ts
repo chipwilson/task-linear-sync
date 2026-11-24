@@ -17,11 +17,38 @@ export interface DocumentTaskRule {
   readonly idKey: string;
   readonly titleKey: string;
   readonly fileNameIdPattern: string;
+  /**
+   * A-023-2 (023, optional): subtask recognition for the document lane (feature
+   * contract C2). All members are regex SOURCE strings (the `(?i)` prefix convention
+   * applies); absent ⇒ the pre-023 single-draft path stays byte-identical (inert for
+   * every adapter that does not declare it).
+   */
+  readonly subtaskRule?: {
+    /** Front-matter list key carrying the subtask roster (e.g. `subtasks`). */
+    readonly rosterKey: string;
+    /** Anchor line grammar: an ATX heading or checklist line opening with the subtask token. */
+    readonly anchorPattern: string;
+    /** Heading that ENDS the anchor region (restatements beyond it are content, never anchors). */
+    readonly anchorRegionStopPattern: string;
+  };
+}
+
+/** One captured single-level front-matter list entry (A-023-2). `line` is 1-based. */
+export interface FrontMatterListEntry {
+  readonly value: string;
+  readonly line: number;
 }
 
 export interface FrontMatterScan {
   /** Top-level scalar keys only (`key: value` lines at zero indentation); quoted scalars unwrapped. */
   readonly scalars: Readonly<Record<string, string>>;
+  /**
+   * A-023-2 (additive): top-level keys whose value is a SINGLE-LEVEL list — block form
+   * (`key:` then indented `- value` lines) or flow form (`key: [a, b]`). Scalars keep
+   * their byte-identical capture (a flow value stays a scalar string too); nested or
+   * otherwise malformed lists stay fully ignored, exactly as before.
+   */
+  readonly lists: Readonly<Record<string, readonly FrontMatterListEntry[]>>;
   /** 1-based line number of the CLOSING fence line. */
   readonly closingLine: number;
 }
@@ -78,6 +105,7 @@ export function scanFrontMatter(lines: readonly string[]): FrontMatterScan | nul
   }
   if (close < 0) return null; // unterminated fence — no front matter (R5)
   const scalars: Record<string, string> = {};
+  const lists: Record<string, readonly FrontMatterListEntry[]> = {};
   for (let i = open + 1; i < close; i += 1) {
     const raw = lines[i] ?? "";
     if (raw.trim() === "") continue;
@@ -88,10 +116,47 @@ export function scanFrontMatter(lines: readonly string[]): FrontMatterScan | nul
     const key = raw.slice(0, colon).trim();
     const value = raw.slice(colon + 1).trim();
     if (key === "" || !/^[A-Za-z_][A-Za-z0-9_-]*$/u.test(key)) continue;
-    if (value === "") continue; // nested-collection openers (`dependencies:`) carry no scalar
-    scalars[key] = unquote(value);
+    if (value === "") {
+      // Nested-collection openers (`dependencies:`) carry no scalar — unchanged (R5).
+      // A-023-2: the SAME opener may open a single-level BLOCK list; capture it when the
+      // following lines are plain scalar items, ignore everything else exactly as before.
+      const block = captureBlockList(lines, close, i + 1);
+      if (block !== null) lists[key] = block;
+      continue;
+    }
+    scalars[key] = unquote(value); // scalar capture byte-identical (A-023-2)
+    // A-023-2: a FLOW value additionally captures as a single-level list; the scalar
+    // above stays exactly what 0.6.0 recorded.
+    const flow = /^\[(.*)\]$/u.exec(value);
+    if (flow !== null) {
+      const inner = (flow[1] ?? "").trim();
+      const items = inner === "" ? [] : inner.split(",").map((part) => unquote(part.trim())).filter((p) => p !== "");
+      lists[key] = items.map((v) => ({ value: v, line: i + 1 }) satisfies FrontMatterListEntry);
+    }
   }
-  return { scalars, closingLine: close + 1 };
+  return { scalars, lists, closingLine: close + 1 };
+}
+
+/**
+ * A-023-2: single-level block list beneath a top-level key — consecutive `- value`
+ * items (indented OR flush-left, both are real upstream shapes), stopping at the first
+ * non-item line or the closing fence. Returns `null` — list IGNORED, everything else
+ * unchanged — when the structure is not a plain scalar list: map-style items
+ * (`- key: value`), nested dashes, or no items at all.
+ */
+function captureBlockList(lines: readonly string[], close: number, from: number): readonly FrontMatterListEntry[] | null {
+  const entries: FrontMatterListEntry[] = [];
+  for (let i = from; i < close; i += 1) {
+    const raw = lines[i] ?? "";
+    if (raw.trim() === "") continue; // blank lines keep the list alive
+    const item = /^[ \t]*-[ \t]+(.*)$/u.exec(raw);
+    if (item === null) break; // any non-item line closes the list
+    const value = unquote((item[1] ?? "").trim());
+    if (value === "") return null; // `- - x`-style nesting: not a plain scalar list
+    if (/^[A-Za-z_][A-Za-z0-9_-]*[ \t]*:/u.test(value)) return null; // map-style item
+    entries.push({ value, line: i + 1 });
+  }
+  return entries.length > 0 ? entries : null;
 }
 
 /**
@@ -190,4 +255,145 @@ export function deriveDocumentTask(
   }
 
   return { kind: "document", localTaskId, title, lineNumber: startLine, startLine, endLine };
+}
+
+// ───────────────────────────── A-023-2: subtask derivation (023 contract C2; research R1)
+
+/** One promoted subtask draft (depth level 2; feature contract C2). */
+export interface SubtaskDraft {
+  readonly kind: "document";
+  /** Normalized `T<digits>` token (same normalizer as WP ids) — the SEED INPUT carries the compose-slot join, the task keeps the bare token. */
+  readonly localTaskId: string;
+  /** Anchor text after the token; a title-less anchor falls back to the readable token form. */
+  readonly title: string;
+  /** The anchor line (1-based) — the child's own line. */
+  readonly lineNumber: number;
+  /** Inclusive section extent: anchor line .. before the terminating anchor/shallower heading, trailing blanks trimmed (C2.2). */
+  readonly startLine: number;
+  readonly endLine: number;
+}
+
+/** One roster entry recognized but never anchored (C2.5) — the taskfile turns these into `subtask-no-anchor` exclusions. */
+export interface SubtaskRosterMiss {
+  readonly localTaskId: string;
+  /** 1-based line of the roster entry. */
+  readonly line: number;
+  /** The raw roster value (e.g. `T099`). */
+  readonly text: string;
+}
+
+/** Widened document derivation: the 022 parent draft plus subtask drafts and roster misses. */
+export interface DocumentDerivation {
+  readonly document: DocumentDraft;
+  /** Anchors INSIDE the anchor region, ascending source order. Duplicates of one id derive unchanged — the engine's frozen collision guard refuses (C2.6). */
+  readonly subtasks: readonly SubtaskDraft[];
+  readonly rosterMisses: readonly SubtaskRosterMiss[];
+}
+
+/** ATX heading probe: level 1–6 or null (leading spaces up to 3, CommonMark relaxed). */
+function headingLevel(text: string): number | null {
+  const m = /^ {0,3}(#{1,6})[ \t]/u.exec(text);
+  return m?.[1] === undefined ? null : m[1].length;
+}
+
+/**
+ * Widened derivation (023 contract C2, amendment A-023-2): the pre-023 document draft
+ * EXACTLY as `deriveDocumentTask` produces it, plus depth-2 subtask drafts recognized
+ * inside the anchor region and roster-only ids. When the rule carries no `subtaskRule`
+ * the child lanes are inertly empty — the single-draft path stays byte-identical (inert
+ * for every adapter that does not declare it). The parent extent is NOT modified here:
+ * `promotedRanges` is the taskfile's depth decision (a folded child promotes nothing),
+ * so this function stays cap-free.
+ */
+export function deriveDocumentTasks(
+  filePath: string,
+  lines: readonly string[],
+  rule: DocumentTaskRule,
+): DocumentDerivation | null {
+  const document = deriveDocumentTask(filePath, lines, rule);
+  if (document === null) return null;
+  const sub = rule.subtaskRule;
+  if (sub === undefined) return { document, subtasks: [], rosterMisses: [] };
+
+  // Anchor region (C2.3): first body line up to (exclusive) the first stop heading.
+  // The stop pattern is case-insensitive (upstream logs spell it every way).
+  const front = scanFrontMatter(lines);
+  const bodyFrom = (front?.closingLine ?? 0) + 1; // 1-based
+  const stopRe = sub.anchorRegionStopPattern.startsWith("(?i)")
+    ? compileRuleSource(sub.anchorRegionStopPattern)
+    : new RegExp(sub.anchorRegionStopPattern, "i");
+  let regionEnd = lines.length; // inclusive last in-region line
+  for (let i = bodyFrom - 1; i < lines.length; i += 1) {
+    if (stopRe.test(lines[i] ?? "")) {
+      regionEnd = i; // 0-based index i is line i+1 ⇒ region lines end at i (exclusive → inclusive i)
+      break;
+    }
+  }
+  // regionEnd is the 1-based number of the line BEFORE the stop heading (= i when the
+  // stop line is i+1); when no stop heading exists it is the file's last line.
+
+  // Anchors (C2.2): heading or checklist lines opening with the subtask token, inside
+  // the region only — restatements beyond the stop line are mirrored content.
+  const anchorRe = compileRuleSource(sub.anchorPattern);
+  interface Anchor {
+    readonly localTaskId: string;
+    readonly title: string;
+    readonly line: number; // 1-based
+    readonly level: number; // ATX level; checklists sit at the deepest level
+  }
+  const anchors: Anchor[] = [];
+  for (let i = bodyFrom - 1; i < regionEnd; i += 1) {
+    const text = lines[i] ?? "";
+    const m = anchorRe.exec(text);
+    if (m === null) continue;
+    const token = m[1] ?? "";
+    if (token === "") continue;
+    const localTaskId = normalizeIdentifierToken(token);
+    const rest = (m[2] ?? "").trim();
+    anchors.push({
+      localTaskId,
+      title: rest === "" ? localTaskId : rest, // C2.4: text after the token, else readable token form
+      line: i + 1,
+      level: headingLevel(text) ?? 6,
+    });
+  }
+
+  // Section extents (C2.2): anchor line .. before the next anchor OR any same-or-
+  // shallower heading (deeper headings are CONTENT), trailing blank lines trimmed.
+  const subtasks: SubtaskDraft[] = anchors.map((anchor, index) => {
+    let boundary = regionEnd + 1; // 1-based exclusive end of the section search
+    for (const other of anchors.slice(index + 1)) {
+      if (other.line < boundary) boundary = other.line;
+    }
+    for (let i = anchor.line; i < boundary - 1; i += 1) {
+      const level = headingLevel(lines[i] ?? "");
+      if (level !== null && level <= anchor.level) {
+        boundary = i + 1;
+        break;
+      }
+    }
+    let endLine = Math.min(boundary - 1, regionEnd);
+    while (endLine > anchor.line && (lines[endLine - 1] ?? "").trim() === "") endLine -= 1;
+    return {
+      kind: "document",
+      localTaskId: anchor.localTaskId,
+      title: anchor.title,
+      lineNumber: anchor.line,
+      startLine: anchor.line,
+      endLine,
+    } satisfies SubtaskDraft;
+  });
+
+  // Roster union (C2.1): front-matter `rosterKey` list ids WITHOUT an in-region anchor
+  // are recognized-but-excluded — never an empty draft (C2.5).
+  const anchored = new Set(anchors.map((anchor) => anchor.localTaskId));
+  const rosterMisses: SubtaskRosterMiss[] = (front?.lists[sub.rosterKey] ?? [])
+    .filter((entry) => !anchored.has(normalizeIdentifierToken(entry.value)))
+    .map((entry) => ({
+      localTaskId: normalizeIdentifierToken(entry.value),
+      line: entry.line,
+      text: entry.value,
+    }));
+
+  return { document, subtasks, rosterMisses };
 }

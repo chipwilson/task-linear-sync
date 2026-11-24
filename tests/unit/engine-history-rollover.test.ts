@@ -65,9 +65,16 @@ const FROZEN_KINDS = [
   "rollback",
 ] as const satisfies readonly SyncHistoryEventKind[];
 
-/** Compile-time 1:1 pin: each side of the pairing must cover the other exactly. */
-type CoversFrozen = SyncHistoryEventKind extends (typeof FROZEN_KINDS)[number] ? true : never;
-type CoversList = (typeof FROZEN_KINDS)[number] extends SyncHistoryEventKind ? true : never;
+// A-023-3 (feature 023) additive kinds — the frozen union may grow ONLY by these.
+const _ADDITIVE_023_KINDS = ["lane-changed"] as const;
+
+/** Compile-time pin (amended by A-023-3): frozen kinds ⊆ union AND union ⊆ frozen ∪ additive. */
+type CoversFrozen = (typeof FROZEN_KINDS)[number] extends SyncHistoryEventKind ? true : never;
+type CoversList = SyncHistoryEventKind extends
+  | (typeof FROZEN_KINDS)[number]
+  | (typeof _ADDITIVE_023_KINDS)[number]
+  ? true
+  : never;
 const VOCABULARY_FROZEN_COVERED: CoversFrozen = true;
 const VOCABULARY_LIST_FROZEN: CoversList = true;
 
@@ -108,9 +115,9 @@ function assertSplitIsAPureSlice(split: RolloverSplit, candidate: readonly SyncH
 
 // ── 1. Frozen vocabulary (GREEN — frozen domain surface already real) ───────────────
 
-test("engine-history-rollover — SyncHistoryEvent kind union is 1:1 with the frozen eight-kind vocabulary", () => {
-  assert.equal(VOCABULARY_FROZEN_COVERED, true, "frozen union ⊆ list compiled");
-  assert.equal(VOCABULARY_LIST_FROZEN, true, "list ⊆ frozen union compiled");
+test("engine-history-rollover — SyncHistoryEvent kind union: the frozen eight stay 1:1, grown only by the additive 023 kind", () => {
+  assert.equal(VOCABULARY_FROZEN_COVERED, true, "frozen list ⊆ union compiled — no frozen kind was removed");
+  assert.equal(VOCABULARY_LIST_FROZEN, true, "union ⊆ frozen list ∪ additive 023 kinds compiled — nothing else crept in");
   assert.deepEqual(
     [...FROZEN_KINDS].sort(),
     [
@@ -127,7 +134,7 @@ test("engine-history-rollover — SyncHistoryEvent kind union is 1:1 with the fr
   );
   for (const kind of FROZEN_KINDS) {
     const event: SyncHistoryEvent = { kind, at: "2026-01-01T00:00:00.000Z", description: `event ${kind}` };
-    assert.ok(FROZEN_KINDS.includes(event.kind), `${kind} is a constructible frozen event`);
+    assert.ok((FROZEN_KINDS as readonly string[]).includes(event.kind), `${kind} is a constructible frozen event`);
   }
 });
 
@@ -139,7 +146,7 @@ test("engine-history-rollover — every IssueUpdatePatch field maps 1:1 to its f
   assert.deepEqual(mapped, ["title-updated", "description-updated", "checkbox-changed"], "per-field kinds, in field order");
   assert.equal(new Set(mapped).size, 3, "three distinct kinds — no two fields collapse");
   for (const kind of mapped) {
-    assert.ok(FROZEN_KINDS.includes(kind), `${kind} stays inside the frozen vocabulary`);
+    assert.ok((FROZEN_KINDS as readonly string[]).includes(kind), `${kind} stays inside the frozen vocabulary`);
   }
 });
 

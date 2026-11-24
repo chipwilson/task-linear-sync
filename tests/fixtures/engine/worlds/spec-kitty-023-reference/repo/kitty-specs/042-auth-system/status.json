@@ -1,0 +1,10 @@
+{
+  "work_packages": {
+    "WP01": {
+      "lane": "done"
+    },
+    "WP02": {
+      "lane": "in_progress"
+    }
+  }
+}

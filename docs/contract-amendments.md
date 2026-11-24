@@ -347,3 +347,119 @@ programmatic-only adapter members, no new `ResolvedConfig` keys), and C6 (siblin
 documentation). The generic whole-segment `*` exclusion grammar added by 017 remains
 available to every adapter — only `spec-kitty` stops declaring it (an empty
 `frameworkSpecificExclusions` set; see C8.3 and the README/docs re-bases in 022 T032/T033).
+
+## Feature 023 amendments — `spec-kitty` sub-task depth & status authority
+
+Sub-task depth, the artifact-folder collection gate, and the event-log status
+authority for the `spec-kitty` identity, measured against the upstream reference
+repository. The normative feature contract is
+[specs/023-spec-kitty-subtask-depth/contracts/spec-kitty-subtask-status.md](../specs/023-spec-kitty-subtask-depth/contracts/spec-kitty-subtask-status.md)
+(C0–C9). Amendments land test-first, one change each, with the three-artifact rule
+where a frozen surface is touched.
+
+- 2026-11-24 · domain · `TaskBodyExtent` · additive optional
+  `promotedRanges?: ReadonlyArray<readonly [number, number]>` (inclusive line spans
+  promoted OUT of a document task) · A-023-0(a) (research R2: contiguous
+  `startLine..endLine` cannot express the holes left by promoted subtask sections; a
+  segment-list rework would churn every kind — FR-013 violation) · artifacts:
+  `specs/002-core-domain-contracts/contracts/task-model.md`, `src/domain/task.ts`,
+  the regenerated `tests/contract/snapshots/frozen-surface.json` (no name-set drift:
+  the member is additive to an existing interface) · gate:
+  `tests/unit/domain-task.test.ts` (absence renders the contiguous slice byte-for-byte;
+  seeds untouched) · migration: consumed ONLY by the document-kind mirror slice; every
+  other kind and every absent/empty case renders exactly as 0.6.0
+
+- 2026-11-24 · domain+config · `WorkflowStateIdentities` / config-init gate · additive
+  optional `lanes?: Record<LaneName, string>` (per-team lane → workflow-state NAME) +
+  new frozen exports `LANE_VOCABULARY` and `LaneMapError` · A-023-0(b) (research R6:
+  state names are per-team routing data — NO built-in default ships, the
+  `workflowStates` consumer-required class; malformed maps fail the config-init gate
+  naming every offending team key, never partially applied) · artifacts:
+  `specs/002-core-domain-contracts/data-model.md` §4, `src/domain/routing.ts`,
+  `src/config/{schema,validate}.ts`, the regenerated frozen-surface snapshot · gate:
+  `tests/unit/config-lanes.test.ts` · migration: an absent map validates and behaves
+  exactly as 0.6.0; unmapped lanes leave tracker state untouched + reported
+
+- 2026-11-24 · discovery (003 contract) · `FrameworkAdapter` / `AdapterConventions` /
+  `CustomAdapterDescriptor` · additive optional `statusEventFileName?: string` (file
+  sought directly beneath each mission directory; built-in `spec-kitty` ships
+  `"status.events.jsonl"`) · A-023-1 (research R5/R7: the append-only lane-event log is
+  mission-scoped status material, never a task source — it joins no candidate union and
+  is read during plan build only; `taskPathPatterns` semantics unchanged so artifact
+  files stay claimed, never `generic`) · artifacts:
+  `specs/003-task-discovery-framework-adapters/contracts/framework-adapter.md`,
+  `docs/framework-adapters.md`, `src/discovery/{adapter,conventions}.ts`,
+  `src/discovery/adapters/spec-kitty.ts` · gate:
+  `tests/contract/discovery-surface.test.ts` (member-level pin; barrel name set
+  unchanged) · migration: absent on every other row; the engine consumes built-in row
+  values only (022 engine-registry precedent)
+
+- 2026-11-24 · parsing (004 contract) · `DocumentTaskRule` / `parseTaskFile` document
+  lane / `ExclusionRecord` / `scanFrontMatter` · additive subtask derivation
+  (rule 13 widening): optional `subtaskRule = { rosterKey, anchorPattern,
+  anchorRegionStopPattern }`; new exports `deriveDocumentTasks`, `DocumentDerivation`,
+  `SubtaskDraft`, `SubtaskRosterMiss`; `scanFrontMatter` gains the additive `lists`
+  capture (single-level block/flow; scalars byte-identical); `ExclusionRecord` kind
+  `subtask` + reason `subtask-no-anchor` (`depth-folded` reused) · A-023-2
+  (feature contract C2: roster ∪ in-region anchors derive depth-2 `document` drafts
+  with the compose-slot seed `${wpId}\u0000${subtaskId}`; anchor-less roster ids are
+  recognized-but-excluded, never empty issues; duplicate anchors keep identical seeds
+  for the EXISTING collision guard; the `collectionPattern` narrowing (C1.2') makes
+  per-WP artifact sub-folders derive zero drafts while staying claimed) · artifacts:
+  `specs/004-task-parsing-line-rendering/contracts/parsing-api.md` (rule 13),
+  `src/parsing/{document,taskfile,extract,adapter}.ts`,
+  `src/discovery/adapters/spec-kitty.ts`, the regenerated
+  `tests/contract/snapshots/parsing-surface.json` (+4 names) · gates:
+  `tests/unit/parsing-document-frontmatter.test.ts`,
+  `tests/unit/parsing-spec-kitty-subtasks.test.ts`,
+  `tests/integration/engine-spec-kitty-two-level.test.ts` (collision refusal included) ·
+  migration: absent `subtaskRule` ⇒ the single-draft document path and the contiguous
+  mirror slice stay byte-identical to 0.6.0 for every adapter
+
+- 2026-11-24 · engine (008 contract) · `SyncHistoryEventKind` / plan build / apply · additive
+  history kind `lane-changed` + event-log lane-status authority (C6): the frozen
+  eight-kind union grows by exactly ONE append-only kind — no frozen kind changes meaning,
+  `checkbox-changed` is never reused for lane moves — while plan build gains a read-only
+  status-event seam (`src/parsing/status.ts`, `src/engine/status-load.ts`) feeding the
+  entry-assembly drift beside the completion path (`resolveLaneState`,
+  `src/engine/completion.ts`), apply resolves the mapped state against the LIVE snapshot
+  (unmapped ⇒ untouched + `lane-state-unmapped`; unresolvable name ⇒ the conflict posture;
+  mapped-and-matching ⇒ idempotent no-change; creates carry the mapped `stateType`), and
+  the report gains the `status-event-log` (malformed COUNT only — content never
+  propagates) and `status-event-unknown-wp` (named, ignored) findings · A-023-3 (research
+  R5/R6: the mission's `status.events.jsonl` is the SOLE status authority — `status.json`
+  and front-matter `lane:` are never read; no built-in lane map default; status files are
+  never written back and status text never enters mirrored content) · artifacts:
+  `specs/002-core-domain-contracts/contracts/task-model.md` +
+  `specs/002-core-domain-contracts/data-model.md` §3 (union),
+  `specs/008-sync-engine-apply-rollback/contracts/history-log.md` §2 (kind table),
+  `src/domain/state-payload.ts`, `src/engine/{build,apply,completion,ops}.ts` · gate:
+  `tests/unit/engine-history-rollover.test.ts` (frozen-eight ∪ additive pin),
+  `tests/unit/{parsing-status,engine-lane-state}.test.ts`,
+  `tests/integration/engine-spec-kitty-event-status.test.ts`,
+  `tests/e2e/spec-kitty-023-reference.test.ts` · migration: absent log or absent `lanes`
+  map ⇒ zero state moves, plans byte-identical to 0.6.0 apart from additive findings; the
+  snapshot manifest keys module export NAMES so the union growth needs no snapshot regen
+
+**023 supersession ledger.** Feature 023 supersedes three 022 positions, recorded in
+`specs/023-spec-kitty-subtask-depth/contracts/spec-kitty-subtask-status.md` (C1.2', C5,
+C2/C4):
+
+- **022 C1.1 (collection pattern clause)** — the `documentTaskRule.collectionPattern`
+  clause matching any depth beneath `kitty-specs/<mission>/tasks/` (`. +` spanning `/`)
+  is superseded by the C1.2' direct-children gate (plus the nine legacy lane-folder
+  spellings); the broad `taskPathPatterns` CLAIM is retained verbatim, so artifact
+  sub-folder files stay `spec-kitty`-claimed and derive zero drafts — the upstream
+  duplicated-`work_package_id` collision abort (R4, measured) becomes structurally
+  unreachable.
+- **022 C2 "lane/status fields are content only"** — true for MIRRORED content still
+  (no status text ever enters a description, no front matter ever mirrors), but superseded
+  for tracker STATE: the mission's event log is a first-class status input at plan build
+  (read-only), deciding an optional lane-driven state transition through the per-team
+  lane map; `status.json` remains non-authoritative and unread.
+- **022 "subtasks are never tasks"** — the 022 assumption that every front-matter
+  sub-task id and `### Subtask` section is ordinary document content is superseded at
+  depth ≥ 2: anchored sub-tasks derive real `document`-kind child tasks (mission +
+  work-package id + bare `T` token identity, durable-only pairing, promoted spans holed
+  from the parent mirror). At the shipped default cap of 1 the old posture IS the
+  behavior — folding renders the parent body byte-identical to 0.6.0.

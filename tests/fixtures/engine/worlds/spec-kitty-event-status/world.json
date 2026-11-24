@@ -1,0 +1,63 @@
+{
+  "$comment": "T004 [023 Phase 1] — event-log status authority world (quickstart scenario 3). status.events.jsonl mixes envelope events, annotations, ONE malformed line, and flat lane transitions; WP02's last lane is in_progress while status.json and WP02 front matter deliberately say planned (contradiction fixture — the log wins). WP01 has NO lane events; WP03's last lane is canceled (unmapped). Team acme configures workflowStates.lanes { in_progress: Doing, done: Done } with NO canceled entry. WP02 pre-exists in Backlog with its durable anchor (stable UUID 8a712f9e-841d-5401-9b12-733eb3959d36 of seed spec-kitty|002-auth-system|WP02), so the lane move plans as an UPDATE; its description byte-matches the mirrored body so the description channel stays clean.",
+  "name": "spec-kitty-event-status",
+  "clock": "2026-01-01T00:00:00.000Z",
+  "teams": [
+    {
+      "key": "acme",
+      "id": "ac000000-0000-4000-8000-000000000101",
+      "projects": [{ "id": "proj-alpha", "name": "Project Alpha" }],
+      "workflowStates": [
+        { "id": "ac000000-0000-4000-8000-000000000201", "name": "Backlog", "type": "backlog" },
+        { "id": "ac000000-0000-4000-8000-000000000202", "name": "Todo", "type": "todo" },
+        { "id": "ac000000-0000-4000-8000-000000000203", "name": "Doing", "type": "started" },
+        { "id": "ac000000-0000-4000-8000-000000000204", "name": "Done", "type": "completed" }
+      ]
+    }
+  ],
+  "issues": [
+    {
+      "id": "ac000000-0000-4000-8000-000000000510",
+      "key": "SYNC-1",
+      "teamKey": "acme",
+      "projectId": "proj-alpha",
+      "title": "OAuth bridge",
+      "description": "# WP02 — OAuth bridge\n\n## Objectives & Success Criteria\n- Keep the bridge thin; the event log owns status.",
+      "stateType": "Backlog",
+      "updatedAt": "2025-11-01T10:00:00.000Z"
+    }
+  ],
+  "attachments": [
+    {
+      "issueId": "ac000000-0000-4000-8000-000000000510",
+      "id": "att-durable-wp02",
+      "url": "https://sync.example.invalid/task-linear-sync/8a712f9e-841d-5401-9b12-733eb3959d36",
+      "title": "task-linear-sync sync state",
+      "metadata": {
+        "__task-linear-sync": "{\"cursors\":{\"lastSyncAt\":\"2025-11-01T10:00:00.000Z\"},\"descriptionContentHash\":\"0000000000000000000000000000000000000000000000000000000000000000\",\"frameworkMetadata\":{\"featureName\":\"002-auth-system\",\"filePath\":\"kitty-specs/002-auth-system/tasks/WP02-oauth.md\",\"frameworkId\":\"spec-kitty\",\"localTaskId\":\"WP02\"},\"history\":[],\"taskUuid\":\"8a712f9e-841d-5401-9b12-733eb3959d36\"}"
+      }
+    }
+  ],
+  "config": {
+    "teams": {
+      "acme": {
+        "projects": ["proj-alpha"],
+        "workflowStates": {
+          "backlog": "Backlog",
+          "todo": "Todo",
+          "done": "Done",
+          "completedTypes": ["completed"],
+          "ignoredTypes": ["canceled", "duplicate"],
+          "lanes": { "in_progress": "Doing", "done": "Done" }
+        }
+      }
+    },
+    "defaultTeamKey": "acme",
+    "defaultProject": "proj-alpha",
+    "confirmationKey": "SYNC",
+    "descriptionNormalizationProfile": "default"
+  },
+  "metadata": {
+    "scenario": "SC-003: the event log is the SOLE status authority. Only WP02 plans a state change (label lane:in_progress → Doing, history lane-changed); WP01 (no events) stays untouched; WP03 (canceled, unmapped) stays untouched with lane-state-unmapped reported; the malformed log line is counted in one finding; descriptions never carry status text; a re-run is a no-op."
+  }
+}

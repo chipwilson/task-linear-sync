@@ -73,5 +73,18 @@ export interface TaskFileAdapter {
     readonly titleKey: string;
     /** Regex source (leading `(?i)` = case-insensitive convention) tested on the BASENAME; digits form the normalized id. */
     readonly fileNameIdPattern: string;
+    /**
+     * A-023-2 (023, optional): subtask recognition (feature contract C2) — roster key,
+     * anchor grammar, anchor-region stop grammar (all regex SOURCE strings). Absent ⇒
+     * the pre-023 single-draft document lane stays byte-identical; present ⇒ the lane
+     * derives 0-or-N promoted child drafts at depth ≥ 2 (020-style folding at depth 1)
+     * and records roster entries with no anchor as `subtask` / `subtask-no-anchor`
+     * exclusions.
+     */
+    readonly subtaskRule?: {
+      readonly rosterKey: string;
+      readonly anchorPattern: string;
+      readonly anchorRegionStopPattern: string;
+    };
   };
 }

@@ -98,6 +98,28 @@ export function parseTaskFile(
     makes 020 folding vacuous — a single parentless draft never folds). Seed, ordinal,
     and determinism rules (7, 11, 12) apply unchanged. Absent member ⇒ rules 1–12
     byte-identical for every other adapter.
+    **A-023-2 widening (feature 023; `contracts/spec-kitty-subtask-status.md` C2):**
+    `documentTaskRule` gains the optional `subtaskRule = { rosterKey, anchorPattern,
+    anchorRegionStopPattern }` (regex SOURCE strings, the `(?i)` convention applies; the
+    stop pattern compiles case-insensitively). PRESENT ⇒ besides the document draft,
+    `deriveDocumentTasks` derives depth-2 subtask drafts: anchors matching
+    `anchorPattern` INSIDE the anchor region (first body line up to, exclusive, the first
+    heading matching `anchorRegionStopPattern` — restatements beyond the stop line are
+    mirrored content, never anchors), each with `localTaskId` = the normalized `T<digits>`
+    token, `title` = anchor text after the token (else the readable token form), and
+    section extent = anchor line .. before the next anchor or any same-or-shallower
+    heading (trailing blank lines trimmed). Roster entries under front-matter `rosterKey`
+    without an in-region anchor are recognized-but-excluded (`ExclusionRecord` kind
+    `subtask`, reason `subtask-no-anchor`) — never drafts. The taskfile lane runs the
+    children through the unchanged `foldDraftsOverCap` decision (document = depth 1,
+    anchors = depth 2): surviving children materialize as kind-`document` tasks parented
+    to the document task with seed third slot `${wpId}\u0000${subtaskId}` (compose-slot
+    precedent), the parent's `taskBody` gains `promotedRanges` (A-023-0, inclusive child
+    spans, source order) only when children survive; folded anchors earn kind-`subtask`
+    reason `depth-folded` exclusions. Duplicate anchors of one id derive unchanged — the
+    engine's existing document-kind collision guard refuses. ABSENT member (or cap 1 with
+    no surviving children) ⇒ the single-draft path and the contiguous extent stay
+    byte-identical to 0.6.0 for every adapter.
 
 ## Test obligations (mapped in quickstart)
 

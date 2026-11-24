@@ -118,7 +118,9 @@ import { classifyTask, resolveConfiguredNormalizer } from "./classify.js";
 import { readCheckpointStore, selectMode } from "./mode.js";
 import type { ModeSelection } from "./mode.js";
 import { appliedAction, resolveConflictAction } from "./actions.js";
-import { desiredCompletionStateName, resolveWorkflowStateId } from "./completion.js";
+import { desiredCompletionStateName, resolveLaneState, resolveWorkflowStateId } from "./completion.js";
+import { loadMissionStatuses, missionDirectory } from "./status-load.js";
+import type { MissionStatus } from "./status-load.js";
 import { normalizedContentHash } from "./normalize.js";
 import { resolveScreener } from "./options.js";
 import type { DescriptionNormalizer, ResolvedEngineOptions } from "./options.js";
@@ -219,6 +221,17 @@ function mirrorRegion(rawLines: readonly string[], task: Task): string {
   const start = task.kind === "document" ? task.taskBody.startLine : task.taskBody.startLine + 1; // 1-based first mirrored line
   const end = task.taskBody.endLine; // inclusive
   if (start > end) return "";
+  // 023 A-023-0/A-023-3 (C2.4): the document-kind slice is the hole-slice of its extent
+  // — promoted subtask spans appear ONLY on the child issues. Every other kind and the
+  // empty/absent-ranges case stay the contiguous slice byte-for-byte (FR-013).
+  const promoted = task.taskBody.promotedRanges;
+  if (task.kind === "document" && promoted !== undefined && promoted.length > 0) {
+    const kept: string[] = [];
+    for (let line = start; line <= end; line += 1) {
+      if (!promoted.some(([from, to]) => line >= from && line <= to)) kept.push(rawLines[line - 1] ?? "");
+    }
+    return kept.join("\n");
+  }
   return rawLines.slice(start - 1, end).join("\n");
 }
 
@@ -281,6 +294,8 @@ interface EntryContext {
   readonly matchByTaskUuid: ReadonlyMap<string, Match>;
   readonly unmatchedTaskUuids: ReadonlySet<string>;
   readonly snapshot: ReadonlyArray<TeamMetadataCollections>;
+  /** 023 C6: mission-directory → event-log posture (read ONLY during plan build; empty when no log). */
+  readonly statusByMission: ReadonlyMap<string, MissionStatus>;
 }
 
 /** Entry assembly result: the frozen entry plus report-level side-channel assertions. */
@@ -426,6 +441,43 @@ function buildEntry(unit: TaskUnit, context: EntryContext): EntryBuild {
           status: "fail",
           detail: error.message,
         });
+      }
+    }
+  }
+
+  // 023 C6.3 — lane-state drift BESIDE the completion path, evaluated only for level-1
+  // document tasks (children derive no state; C6 keys on work-package ids only) and only
+  // when the decision lanes above left a mutable cell (skip-unresolved/conflict stay
+  // frozen). Authority: the mission's event log ONLY — status.json and front-matter lane
+  // never reach this seam (they are never read). Unmapped lane ⇒ untouched +
+  // `lane-state-unmapped`; mapped name unresolvable ⇒ the conflict posture of the
+  // completion path; mapped-and-live-matches ⇒ idempotent no-change; creates carry the
+  // mapped state (the label is the apply-side discriminator).
+  if (
+    task.kind === "document" &&
+    task.parentUuid === undefined &&
+    (decision === "create" || decision === "update" || decision === "no-change")
+  ) {
+    const mission = missionDirectory(task.filePath);
+    const lane = mission === undefined ? undefined : context.statusByMission.get(mission)?.lanes.get(task.localTaskId ?? "");
+    if (lane !== undefined) {
+      try {
+        const resolved = resolveLaneState(context.config, context.snapshot, unit.routing.teamKey, lane);
+        if (resolved === null) {
+          labels.push("lane-state-unmapped"); // never a silent guess (C6.2)
+        } else if (isCreate) {
+          labels.push(`lane:${lane}`); // the create carries the mapped state (C6.3)
+        } else if (issue !== undefined && issue.stateType !== resolved.stateType) {
+          labels.push(`lane:${lane}`);
+          changedFields.push("state");
+          if (decision === "no-change") decision = "update";
+        }
+        // mapped AND live state already matches ⇒ no drift, no label (idempotent, C6.2)
+      } catch (error) {
+        if (!(error instanceof EngineError)) throw error;
+        labels.push("validation:lane-state", `reason:${error.message}`);
+        decision = "conflict"; // surfaced for the human via the report conflicts section
+        assertions.push({ guarantee: "lane-state-validation", status: "fail", detail: error.message });
       }
     }
   }
@@ -582,6 +634,34 @@ export async function buildSyncPlan(
     options.normalizationProfiles,
   );
 
+  // ── 023 C6.1/C6.3: mission status-event logs — read-only, plan-build-only, the SOLE
+  // status authority. Only level-1 document units consult them (children derive no
+  // state), and only adapters whose row ships a `statusEventFileName` (built-in
+  // spec-kitty, A-023-1). A missing log is the empty posture, never an error.
+  const statusByMission = new Map<string, MissionStatus>();
+  const docIdsByMission = new Map<string, Set<string>>();
+  {
+    const taskPathsByFileName = new Map<string, Set<string>>();
+    for (const unit of units) {
+      const task = unit.task;
+      if (task.kind !== "document" || task.parentUuid !== undefined) continue;
+      const fileName = builtInAdapters[task.frameworkId].statusEventFileName;
+      const mission = missionDirectory(unit.filePath);
+      if (fileName === undefined || mission === undefined) continue;
+      const paths = taskPathsByFileName.get(fileName) ?? new Set<string>();
+      paths.add(unit.filePath);
+      taskPathsByFileName.set(fileName, paths);
+      const ids = docIdsByMission.get(mission) ?? new Set<string>();
+      if (task.localTaskId !== undefined) ids.add(task.localTaskId);
+      docIdsByMission.set(mission, ids);
+    }
+    for (const [fileName, paths] of [...taskPathsByFileName.entries()].sort(([a], [b]) => (a < b ? -1 : 1))) {
+      for (const [mission, status] of loadMissionStatuses(discovery.root, paths, fileName)) {
+        statusByMission.set(mission, status);
+      }
+    }
+  }
+
   // ── Stages 5–6: classify + resolve + assemble per task (working order). ──
   const context: EntryContext = {
     config,
@@ -593,9 +673,36 @@ export async function buildSyncPlan(
     matchByTaskUuid,
     unmatchedTaskUuids,
     snapshot,
+    statusByMission,
   };
   const entries: PlanTaskEntry[] = [];
   const validationAssertions: PlanReportAssertion[] = [];
+  // Findings ride the report's assertion channel (C6.3): malformed lines leave behind
+  // only their COUNT — the bytes never reach plan or report — and unknown wp_ids are
+  // named but ignored, nothing is conjured for them. Mission order is deterministic.
+  for (const mission of [...statusByMission.keys()].sort()) {
+    const status = statusByMission.get(mission)!;
+    if (status.malformedCount > 0) {
+      validationAssertions.push({
+        guarantee: "status-event-log",
+        status: "fail",
+        detail:
+          `${mission}: status-event log carries ${status.malformedCount} malformed line(s) — ` +
+          `counted and skipped; their content never propagates (C6.3)`,
+      });
+    }
+    const known = docIdsByMission.get(mission) ?? new Set<string>();
+    const unknownIds = [...status.lanes.keys()].filter((id) => !known.has(id)).sort();
+    if (unknownIds.length > 0) {
+      validationAssertions.push({
+        guarantee: "status-event-unknown-wp",
+        status: "fail",
+        detail:
+          `${mission}: status-event log names work-package id(s) outside the mission's ` +
+          `documents (${unknownIds.join(", ")}) — ignored, no task is conjured (C6.3)`,
+      });
+    }
+  }
   const byUuid = new Map<string, Task>(units.map((unit) => [unit.task.stableUuid, unit.task]));
   for (const unit of units) {
     const built = buildEntry(unit, context);

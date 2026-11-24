@@ -1,0 +1,41 @@
+{
+  "$comment": "T003 [023 Phase 1] — two-level document board world: mission 002-auth-system with WP01 (anchors T001–T004, Activity-Log restatement) and WP02 (anchors T005–T007, roster-only id T099). Config pins maxTaskIssueDepth: 2; team acme carries workflowStates but deliberately NO lanes map (lane state must never move here). Tracker starts empty; engine-spec-kitty-two-level.test.ts drives the full lifecycle.",
+  "name": "spec-kitty-two-level",
+  "clock": "2026-01-01T00:00:00.000Z",
+  "teams": [
+    {
+      "key": "acme",
+      "id": "ac000000-0000-4000-8000-000000000101",
+      "projects": [{ "id": "proj-alpha", "name": "Project Alpha" }],
+      "workflowStates": [
+        { "id": "ac000000-0000-4000-8000-000000000201", "name": "Backlog", "type": "backlog" },
+        { "id": "ac000000-0000-4000-8000-000000000202", "name": "Todo", "type": "todo" },
+        { "id": "ac000000-0000-4000-8000-000000000203", "name": "Doing", "type": "started" },
+        { "id": "ac000000-0000-4000-8000-000000000204", "name": "Done", "type": "completed" }
+      ]
+    }
+  ],
+  "issues": [],
+  "config": {
+    "teams": {
+      "acme": {
+        "projects": ["proj-alpha"],
+        "workflowStates": {
+          "backlog": "Backlog",
+          "todo": "Todo",
+          "done": "Done",
+          "completedTypes": ["completed"],
+          "ignoredTypes": ["canceled", "duplicate"]
+        }
+      }
+    },
+    "defaultTeamKey": "acme",
+    "defaultProject": "proj-alpha",
+    "confirmationKey": "SYNC",
+    "descriptionNormalizationProfile": "default",
+    "maxTaskIssueDepth": 2
+  },
+  "metadata": {
+    "scenario": "SC-001 at maxTaskIssueDepth 2: 2 work-package parents + 7 promoted sub-task children, each child parented to its WP issue (parent-before-child), parent descriptions exclude every promoted span, roster-only id T099 excluded (subtask-no-anchor) with zero empty issues."
+  }
+}

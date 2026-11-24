@@ -15,12 +15,26 @@ export type FrameworkId = "bmad" | "spec-kit" | "open-spec" | "kiro" | "spec-sup
  */
 export type TaskKind = "heading" | "checklist" | "document";
 
-/** Inclusive line range of the mirrored task section (001 R2.17). */
+/**
+ * Inclusive line range of the mirrored task section (001 R2.17).
+ *
+ * Amended 2026-11-24 by feature 023 (docs/contract-amendments.md, A-023-0): additive
+ * `promotedRanges` — the inclusive line spans mirrored OUT of a DOCUMENT task because
+ * their subtask sections ride promoted child issues instead. Consumed ONLY by the
+ * document-kind mirror slice (`kind === "document"` with non-empty ranges); every other
+ * kind — and every empty/absent case — keeps the contiguous `startLine..endLine` slice
+ * byte-for-byte. Additive only: no existing field's seed, payload, or behavior changes.
+ */
 export interface TaskBodyExtent {
   /** 1-based, the task's own line. */
   readonly startLine: number;
   /** Inclusive; last line before next task / sibling-or-shallower heading. */
   readonly endLine: number;
+  /**
+   * 023 A-023-0 (additive): inclusive `[startLine, endLine]` spans promoted to child
+   * issues; present only on document tasks with promoted children (depth ≥ 2).
+   */
+  readonly promotedRanges?: ReadonlyArray<readonly [number, number]>;
 }
 
 export interface IssueRef {

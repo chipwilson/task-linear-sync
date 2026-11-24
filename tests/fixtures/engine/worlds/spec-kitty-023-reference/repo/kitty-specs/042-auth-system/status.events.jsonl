@@ -1,0 +1,6 @@
+{"aggregate_type": "work_package", "event_type": "WPCreated", "payload": {"wp_id": "WP01"}, "schema_version": "5.0.0", "at": "2026-11-01T09:00:00Z"}
+{"wp_id": "WP01", "from_lane": "genesis", "to_lane": "planned", "at": "2026-11-01T09:00:01Z", "actor": "ops-placeholder"}
+{ this line is deliberately malformed — counted, content never propagates
+{"kind": "annotation", "wp_id": "WP02", "delta": "opened", "at": "2026-11-02T09:00:00Z"}
+{"wp_id": "WP01", "from_lane": "planned", "to_lane": "in_progress", "at": "2026-11-04T09:00:00Z", "actor": "ops-placeholder"}
+{"wp_id": "WP99", "from_lane": "planned", "to_lane": "in_progress", "at": "2026-11-05T09:00:00Z", "actor": "ops-placeholder"}

@@ -108,6 +108,7 @@ import {
   createIssueAfterSnapshot,
   deriveRunId,
   emissionOrder,
+  historyKindForStateChange,
   historyKindForUpdatedField,
   planCreateIssueOp,
   planRenderFileOp,
@@ -133,7 +134,7 @@ import {
   writeRunReportWithMarker,
   type PlanReportAssertion,
 } from "./report.js";
-import { desiredCompletionStateName, resolveWorkflowStateId } from "./completion.js";
+import { desiredCompletionStateName, resolveLaneState, resolveWorkflowStateId } from "./completion.js";
 import { resolveConfiguredNormalizer } from "./classify.js";
 import { normalizedContentHash } from "./normalize.js";
 import { synthesizeConflictMarkerBlock } from "./markers.js";
@@ -620,6 +621,17 @@ function mirrorRegion(rawLines: readonly string[], task: Task): string {
   const start = task.kind === "document" ? task.taskBody.startLine : task.taskBody.startLine + 1; // 1-based first mirrored line
   const end = task.taskBody.endLine; // inclusive
   if (start > end) return "";
+  // 023 A-023-0/A-023-3 (C2.4): the document-kind slice is the hole-slice of its extent
+  // — promoted subtask spans appear ONLY on the child issues. Every other kind and the
+  // empty/absent-ranges case stay the contiguous slice byte-for-byte (FR-013).
+  const promoted = task.taskBody.promotedRanges;
+  if (task.kind === "document" && promoted !== undefined && promoted.length > 0) {
+    const kept: string[] = [];
+    for (let line = start; line <= end; line += 1) {
+      if (!promoted.some(([from, to]) => line >= from && line <= to)) kept.push(rawLines[line - 1] ?? "");
+    }
+    return kept.join("\n");
+  }
   return rawLines.slice(start - 1, end).join("\n");
 }
 
@@ -895,6 +907,25 @@ async function runCreateFlow(context: RunContext, flow: TaskFlow, ledger: StepLe
   const title = screenText(context.screener, flow.baseTitle);
   const description = desiredIssueDescription(context, flow);
 
+  // 023 C6.3 — a lane-labeled create goes straight into the MAPPED state (the tracker
+  // default otherwise). Resolution happens BEFORE the intent and the single attempt, so
+  // a dead lane name fails the cell without ever creating an issue.
+  const createLaneLabel = flow.entry.reasons.find((r) => r.startsWith("lane:"));
+  let laneStateType: string | undefined;
+  if (createLaneLabel !== undefined) {
+    try {
+      laneStateType = resolveLaneState(context.config, context.snapshot, teamKey, createLaneLabel.slice("lane:".length))?.stateType;
+    } catch {
+      context.outcomes.set(uuid, {
+        taskUuid: uuid,
+        decision: "create",
+        status: "failed",
+        detail: "lane-state mapping: the live workflow snapshot does not resolve the mapped lane state — no issue was created",
+      });
+      return;
+    }
+  }
+
   // ── (a) Intent BEFORE attempt (durable; the crash window is an intent without result).
   const intent = await writeCreateIntentBeforeAttempt(context.deps.state, {
     intentId: intentIdFor(context.plan.planId, uuid),
@@ -913,7 +944,7 @@ async function runCreateFlow(context: RunContext, flow: TaskFlow, ledger: StepLe
       projectId,
       title,
       description,
-      ...(flow.task.checked === true ? { stateType: "done" } : {}),
+      ...(laneStateType !== undefined ? { stateType: laneStateType } : flow.task.checked === true ? { stateType: "done" } : {}),
       ...(parentId !== undefined ? { parentId } : {}),
     });
   } catch {
@@ -1124,6 +1155,11 @@ async function runUpdateFlow(context: RunContext, flow: TaskFlow, ledger: StepLe
   // changedFields bounds WHICH channels may ever be patched (R7).
   const changed = flow.entry.changedFields;
   const patch: MutablePatch = {};
+  // 023 C6.3 — the entry's `lane:<lane>` label marks a lane-driven state cell; such a
+  // cell resolves through the lane map against the LIVE snapshot, never the completion
+  // checkbox (the event log is the sole status authority, C6.1).
+  const laneLabel = flow.entry.reasons.find((r) => r.startsWith("lane:"));
+  const laneDriven = laneLabel !== undefined;
   const screenedTitle = screenText(context.screener, flow.baseTitle);
   if (changed.includes("title") && issue.title !== screenedTitle) patch.title = screenedTitle;
   if (changed.includes("description")) {
@@ -1131,18 +1167,40 @@ async function runUpdateFlow(context: RunContext, flow: TaskFlow, ledger: StepLe
     if (desired !== issue.description) patch.description = desired;
   }
   if (changed.includes("state")) {
-    const stateId = await completionStateId(context, flow);
-    if (stateId === "conflict") {
-      context.outcomes.set(uuid, {
-        taskUuid: uuid,
-        decision,
-        status: "failed",
-        issueId: issue.id,
-        detail: "completion mapping: the live workflow snapshot does not resolve the desired state — no mutation toward this cell",
-      });
-      return;
+    if (laneDriven) {
+      let resolved: ReturnType<typeof resolveLaneState> | "conflict" = null;
+      try {
+        resolved = resolveLaneState(context.config, context.snapshot, flow.routing.teamKey, laneLabel!.slice("lane:".length));
+      } catch {
+        resolved = "conflict"; // the conflict posture of the completion path — never a guess
+      }
+      if (resolved === "conflict") {
+        context.outcomes.set(uuid, {
+          taskUuid: uuid,
+          decision,
+          status: "failed",
+          issueId: issue.id,
+          detail: "lane-state mapping: the live workflow snapshot does not resolve the mapped lane state — no mutation toward this cell",
+        });
+        return;
+      }
+      // Unmapped at apply time (never reaches here from a plan) ⇒ untouched; live already
+      // matches the mapped type ⇒ idempotent, no patch (C6.2).
+      if (resolved !== null && issue.stateType !== resolved.stateType) patch.stateTypeId = resolved.stateId;
+    } else {
+      const stateId = await completionStateId(context, flow);
+      if (stateId === "conflict") {
+        context.outcomes.set(uuid, {
+          taskUuid: uuid,
+          decision,
+          status: "failed",
+          issueId: issue.id,
+          detail: "completion mapping: the live workflow snapshot does not resolve the desired state — no mutation toward this cell",
+        });
+        return;
+      }
+      if (stateId !== null) patch.stateTypeId = stateId;
     }
-    if (stateId !== null) patch.stateTypeId = stateId;
   }
 
   if (Object.keys(patch).length > 0) {
@@ -1166,7 +1224,9 @@ async function runUpdateFlow(context: RunContext, flow: TaskFlow, ledger: StepLe
       });
     }
     const primary = (["title", "description", "stateTypeId"] as const).find((f) => patch[f] !== undefined)!;
-    const kind = historyKindForUpdatedField(primary);
+    // Lane-driven state cells append `lane-changed` (A-023-3 additive kind); every other
+    // field keeps its frozen mapping — a combined patch still names one primary field.
+    const kind = primary === "stateTypeId" ? historyKindForStateChange(laneDriven) : historyKindForUpdatedField(primary);
     await landPageZeroAndEvent(
       context,
       flow,
@@ -1470,6 +1530,8 @@ function historyDescription(kind: SyncHistoryEventKind, flow: TaskFlow): string 
       return "description updated by the configured conflict action";
     case "checkbox-changed":
       return `completion checkbox changed to ${flow.task.checked === true ? "done" : "not-done"}`;
+    case "lane-changed":
+      return `workflow state moved by the mission status-event log (${flow.entry.reasons.find((r) => r.startsWith("lane:")) ?? "lane"})`;
     case "conflict-detected":
       return "conflict recorded by the configured resolution action";
     case "discovered":
@@ -1490,6 +1552,8 @@ function eventReferences(
   const refs: string[] = [];
   if (patch.description !== undefined) refs.push(`contentHash:${landedHash}`);
   if (patch.stateTypeId !== undefined) {
+    const laneLabel = flow.entry.reasons.find((r) => r.startsWith("lane:"));
+    if (laneLabel !== undefined) refs.push(laneLabel); // lane id rides the reference (023, history-log §2)
     refs.push(`stateTypeId:${patch.stateTypeId}`);
     const team = context.snapshot.find((c) => c.teamKey === flow.routing.teamKey);
     const name = team?.workflowStates.find((s) => s.id === patch.stateTypeId)?.name;
