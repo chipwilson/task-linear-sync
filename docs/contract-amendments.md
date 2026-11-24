@@ -415,3 +415,51 @@ where a frozen surface is touched.
   `tests/integration/engine-spec-kitty-two-level.test.ts` (collision refusal included) ·
   migration: absent `subtaskRule` ⇒ the single-draft document path and the contiguous
   mirror slice stay byte-identical to 0.6.0 for every adapter
+
+- 2026-11-24 · engine (008 contract) · `SyncHistoryEventKind` / plan build / apply · additive
+  history kind `lane-changed` + event-log lane-status authority (C6): the frozen
+  eight-kind union grows by exactly ONE append-only kind — no frozen kind changes meaning,
+  `checkbox-changed` is never reused for lane moves — while plan build gains a read-only
+  status-event seam (`src/parsing/status.ts`, `src/engine/status-load.ts`) feeding the
+  entry-assembly drift beside the completion path (`resolveLaneState`,
+  `src/engine/completion.ts`), apply resolves the mapped state against the LIVE snapshot
+  (unmapped ⇒ untouched + `lane-state-unmapped`; unresolvable name ⇒ the conflict posture;
+  mapped-and-matching ⇒ idempotent no-change; creates carry the mapped `stateType`), and
+  the report gains the `status-event-log` (malformed COUNT only — content never
+  propagates) and `status-event-unknown-wp` (named, ignored) findings · A-023-3 (research
+  R5/R6: the mission's `status.events.jsonl` is the SOLE status authority — `status.json`
+  and front-matter `lane:` are never read; no built-in lane map default; status files are
+  never written back and status text never enters mirrored content) · artifacts:
+  `specs/002-core-domain-contracts/contracts/task-model.md` +
+  `specs/002-core-domain-contracts/data-model.md` §3 (union),
+  `specs/008-sync-engine-apply-rollback/contracts/history-log.md` §2 (kind table),
+  `src/domain/state-payload.ts`, `src/engine/{build,apply,completion,ops}.ts` · gate:
+  `tests/unit/engine-history-rollover.test.ts` (frozen-eight ∪ additive pin),
+  `tests/unit/{parsing-status,engine-lane-state}.test.ts`,
+  `tests/integration/engine-spec-kitty-event-status.test.ts`,
+  `tests/e2e/spec-kitty-023-reference.test.ts` · migration: absent log or absent `lanes`
+  map ⇒ zero state moves, plans byte-identical to 0.6.0 apart from additive findings; the
+  snapshot manifest keys module export NAMES so the union growth needs no snapshot regen
+
+**023 supersession ledger.** Feature 023 supersedes three 022 positions, recorded in
+`specs/023-spec-kitty-subtask-depth/contracts/spec-kitty-subtask-status.md` (C1.2', C5,
+C2/C4):
+
+- **022 C1.1 (collection pattern clause)** — the `documentTaskRule.collectionPattern`
+  clause matching any depth beneath `kitty-specs/<mission>/tasks/` (`. +` spanning `/`)
+  is superseded by the C1.2' direct-children gate (plus the nine legacy lane-folder
+  spellings); the broad `taskPathPatterns` CLAIM is retained verbatim, so artifact
+  sub-folder files stay `spec-kitty`-claimed and derive zero drafts — the upstream
+  duplicated-`work_package_id` collision abort (R4, measured) becomes structurally
+  unreachable.
+- **022 C2 "lane/status fields are content only"** — true for MIRRORED content still
+  (no status text ever enters a description, no front matter ever mirrors), but superseded
+  for tracker STATE: the mission's event log is a first-class status input at plan build
+  (read-only), deciding an optional lane-driven state transition through the per-team
+  lane map; `status.json` remains non-authoritative and unread.
+- **022 "subtasks are never tasks"** — the 022 assumption that every front-matter
+  sub-task id and `### Subtask` section is ordinary document content is superseded at
+  depth ≥ 2: anchored sub-tasks derive real `document`-kind child tasks (mission +
+  work-package id + bare `T` token identity, durable-only pairing, promoted spans holed
+  from the parent mirror). At the shipped default cap of 1 the old posture IS the
+  behavior — folding renders the parent body byte-identical to 0.6.0.

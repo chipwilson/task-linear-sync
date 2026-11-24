@@ -167,11 +167,11 @@ description: "Task list for feature 023 — Spec Kitty Sub-Task Depth & Front-Ma
 
 ## Phase 7: Polish & Cross-Cutting Concerns
 
-- [ ] T030 [P] README refresh in `README.md`: adapter-table row + Spec Kitty subsection describing the two-level model, event-log status authority, and canonical-document rule (FR-014).
+- [X] T030 [P] README refresh in `README.md`: adapter-table row + Spec Kitty subsection describing the two-level model, event-log status authority, and canonical-document rule (FR-014).
 
-- [ ] T031 [P] Docs refresh in `docs/framework-adapters.md` (spec-kitty narrative: subtask promotion/folding, artifact sub-folders) and `docs/configuration-reference.md` (`maxTaskIssueDepth` interplay with document sources; `workflowStates.lanes` keys with NO default; `statusEventFileName`) (FR-014).
+- [X] T031 [P] Docs refresh in `docs/framework-adapters.md` (spec-kitty narrative: subtask promotion/folding, artifact sub-folders) and `docs/configuration-reference.md` (`maxTaskIssueDepth` interplay with document sources; `workflowStates.lanes` keys with NO default; `statusEventFileName`) (FR-014).
 
-- [ ] T032 [P] Governance + release records: rewrite Requirement 7 in `specs/requirements.md`; add the `[0.7.0]` entry to `CHANGELOG.md` (headline: sub-task depth + event-log status; upgrade note: artifact sub-folders stop counting, no identity changes, zero description churn at the flat default); record A-023-0…A-023-3 + the supersession ledger (022 C1.1 pattern clause; the 022 "subtasks are never tasks" assumption) in `docs/contract-amendments.md`.
+- [X] T032 [P] Governance + release records: rewrite Requirement 7 in `specs/requirements.md`; add the `[0.7.0]` entry to `CHANGELOG.md` (headline: sub-task depth + event-log status; upgrade note: artifact sub-folders stop counting, no identity changes, zero description churn at the flat default); record A-023-0…A-023-3 + the supersession ledger (022 C1.1 pattern clause; the 022 "subtasks are never tasks" assumption) in `docs/contract-amendments.md`.
 
 - [ ] T033 Contract-tier green: `tests/contract/discovery-surface.test.ts`, regenerated `tests/contract/snapshots/frozen-surface.json`, report-schema scan, and the documentation-consistency suite pass against the corrected text.
 

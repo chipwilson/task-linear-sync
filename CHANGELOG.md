@@ -7,6 +7,70 @@ this preview — lives in [docs/versioning.md](docs/versioning.md).
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-11-24
+
+Feature — **spec-kitty sub-task depth + event-log status authority**
+(feature 023). Spec Kitty missions carry two more conventions the 0.6 adapter
+ignored: `### Subtask Tnnn – Title` sections inside work-package documents
+(with `subtasks:` rosters in front matter), and an append-only
+`status.events.jsonl` lane-event log per mission. 0.7.0 honors both without
+touching the flat default: at `maxTaskIssueDepth: 1` (the shipped default) a
+work-package document still mirrors byte-identically to v0.6.0, with every
+sub-task folded verbatim into its body.
+
+- **Sub-task depth** (`src/parsing/depth.ts`, `src/engine/build.ts`) — at
+  `maxTaskIssueDepth: 2` each `### Subtask Tnnn – Title` anchor becomes a
+  child issue of its work-package issue (identity: mission + work-package id
+  + bare `T` token; durable-only pairing, like the documents), the promoted
+  span is holed out of the parent's mirrored body, and Activity-Log
+  restatements never double-promote. Roster ids without a body anchor are
+  reported as `subtask-no-anchor` exclusions at every depth — never issues,
+  never silent drops. Toggling the cap is convergent: folding back to 1
+  surfaces the former children as unmapped leftovers with zero
+  archive/delete, and toggling back re-matches the SAME issues with zero
+  re-creation (SC-005 posture, like 0.4's fold).
+- **Event-log status authority** (`src/parsing/status.ts`,
+  `src/engine/status-load.ts`, `src/engine/completion.ts`, apply lane) — the
+  mission's `status.events.jsonl` is the SOLE status authority: the last
+  qualifying line per `wp_id` (string `wp_id` AND string `to_lane` at top
+  level; envelope/annotation/blank lines skip without poisoning order)
+  decides an optional state move through the NEW per-team
+  `workflowStates.lanes` map (nine lane names → workflow-state names, no
+  built-in default, `LaneMapError` on a malformed map). A mapped lane patches
+  the issue state (idempotent when the live state already matches) or rides
+  the create; an unmapped lane leaves state untouched and reports
+  `lane-state-unmapped`; a mapped name the team cannot resolve is a plan-time
+  conflict finding, never a mutation-time surprise. `status.json` and
+  front-matter `lane:` are never read; malformed log lines are counted into
+  one report finding and their content never propagates; unknown `wp_id`s are
+  named and ignored. Status text never enters mirrored content, and status
+  files are never written back (plan-build read-only, Principle I). Lane
+  state changes append the additive history kind `lane-changed` (A-023-3;
+  frozen kinds unchanged, `checkbox-changed` never reused for lanes).
+- **Artifact-folder hygiene** (`src/discovery/adapters/spec-kitty.ts`) — the
+  collection gate narrows to direct children of `kitty-specs/<mission>/tasks/`
+  (plus the nine legacy lane folder spellings) while the broad claim stays:
+  per-WP artifact sub-folders and `tasks/README.md` remain spec-kitty-claimed
+  documentation and yield zero tasks at every depth; a duplicated
+  `work_package_id` inside a review artifact can no longer collide with the
+  canonical document's identity (C2.4 refusals disappear with it).
+- **Upgrade note** — no task identity changes at the flat default: existing
+  0.6.0 deployments see zero description churn and zero new issues on the
+  first 0.7.0 run; only repositories with artifact sub-folders change
+  behavior, and only by STOPPING syncing artifact files that should never
+  have been issues (their stale issues surface as unmapped leftovers for
+  operator cleanup — nothing auto-deletes, same posture as 0.6.0's roll-up
+  note). Opt-in depth 2 and lane mapping are per-configuration; both default
+  off.
+- **Documentation** — README adapter row + Spec Kitty subsection,
+  [docs/framework-adapters.md](docs/framework-adapters.md) (claim vs. collect
+  split, sub-task promotion/folding, `statusEventFileName`),
+  [docs/configuration-reference.md](docs/configuration-reference.md)
+  (`maxTaskIssueDepth` document interplay, `workflowStates.lanes` with no
+  default, absent-by-default posture); governance records and the amendment
+  ledger (A-023-0…A-023-3 + supersessions) in
+  [docs/contract-amendments.md](docs/contract-amendments.md).
+
 ## [0.6.0] - 2026-11-21
 
 Defect correction — **spec-kitty work-package documents are the task source**

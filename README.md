@@ -38,9 +38,10 @@ a file and never echoing it into any output.
 - **Version posture**: the package is in its 0.x line — under the
   [0.x posture](docs/versioning.md) breaking changes may ride minor bumps until
   the documented 1.0.0 condition is met. Surface-level stability guarantees
-  (below) hold throughout. Current release: **v0.6.0** — spec-kitty
+  (below) hold throughout. Current release: **v0.7.0** — spec-kitty
   work-package documents are the task source (one document = one fully
-  detailed task; the mission roll-up yields zero tasks); every release ships
+  detailed task; the mission roll-up yields zero tasks) with opt-in sub-task
+  depth and event-log-driven lane state; every release ships
   its own section in
   [CHANGELOG.md](CHANGELOG.md).
 - **Requires** Node 20 or newer wherever the tool runs; nothing else to install.
@@ -173,7 +174,7 @@ all enabled by default through the `frameworkAdapters` config key:
 | `open-spec` | OpenSpec | path contains `openspec/`/`open-spec/` **or** sibling `openspec.json`/`proposal.md` | `openspec/`, `open-spec/` | segment after `openspec/`, `changes/`, or `specs/` |
 | `bmad` | BMAD | path contains `bmad/`/`bmad-method/` **or** sibling `prd.md`/`architecture.md` | `bmad/`, `bmad-method/`, `docs/` | parent dir, else task-file basename |
 | `spec-superpower` | Spec Superpowers | path beneath `docs/superpowers/plans/` | `docs/superpowers/plans/` | date-stripped plan filename |
-| `spec-kitty` | Spec Kitty | path beneath `kitty-specs/` (no sibling requirement) — tasks are the work-package documents under `kitty-specs/<mission>/tasks/`; the roll-up yields none | `kitty-specs/` | immediate parent dir beneath `kitty-specs/` (the mission) |
+| `spec-kitty` | Spec Kitty | path beneath `kitty-specs/` (no sibling requirement) — tasks are the work-package documents that are direct children of `kitty-specs/<mission>/tasks/` (or of a legacy lane folder beneath it); deeper artifact files and the roll-up yield none | `kitty-specs/` | immediate parent dir beneath `kitty-specs/` (the mission) |
 | `generic` | any Markdown layout | fallback — never claims a file by marker | configured base dirs | parent dir under a base |
 
 When several adapters match one file, selection ranks the longest matching
@@ -288,20 +289,40 @@ agent-hook scaffold for this framework.
 ### Spec Kitty (`spec-kitty`)
 
 Spec Kitty keeps one mission per directory, and the sync unit is the
-work-package document under `kitty-specs/<mission>/tasks/` — one document is
-one fully detailed task. The roll-up `kitty-specs/<mission>/tasks.md` stays
-claimed but is index content: its checklist lines, `## Work Package …`
-headings, and prose yield zero tasks and are never extraction inputs. The
-mission directory is the feature name, and `spec.md`, `plan.md`, and
-`research.md` ride along as sibling documents. Anything beneath
-`kitty-specs/` is claimed — no sibling marker is required — and legacy
-per-lane sub-folders beneath `tasks/` are accepted collection content.
+work-package document that is a DIRECT child of `kitty-specs/<mission>/tasks/`
+(or of a legacy per-lane folder beneath it) — one document is one fully
+detailed task. The roll-up `kitty-specs/<mission>/tasks.md` stays claimed but
+is index content: its checklist lines, `## Work Package …` headings, and prose
+yield zero tasks and are never extraction inputs. The mission directory is the
+feature name, and `spec.md`, `plan.md`, and `research.md` ride along as
+sibling documents. Anything beneath `kitty-specs/` is claimed — no sibling
+marker is required — which keeps per-WP artifact sub-folders
+(`tasks/WP01-x/review-cycle-1.md`, `tasks/README.md`, `wps.yaml`,
+`status.json`) safely claimed as documentation: they yield zero tasks at every
+depth, and a duplicated `work_package_id` inside one never collides with the
+canonical document's identity (feature 023).
+
+Sub-task depth (feature 023): `### Subtask Tnnn – Title` sections inside a
+work-package document are sub-tasks. At the default cap (`maxTaskIssueDepth:
+1`) they fold into the parent's mirrored content verbatim — one issue per
+document, byte-stable against v0.6.0; at depth 2 each anchored sub-task
+becomes a child issue parented to its work-package issue, holed out of the
+parent body, while roster ids without a body anchor are reported as excluded
+and never become issues. Status is read ONLY from the mission's append-only
+`status.events.jsonl` (the last qualifying `wp_id`/`to_lane` line per work
+package wins; malformed lines are counted and reported, never read): a mapped
+lane (`workflowStates.lanes`, no built-in default) patches the issue state or
+carries it on create, an unmapped lane leaves the state untouched and is
+reported. `status.json` and front-matter `lane:` are never consulted, and no
+status text ever enters mirrored content or the repository (status files are
+never written back).
 
 Identity is the mission plus the work-package id: the front-matter
 `work_package_id` scalar when present, else the leading `WP<digits>` token
 of the file name (`wp01-billing.md` → `WP01`). Neither the file name itself
 nor the document's position enters the identity, so a rename inside the
-mission's `tasks/` folder keeps the same task. The title cascades:
+mission's `tasks/` folder keeps the same task. Sub-task identities are the
+mission, the work-package id, and the bare `T<nnn>` token. The title cascades:
 front-matter `title:` → the body's first heading of any level → a readable
 file-slug. The mirrored issue content is the document verbatim minus its
 leading front matter. Documents are never written back — no confirmation

@@ -49,6 +49,16 @@ Notes:
   from the row (022 A-022-2): the whitelist members remain available to custom adapters, but
   the built-in `spec-kitty` row no longer declares them and the parser never consults them
   in document mode.
+- Sub-task depth for document sources (023): `documentTaskRule.subtaskRule` (programmatic
+  lane, same merge) recognizes `### Subtask Tnnn – Title` body anchors. At the default
+  `maxTaskIssueDepth: 1` every recognized sub-task — anchors and roster-only ids alike —
+  folds verbatim into the parent's mirrored content, byte-identical to the v0.6 posture;
+  at depth ≥ 2 each anchored sub-task becomes a child issue (identity: mission + work-package
+  id + bare `T`-token) and its promoted span is holed out of the parent body. Roster ids
+  (`subtasks:` front matter, block or flow list) without a body anchor are recognized and
+  excluded (`subtask-no-anchor`) at every depth — never issues, never silently dropped.
+  Activity-Log restatements of a promoted id are ordinary parent content, never a second
+  child.
 - The optional `statusEventFileName` member (023 A-023-1) names the file sought DIRECTLY
   BENEATH each mission directory as that identity's status event log. The built-in
   `spec-kitty` row ships `"status.events.jsonl"`; the file never joins the candidate
