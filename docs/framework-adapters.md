@@ -17,7 +17,7 @@ Everything below is the 003 realization of 001 R7.2/R7.5; the normative contract
 | `open-spec` | `openspec/`, `open-spec/` | path contains `openspec/`/`open-spec/` **OR** sibling `openspec.json`/`proposal.md` | segment after `openspec/`, `changes/`, or `specs/` | `spec.md`, `proposal.md`, `tasks.md` | — |
 | `bmad` | `bmad/`, `bmad-method/`, `docs/` | path contains `bmad/`/`bmad-method/` **OR** sibling `prd.md`/`architecture.md` | parent dir, or task-file basename when no feature dir | `requirements.md`, `design.md`, `architecture.md`, `prd.md`, `spec.md` | — |
 | `spec-superpower` | `docs/superpowers/plans/` | path beneath the plans root (path-only — no sibling markers; the dated-filename convention lives in `taskFilePatterns`) | date-stripped task-file basename (`2026-11-09-auth.md` → `auth`) | none | — |
-| `spec-kitty` | `kitty-specs/` | path beneath `kitty-specs/` (no sibling requirement); tasks are the work-package documents under `kitty-specs/*/tasks/` claimed by `taskPathPatterns` — the roll-up yields none | immediate parent dir beneath `kitty-specs/` (the mission) — `segment-under-base` | from config `siblingDocuments` (`spec.md`, `plan.md`, `research.md`) | — |
+| `spec-kitty` | `kitty-specs/` | path beneath `kitty-specs/` (no sibling requirement); tasks are the work-package documents that are DIRECT children of `kitty-specs/<mission>/tasks/` (or of a legacy lane folder beneath it) per the row's `documentTaskRule.collectionPattern` — deeper artifact files stay claimed but yield none, and the roll-up yields none | immediate parent dir beneath `kitty-specs/` (the mission) — `segment-under-base` | from config `siblingDocuments` (`spec.md`, `plan.md`, `research.md`) | — |
 | `generic` | from config `specsBaseDirectories` | none — detection matches nothing | parent dir beneath a configured base, else absent | from config `siblingDocuments` | `.task-linear-sync/hooks/` · `command-json` |
 
 Notes:
@@ -30,6 +30,13 @@ Notes:
   is the work-package collection, claimed by the row's `taskPathPatterns` glob (supersedes
   017 C2.5). The roll-up `kitty-specs/<mission>/tasks.md` stays claimed as documentation and
   yields zero tasks.
+- The collection gate is NARROWER than the claim (023 C1.2'): `taskPathPatterns` keeps
+  EVERY `kitty-specs/*/tasks/**/*.md` file claimed as `spec-kitty` (no `generic`
+  fall-through for artifact folders), while `documentTaskRule.collectionPattern` admits
+  only direct children of the mission's `tasks/` folder — optionally under one of the
+  nine legacy lane folder names — so per-WP artifact sub-folders (`tasks/WP01-x/review.md`)
+  and `tasks/README.md` contribute zero tasks at every depth, duplicated front-matter ids
+  included (FR-015, no identity collisions).
 - Base directories are **discovery hints**, not selection markers. `docs/` is a `bmad` base
   directory, but a `docs/**` task file with no bmad markers resolves to `generic` — directory
   names are generic discovery defaults, never routing values (001 R7.8).

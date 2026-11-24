@@ -151,15 +151,15 @@ description: "Task list for feature 023 — Spec Kitty Sub-Task Depth & Front-Ma
 
 ### Tests for User Story 4 ⚠️
 
-- [ ] T026 [P] [US4] Discovery/integration tests `tests/integration/discovery-spec-kitty-artifacts.test.ts` over world T005: artifact sub-folder files (incl. duplicated `work_package_id` front matter) yield ZERO tasks at depths 1 and 2 while remaining `spec-kitty`-claimed (no `generic` fall-through); canonical document + its own artifacts produce NO collision refusal; `tasks/README.md` claimed, 0 tasks; missions `042-*`, `*-01KQ2VNJ`, bare slug all attribute tasks to their directory name.
+- [X] T026 [P] [US4] Discovery/integration tests `tests/integration/discovery-spec-kitty-artifacts.test.ts` over world T005: artifact sub-folder files (incl. duplicated `work_package_id` front matter) yield ZERO tasks at depths 1 and 2 while remaining `spec-kitty`-claimed (no `generic` fall-through); canonical document + its own artifacts produce NO collision refusal; `tasks/README.md` claimed, 0 tasks; missions `042-*`, `*-01KQ2VNJ`, bare slug all attribute tasks to their directory name.
 
-- [ ] T027 [P] [US4] Inertness + parity pins in `tests/integration/engine-spec-kitty-artifact-folders.test.ts`: `meta.json`, `spec.md`, `plan.md`, roll-ups, `wps.yaml`, `status.json`, `status.events.jsonl` contribute 0 tasks at every allowed depth (FR-009); count parity per mission (FR-011/FR-016: level-1 count = canonical WP-document count at BOTH depth settings).
+- [X] T027 [P] [US4] Inertness + parity pins in `tests/integration/engine-spec-kitty-artifact-folders.test.ts`: `meta.json`, `spec.md`, `plan.md`, roll-ups, `wps.yaml`, `status.json`, `status.events.jsonl` contribute 0 tasks at every allowed depth (FR-009); count parity per mission (FR-011/FR-016: level-1 count = canonical WP-document count at BOTH depth settings).
 
 ### Implementation for User Story 4
 
-- [ ] T028 [US4] Narrow the canonical gate on `src/discovery/adapters/spec-kitty.ts`: `collectionPattern` becomes VERBATIM `^kitty-specs/[^/]+/tasks/(?:(?:planned|claimed|in_progress|for_review|in_review|approved|done|blocked|canceled)/)?[^/]+\.md$` (direct children + legacy lane variant; `. +` no longer spans `/`); `taskPathPatterns` STAYS `kitty-specs/*/tasks/**/*.md` (broad claim preserved); amend contract C1.2' pins + `docs/framework-adapters.md` wording.
+- [X] T028 [US4] Narrow the canonical gate on `src/discovery/adapters/spec-kitty.ts`: `collectionPattern` becomes VERBATIM `^kitty-specs/[^/]+/tasks/(?:(?:planned|claimed|in_progress|for_review|in_review|approved|done|blocked|canceled)/)?[^/]+\.md$` (direct children + legacy lane variant; `. +` no longer spans `/`); `taskPathPatterns` STAYS `kitty-specs/*/tasks/**/*.md` (broad claim preserved); amend contract C1.2' pins + `docs/framework-adapters.md` wording.
 
-- [ ] T029 [US4] Reference-reproduction e2e `tests/e2e/spec-kitty-023-reference.test.ts` with fixture tree per research R8 (three naming styles, full artifact sets, duplicated-id artifacts, mixed status log, roster+anchor+restatement documents): asserts zero collision refusals (SC-007), stock-default count parity + zero sub-issues (SC-002/FR-016), depth-2 children = anchors (SC-001), no-op second plan, and status/no-lanes ⇒ zero state moves.
+- [X] T029 [US4] Reference-reproduction e2e `tests/e2e/spec-kitty-023-reference.test.ts` with fixture tree per research R8 (three naming styles, full artifact sets, duplicated-id artifacts, mixed status log, roster+anchor+restatement documents): asserts zero collision refusals (SC-007), stock-default count parity + zero sub-issues (SC-002/FR-016), depth-2 children = anchors (SC-001), no-op second plan, and status/no-lanes ⇒ zero state moves.
 
 **Checkpoint**: The upstream-shaped repository is fully plannable and inert where it should be.
 
