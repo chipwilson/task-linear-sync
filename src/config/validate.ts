@@ -5,9 +5,10 @@
  * (001 R17.5). Identity values intentionally have NO defaults (constitution III), so this
  * validation is the only enforcement point and must be complete.
  */
-import { MissingIdentityError } from "./schema.js";
+import { MissingIdentityError, LaneMapError } from "./schema.js";
 import type { ResolvedConfig } from "./schema.js";
-import type { TeamIdentity, WorkflowStateIdentities } from "../domain/routing.js";
+import type { LaneName, TeamIdentity, WorkflowStateIdentities } from "../domain/routing.js";
+import { LANE_VOCABULARY } from "../domain/routing.js";
 
 const isBlank = (v: unknown): boolean =>
   typeof v !== "string" || v.trim().length === 0;
@@ -20,6 +21,30 @@ const WORKFLOW_STATE_IDENTITIES = ["backlog", "todo", "inProgress", "done"] as c
 function hasAnyWorkflowStateIdentity(ws: WorkflowStateIdentities | undefined): boolean {
   if (!ws) return false;
   return WORKFLOW_STATE_IDENTITIES.some((name) => !isBlank(ws[name]));
+}
+
+/**
+ * 023 A-023-0: the optional per-team `lanes` map is validated whenever PRESENT.
+ * Keys must sit inside the nine-lane vocabulary; values must be non-empty strings.
+ * Every offender across every team is collected before the single fail (no partial
+ * application, MissingIdentityError precedent); the diagnostic names only the
+ * offending team keys — never lane values or mapping content.
+ */
+function collectLaneMapOffenders(c: ResolvedConfig): string[] {
+  const offenders: string[] = [];
+  for (const teamKey of Object.keys(c.teams ?? {})) {
+    const lanes = c.teams[teamKey]?.workflowStates?.lanes as Record<string, unknown> | undefined;
+    if (lanes === undefined || lanes === null) continue;
+    for (const [lane, stateName] of Object.entries(lanes)) {
+      if (!(LANE_VOCABULARY as readonly string[]).includes(lane)) {
+        offenders.push(`teams[${teamKey}].workflowStates.lanes.${lane} (unknown lane key)`);
+      }
+      if (isBlank(stateName)) {
+        offenders.push(`teams[${teamKey}].workflowStates.lanes.${lane} (blank state name)`);
+      }
+    }
+  }
+  return offenders;
 }
 
 /**
@@ -56,5 +81,13 @@ export function validateWorkspaceIdentity(c: ResolvedConfig): void {
 
   if (missing.length > 0) {
     throw new MissingIdentityError(missing);
+  }
+
+  // A-023-0: the optional `lanes` map is checked only once every REQUIRED identity is
+  // present — required-identity failures keep priority; a malformed map never lands
+  // partially applied (the config is rejected whole).
+  const laneOffenders = collectLaneMapOffenders(c);
+  if (laneOffenders.length > 0) {
+    throw new LaneMapError(laneOffenders);
   }
 }
