@@ -7,7 +7,7 @@
  */
 import { MissingIdentityError, LaneMapError } from "./schema.js";
 import type { ResolvedConfig } from "./schema.js";
-import type { LaneName, TeamIdentity, WorkflowStateIdentities } from "../domain/routing.js";
+import type { TeamIdentity, WorkflowStateIdentities } from "../domain/routing.js";
 import { LANE_VOCABULARY } from "../domain/routing.js";
 
 const isBlank = (v: unknown): boolean =>
