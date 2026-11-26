@@ -117,6 +117,13 @@ export interface ResolvedConfig {
   readonly projectByPath: readonly ProjectByPathEntry[];
   readonly defaultTeamKey: string;
   readonly defaultProject: string;
+  /**
+   * 024 A-024-1 (FR-001/FR-007): root task-state-mapping switch, built-in default
+   * `true`. When `false` (or per-team `workflowStates.mappingEnabled: false`), the
+   * engine derives NO state change from checkbox changes or lane events and affected
+   * plan units carry reason `state-mapping-disabled` (contract C3).
+   */
+  readonly stateMappingEnabled: boolean;
 
   // ── Matching ──
   readonly scoringWeights: ScoringWeights;
@@ -212,9 +219,10 @@ export class MissingIdentityError extends Error {
 
 /**
  * Thrown by validateWorkspaceIdentity for a malformed `workflowStates.lanes` map
- * (023 amendment A-023-0): EVERY offending entry named at once, keyed
- * `teams[<teamKey>].workflowStates.lanes[...]`. Keys outside the nine-lane vocabulary
- * and blank values fail; NO built-in default ships and nothing is partially applied.
+ * (023 amendment A-023-0, preserved for AUTHORED content by 024 amendment A-024-0):
+ * EVERY offending entry named at once, keyed `teams[<teamKey>].workflowStates.lanes[...]`.
+ * Keys outside the nine-lane vocabulary and blank values fail; absent entries adopt
+ * the built-in default table (no partial application).
  */
 export class LaneMapError extends Error {
   override readonly name = "LaneMapError";

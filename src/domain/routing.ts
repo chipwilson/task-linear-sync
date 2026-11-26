@@ -42,11 +42,21 @@ export interface WorkflowStateIdentities {
   /**
    * 023 A-023-0 (additive): per-team lane → workflow-state NAME map (`spec-kitty`
    * status authority). Keys restricted to the nine-lane vocabulary, values non-empty
-   * state names; validated at config load. NO built-in default ships (consumer-required
-   * class, like `workflowStates` itself): absent or unmapped lane ⇒ tracker state
-   * untouched + reported finding — never a silent guess.
+   * state names; validated at config load. 024 amendment A-024-0 supersedes the
+   * "no built-in default ships" clause: absent entries materialize from
+   * `DEFAULT_LANE_STATE_MAP` through the load-time resolution pass (configured
+   * entries win); an explicit `null` map means lane-mapping OFF — every lane stays
+   * untouched + `lane-state-unmapped` (research R3). Absent or unmapped lane ⇒
+   * tracker state untouched + reported finding — never a silent guess.
    */
-  readonly lanes?: Readonly<Partial<Record<LaneName, string>>>;
+  readonly lanes?: Readonly<Partial<Record<LaneName, string>>> | null;
+  /**
+   * 024 A-024-1 (additive): per-team task-state-mapping switch. Absent ⇒ inherit the
+   * root `stateMappingEnabled`; `false` ⇒ mapping OFF for this team (wins over the
+   * global); inactive ⇒ NO state change from checkbox changes or lane events,
+   * affected plan units carry reason `state-mapping-disabled` (contract C3).
+   */
+  readonly mappingEnabled?: boolean;
 }
 
 /** teamKey → { projects, workflowStates } identity (consumer-required, no defaults). */

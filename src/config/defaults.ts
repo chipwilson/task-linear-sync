@@ -4,10 +4,48 @@
  * enforced by tests/contract/defaults-scan.test.ts). Routing values NEVER default
  * (empty here — validation-required). Defaults summarized from 001 R17.4 via
  * data-model.md §17.
+ *
+ * 024 amendment A-024-0 (constitution v1.1.0 platform-default exception): the
+ * workflow-state NAME tables below DO ship as built-in defaults — they are
+ * Linear's own platform-generic default state names (zero org-specific literals)
+ * and remain fully overridable through the existing per-team precedence. They
+ * materialize per configured team through the load-time resolution pass
+ * (`applyStateMappingDefaults` in load.ts), never as rows in `builtInDefaults.teams`
+ * (team keys are dynamic).
  */
 import type { ResolvedConfig } from "./schema.js";
+import type { LaneName } from "../domain/routing.js";
 
 const DEFAULT_TOOL_ID = "task-linear-sync";
+
+/**
+ * 024 C1.1 — the four workflow-state identity defaults: Linear's default team
+ * workflow names (research R2). `canceled` has NO name identity (the
+ * `ignoredStateTypes: ["canceled","duplicate"]` TYPE defaults already cover it).
+ */
+export const DEFAULT_WORKFLOW_STATE_NAMES: Readonly<Record<"backlog" | "todo" | "inProgress" | "done", string>> = {
+  backlog: "Backlog",
+  todo: "Todo",
+  inProgress: "In Progress",
+  done: "Done",
+};
+
+/**
+ * 024 C1.1 — the default lane → workflow-state map (spec-kitty lanes, research R2).
+ * Review-adjacent lanes collapse onto "In Progress" (the default workflow has no
+ * review state); NO `blocked` entry — lanes without a sensible counterpart stay
+ * on the `lane-state-unmapped` posture (FR-003).
+ */
+export const DEFAULT_LANE_STATE_MAP: Readonly<Partial<Record<LaneName, string>>> = {
+  planned: "Backlog",
+  claimed: "Todo",
+  in_progress: "In Progress",
+  for_review: "In Progress",
+  in_review: "In Progress",
+  approved: "In Progress",
+  done: "Done",
+  canceled: "Canceled",
+};
 
 /** toolId → tool-owned env-var prefix: upper snake case. */
 export function envVarPrefixFor(toolId: string): string {
@@ -70,6 +108,10 @@ export const builtInDefaults: ResolvedConfig = {
   projectByPath: [],
   defaultTeamKey: "",
   defaultProject: "",
+  // 024 A-024-1 (FR-001/FR-004): task state mapping is default-ON; the name/lane
+  // tables above materialize per configured team at load time. `false` restores the
+  // pre-024 untouched-state posture globally (per-team: workflowStates.mappingEnabled).
+  stateMappingEnabled: true,
 
   // ── Matching (weights all >= 0) ──
   scoringWeights: {

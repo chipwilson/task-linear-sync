@@ -2,10 +2,13 @@
  * T023 [P] [US1] — Checkbox completion → workflow-state mapping (research R7; data-model §6;
  * FR-006; unit tests T016; integration T033).
  * `checkedChanged ∧ ¬descriptionConflict ⇒ desiredStateType = checked ? configured done
- * state : configured backlog state`. Workflow identities are per-team CONSUMER-CONFIGURED
- * values (`ResolvedConfig.teams[teamKey].workflowStates.done` / `.backlog`, frozen 002
- * routing shapes) — NO built-in default (constitution III). Name→id resolution uses the
- * 007 `discoverMetadata` workflow-state snapshot captured at plan time and re-fetched
+ * state : configured backlog state`. Workflow identities are per-team CONFIGURED values
+ * (`ResolvedConfig.teams[teamKey].workflowStates.done` / `.backlog`, frozen 002 routing
+ * shapes); since feature 024 (amendment A-024-0, constitution v1.1.0 platform-default
+ * exception) the absent entries materialize from `DEFAULT_WORKFLOW_STATE_NAMES` through
+ * the load-time resolution pass — the resolvers below see ordinary configured values and
+ * need NO mapping-logic change (research R1). Name→id resolution uses the 007
+ * `discoverMetadata` workflow-state snapshot captured at plan time and re-fetched
  * before mutation; an unknown configured state name is a plan-time validation failure
  * (sanitized `EngineError`), not a runtime surprise. Independent of the description-
  * conflict machinery (US1 AC5); produced downstream as an `update-issue(stateTypeId)` op +
@@ -16,6 +19,22 @@ import type { ResolvedConfig } from "../config/schema.js";
 import type { TeamMetadataCollections } from "../ports/linear-port.js";
 import { EngineError } from "./errors.js";
 
+/**
+ * 024 A-024-1 / contract C3.1 — is task state mapping ACTIVE for a routed team?
+ * The root `stateMappingEnabled` (built-in default `true`) governs globally; a
+ * per-team `workflowStates.mappingEnabled: false` wins over it; an absent per-team
+ * value inherits the global. Inactive ⇒ the engine derives NO state change from a
+ * checkbox change or lane event and affected units carry `state-mapping-disabled`
+ * (data-model §3/§7). An unknown teamKey reads as "no per-team value" — the
+ * resolvers below still fail it through their existing identity gates.
+ */
+export function stateMappingActive(config: ResolvedConfig, teamKey: string): boolean {
+  return (
+    config.stateMappingEnabled !== false &&
+    config.teams?.[teamKey]?.workflowStates?.mappingEnabled !== false
+  );
+}
+
 /** The completion arm's identity token: which `workflowStates` field the checkbox drives. */
 function armIdentity(checked: boolean): "done" | "backlog" {
   return checked ? "done" : "backlog";
@@ -24,13 +43,16 @@ function armIdentity(checked: boolean): "done" | "backlog" {
 /**
  * The configured completion state NAME for a checkbox transition:
  * `checked ⇒ teams[teamKey].workflowStates.done`, unchecked ⇒ `.backlog` (FR-006).
- * Missing/blank configuration is a plan-time validation failure — throws a sanitized
- * `EngineError` naming the team and the missing identity (no built-in default exists;
- * constitution III). An unknown teamKey likewise fails at plan time: `defaultTeamKey`
- * is a ROUTING fallback (005) and completion mapping never silently re-routes an
+ * Since 024, an ABSENT entry arrives already filled from the built-in default
+ * table by the load-time resolution pass; a BLANK or explicit-`null` value is the
+ * operator overriding with nothing usable — a plan-time validation failure that
+ * throws a sanitized `EngineError` naming the team and the missing identity
+ * (null-tolerant per research R7 — never a crash at `.trim()`, never a guessed
+ * name). An unknown teamKey likewise fails at plan time: `defaultTeamKey` is a
+ * ROUTING fallback (005) and completion mapping never silently re-routes an
  * unmapped team through it — the failing team must be the team the task routes to.
- * Messages name only the offending identity (`teams[<key>].workflowStates.<arm>`) and
- * the team key — never config or snapshot content (sanitized-failure posture).
+ * Messages name only the offending identity (`teams[<key>].workflowStates.<arm>`)
+ * and the team key — never config or snapshot content (sanitized-failure posture).
  */
 export function desiredCompletionStateName(
   config: ResolvedConfig,
@@ -48,13 +70,16 @@ export function desiredCompletionStateName(
     );
   }
 
-  const stateName = checked ? team.workflowStates?.done : team.workflowStates?.backlog;
-  if (stateName === undefined || stateName.trim().length === 0) {
-    // Present-but-blank counts as missing — no trim-guess, and never a built-in "Done"/"Backlog".
+  const stateName = (checked ? team.workflowStates?.done : team.workflowStates?.backlog) as string | null | undefined;
+  if (stateName === undefined || stateName === null || stateName.trim().length === 0) {
+    // Present-but-blank/null counts as missing — no trim-guess, never a guessed name
+    // (C5.1). The built-in default table applies only to ABSENT entries (C2.1).
     throw new EngineError(
-      `completion mapping: team '${teamKey}' has no configured ${identity} workflow-state name — ` +
-        `teams[${teamKey}].workflowStates.${identity} is missing or blank and no built-in default exists; ` +
-        `configure the ${identity} state name for team '${teamKey}'`,
+      `completion mapping: team '${teamKey}' has no usable ${identity} workflow-state name — ` +
+        `teams[${teamKey}].workflowStates.${identity} is blank or null (the built-in default table of ` +
+        `Linear default state names fills ABSENT entries only) — set ${identity} to the team's state ` +
+        `name, remove the entry to adopt the default, or disable mapping via stateMappingEnabled / ` +
+        `per-team workflowStates.mappingEnabled`,
     );
   }
   return stateName;
@@ -104,13 +129,16 @@ export interface LaneState {
 
 /**
  * Resolve a work-package lane to the ROUTED team's workflow state (feature 023 contract
- * C6.2; amendment A-023-0). `teams[teamKey].workflowStates.lanes` is OPTIONAL with NO
- * built-in default — an unmapped lane (absent map, absent key, blank value) resolves to
- * `null`: the caller leaves the state UNTOUCHED and reports `lane-state-unmapped` (never
- * a silent guess, no `defaultTeamKey` fallback on this seam — the completion-path rule).
- * A MAPPED name resolves through the same snapshot path as the completion lane; an
- * unresolvable name throws the sanitized `EngineError` (conflict posture of the
- * completion path). Messages name only identities — never map or snapshot content.
+ * C6.2; amendments A-023-0, A-024-0/A-024-2). Since 024 the lane map arrives
+ * default-FILLED by the load-time resolution pass (configured entries win); an
+ * unmapped lane (`blocked` — no default counterpart, an out-of-vocabulary event token,
+ * a blank/null entry, or a `null` map = lane-mapping OFF, research R3) resolves to
+ * `null`: the caller leaves the state UNTOUCHED and reports `lane-state-unmapped`
+ * (never a silent guess — null-tolerant reads per C5.1, no `defaultTeamKey` fallback
+ * on this seam — the completion-path rule). A MAPPED name resolves through the same
+ * snapshot path as the completion lane; an unresolvable name throws the sanitized
+ * `EngineError` (conflict posture of the completion path). Messages name only
+ * identities — never map or snapshot content.
  */
 export function resolveLaneState(
   config: ResolvedConfig,
@@ -127,17 +155,20 @@ export function resolveLaneState(
   }
   // The config schema keys lanes by the nine-lane vocabulary; the event log may carry ANY
   // token (bootstrap `genesis`, custom names) — an out-of-vocabulary key reads undefined,
-  // i.e. unmapped, which is exactly the C6.2 posture.
-  const lanes = team.workflowStates?.lanes as Readonly<Record<string, string>> | undefined;
+  // i.e. unmapped, which is exactly the C6.2 posture. A `null` map (explicit lane-off)
+  // and blank/null entries take the same missing branch — never a crash at `.trim()`.
+  const lanes = team.workflowStates?.lanes as Readonly<Record<string, string | null>> | null | undefined;
   const mapped = lanes?.[lane];
-  if (mapped === undefined || mapped.trim().length === 0) return null; // untouched + reported (C6.2)
+  if (mapped === undefined || mapped === null || mapped.trim().length === 0) return null; // untouched + reported (C6.2/C3.3)
   const snapTeam = snapshot.find((collections) => collections.teamKey === teamKey);
   const state = snapTeam?.workflowStates.find((candidate) => candidate.name === mapped);
   if (state === undefined) {
     throw new EngineError(
       `lane-state mapping: configured lane state name '${mapped}' does not exist in team ` +
         `'${teamKey}' (exact, case-sensitive match required) — plan-time validation failure, ` +
-        `not a mutation-time surprise (C6.2, R7 posture)`,
+        `not a mutation-time surprise (C6.2, R7 posture) — map the lane to one of the team's ` +
+        `workflow states, set lanes to null to leave every lane untouched, or disable mapping ` +
+        `via stateMappingEnabled / per-team workflowStates.mappingEnabled`,
     );
   }
   return { stateId: state.id, stateName: state.name, stateType: state.type };
