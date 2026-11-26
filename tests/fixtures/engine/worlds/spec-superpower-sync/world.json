@@ -27,6 +27,16 @@
           "id": "ac000000-0000-4000-8000-000000000203",
           "name": "Done",
           "type": "completed"
+        },
+        {
+          "id": "ac000000-0000-4000-8000-000000000204",
+          "name": "In Progress",
+          "type": "started"
+        },
+        {
+          "id": "ac000000-0000-4000-8000-000000000205",
+          "name": "Canceled",
+          "type": "canceled"
         }
       ]
     }
@@ -59,6 +69,6 @@
     "descriptionNormalizationProfile": "default"
   },
   "metadata": {
-    "scenario": "018 T018 \u2014 spec-superpower plans, empty tracker: bootstrap creates 3 issues per dated plan; checkbox flip re-mirrors exactly one description."
+    "scenario": "018 T018 — spec-superpower plans, empty tracker: bootstrap creates 3 issues per dated plan; checkbox flip re-mirrors exactly one description."
   }
 }

@@ -82,6 +82,9 @@ test("config missing-identity fixtures abort naming every missing value", () => 
     }
   }
 
+  // 024: the fixture carries `stateMappingEnabled: false` — with mapping ON, an empty
+  // `workflowStates: {}` ADOPTS the built-in default table (a valid configuration), so
+  // the ≥1-configured-identity gate lives on the disabled posture.
   const p = loadConfig({ configFile: fix("missing-identity/partial-identities.json") });
   try {
     validateWorkspaceIdentity(p);

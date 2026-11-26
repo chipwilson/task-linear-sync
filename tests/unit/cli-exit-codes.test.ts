@@ -34,6 +34,21 @@ test("configuration errors map to 3", () => {
   assert.equal(exitCodeForError(new StatePlacementError("inside the repo")), 3);
   // 020 C6: an invalid maxTaskIssueDepth is a configuration failure (exit 3).
   assert.equal(exitCodeForError(new TaskDepthConfigError(0, "below-minimum")), 3);
+  // 024 C4.6/R6: the bootstrap mapping refusal and the lane-map validation error are
+  // configuration failures (exit 3) — the bootstrap error must NOT fall through to the
+  // EngineError family's RUN_ABORTED bucket despite its base class.
+  assert.equal(exitCodeForError(new LaneMapError(["teams[acme].workflowStates.lanes.done"])), 3);
+  const bootstrap = new StateMappingBootstrapError([
+    {
+      teamKey: "acme",
+      missing: [{ entryPath: "teams[acme].workflowStates.done", intendedName: "Done" }],
+      nearMatches: [],
+      available: [{ name: "To Do", type: "unstarted" }],
+      missingTypes: ["canceled"],
+      workflowEmpty: false,
+    },
+  ]);
+  assert.equal(exitCodeForError(bootstrap), 3);
   // Credential-preflight diagnostics surface as the tracker's named config error.
   const preflight = Object.assign(new Error("credential env var TASK_LINEAR_SYNC_API_KEY is not set"), {
     name: "TrackerConfigError",

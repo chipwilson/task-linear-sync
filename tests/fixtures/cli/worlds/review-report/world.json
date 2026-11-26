@@ -7,14 +7,45 @@
       "key": "TEAM-A",
       "id": "ac000000-0000-4000-8000-000000000101",
       "projects": [
-        { "id": "proj-alpha", "name": "Project Alpha" },
-        { "id": "proj-beta", "name": "Project Beta" },
-        { "id": "proj-secret", "name": "Secret Lab SECRET555" }
+        {
+          "id": "proj-alpha",
+          "name": "Project Alpha"
+        },
+        {
+          "id": "proj-beta",
+          "name": "Project Beta"
+        },
+        {
+          "id": "proj-secret",
+          "name": "Secret Lab SECRET555"
+        }
       ],
       "workflowStates": [
-        { "id": "ac000000-0000-4000-8000-000000000201", "name": "Backlog", "type": "backlog" },
-        { "id": "ac000000-0000-4000-8000-000000000202", "name": "Todo", "type": "todo" },
-        { "id": "ac000000-0000-4000-8000-000000000203", "name": "Done", "type": "completed" }
+        {
+          "id": "ac000000-0000-4000-8000-000000000201",
+          "name": "Backlog",
+          "type": "backlog"
+        },
+        {
+          "id": "ac000000-0000-4000-8000-000000000202",
+          "name": "Todo",
+          "type": "todo"
+        },
+        {
+          "id": "ac000000-0000-4000-8000-000000000203",
+          "name": "Done",
+          "type": "completed"
+        },
+        {
+          "id": "ac000000-0000-4000-8000-000000000204",
+          "name": "In Progress",
+          "type": "started"
+        },
+        {
+          "id": "ac000000-0000-4000-8000-000000000205",
+          "name": "Canceled",
+          "type": "canceled"
+        }
       ]
     }
   ],
@@ -94,20 +125,41 @@
   "config": {
     "teams": {
       "TEAM-A": {
-        "projects": ["proj-alpha", "proj-beta", "proj-secret"],
+        "projects": [
+          "proj-alpha",
+          "proj-beta",
+          "proj-secret"
+        ],
         "workflowStates": {
           "backlog": "Backlog",
           "todo": "Todo",
           "done": "Done",
-          "completedTypes": ["completed"],
-          "ignoredTypes": ["canceled", "duplicate"]
+          "completedTypes": [
+            "completed"
+          ],
+          "ignoredTypes": [
+            "canceled",
+            "duplicate"
+          ]
         }
       }
     },
     "projectByPath": [
-      { "prefix": "specs/alpha-feature", "teamKey": "TEAM-A", "project": "proj-alpha" },
-      { "prefix": "specs/beta-feature", "teamKey": "TEAM-A", "project": "proj-beta" },
-      { "prefix": "specs/gamma-feature", "teamKey": "TEAM-A", "project": "proj-alpha" }
+      {
+        "prefix": "specs/alpha-feature",
+        "teamKey": "TEAM-A",
+        "project": "proj-alpha"
+      },
+      {
+        "prefix": "specs/beta-feature",
+        "teamKey": "TEAM-A",
+        "project": "proj-beta"
+      },
+      {
+        "prefix": "specs/gamma-feature",
+        "teamKey": "TEAM-A",
+        "project": "proj-alpha"
+      }
     ],
     "defaultTeamKey": "TEAM-A",
     "defaultProject": "proj-alpha",

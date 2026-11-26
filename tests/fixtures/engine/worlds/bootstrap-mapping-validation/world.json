@@ -1,0 +1,51 @@
+{
+  "teams": [
+    {
+      "key": "ALPHA",
+      "name": "Alpha",
+      "issueLabels": [],
+      "workflowStates": [
+        { "id": "alpha-todo", "name": "Todo", "type": "unstarted" },
+        { "id": "alpha-prog", "name": "In Progress", "type": "started" },
+        { "id": "alpha-wait", "name": "Waiting on User", "type": "unstarted" },
+        { "id": "alpha-done", "name": "Done", "type": "completed" },
+        { "id": "alpha-cancel", "name": "Canceled", "type": "canceled" }
+      ]
+    },
+    {
+      "key": "BETA",
+      "name": "Beta",
+      "issueLabels": [],
+      "workflowStates": [
+        { "id": "beta-todo", "name": "Todo", "type": "unstarted" },
+        { "id": "beta-prog", "name": "In Progress", "type": "started" },
+        { "id": "beta-done", "name": "Done", "type": "completed" }
+      ]
+    },
+    {
+      "key": "GAMMA",
+      "name": "Gamma",
+      "issueLabels": [],
+      "workflowStates": [
+        { "id": "gamma-todo", "name": "Todo", "type": "unstarted" },
+        { "id": "gamma-wait", "name": "Waiting on User", "type": "unstarted" },
+        { "id": "gamma-done", "name": "Done", "type": "completed" },
+        { "id": "gamma-cancel", "name": "Canceled", "type": "canceled" }
+      ]
+    },
+    {
+      "key": "DELTA",
+      "name": "Delta",
+      "issueLabels": [],
+      "workflowStates": [
+        { "id": "delta-todo", "name": "Todo", "type": "unstarted" },
+        { "id": "delta-done", "name": "Done", "type": "completed" }
+      ]
+    }
+  ],
+  "users": [],
+  "projects": [],
+  "labels": [],
+  "issues": [],
+  "documents": []
+}

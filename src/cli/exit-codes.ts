@@ -92,6 +92,9 @@ export function exitCodeForError(error: unknown): ExitCode {
     isErrorNamed(error, "ConfigFileError", "MissingIdentityError", "StatePlacementError") ||
     // 020 C6: an invalid maxTaskIssueDepth refuses as a configuration failure.
     isErrorNamed(error, "TaskDepthConfigError") ||
+    // 024 C4.6: the bootstrap mapping refusal and an unresolvable lane map are
+    // configuration failures — exit 3, never the generic run-aborted bucket.
+    isErrorNamed(error, "StateMappingBootstrapError", "LaneMapError") ||
     // Credential-preflight diagnostics surface as the tracker's named config error.
     isErrorNamed(error, "TrackerConfigError")
   ) {

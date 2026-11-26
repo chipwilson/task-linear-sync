@@ -128,6 +128,7 @@ import {
 import { historyPageAddress, parseHistoryPageRecord, serializeHistoryPageRecord } from "./history-page.js";
 import { EngineError } from "./errors.js";
 import { readCheckpointStore, writeCheckpointStore } from "./mode.js";
+import { assertBootstrapStateMapping } from "./state-validation.js";
 import {
   buildPlanReportJson,
   renderPlanReportMarkdown,
@@ -340,6 +341,16 @@ async function runUnderLock(
 
   const storeFile = await readCheckpointStore(deps.state);
   const checkpointMap: Record<string, Checkpoint> = { ...storeFile.checkpoints };
+
+  // ── 024 C4.1 (T015): apply-side bootstrap re-check — the same validator against the
+  // pre-mutation snapshot just re-fetched by the stability pass, under the lock and
+  // BEFORE the journal (the first file write) or any mutation. It fires only on a
+  // bootstrap store (empty checkpoints — the same reality rule as `selectMode`): a
+  // workflow that moved between plan build and apply still refuses cleanly (C4.5: no
+  // partial state; a corrected re-run succeeds).
+  if (Object.keys(checkpointMap).length === 0) {
+    assertBootstrapStateMapping(deps.config, derived.snapshot);
+  }
 
   // ── (4) Journal materialized COMPLETE before the first mutation (unjournaled per
   //      spec when journaling is disabled). ───────────────────────────────────────────
@@ -911,12 +922,16 @@ async function runCreateFlow(context: RunContext, flow: TaskFlow, ledger: StepLe
   // issue in a state the sync scope EXCLUDES via `ignoredStateTypes` (canceled→
   // "Canceled" is the default path) — the issue stays durable (it holds the canonical
   // identity attachment URL) but invisible to matching, so the task re-plans as a
-  // create. BEFORE minting a new intent/attempt, reconcile by canonical attachment URL:
-  // a carrier already exists ⇒ the identity is minted — skip the cell instead of
-  // conjuring a duplicate anchor (Constitution II; the ignored-state issue stays
-  // deliberately outside sync management, and the run converges — every later plan
-  // skips identically with zero mutation).
-  {
+  // create. The guard fires only for a RE-PLANNED create — a stored checkpoint means the
+  // sync minted this identity before, so the canonical URL is already issued. It
+  // reconciles by canonical URL BEFORE minting an intent/attempt: a carrier exists ⇒
+  // the identity is minted — skip the cell instead of conjuring a duplicate anchor
+  // (Constitution II; the ignored-state issue stays deliberately outside sync management,
+  // and the run converges — every later plan skips identically with zero mutation).
+  // Fresh creates (no checkpoint) keep the existing attempt-then-reconcile flow — the
+  // indeterminate-create recovery path pins exactly one attempt (data-model §8) — and
+  // pending/terminal intents already returned above (FR-012 replay guard).
+  if (flow.checkpoint !== undefined) {
     const carriers = await carriersFor(context.deps.port, context.config, uuid);
     if (carriers.length > 0) {
       skipOutcome(

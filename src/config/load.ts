@@ -115,6 +115,9 @@ function applyToolIdDerivations(merged: Record<string, unknown>, explicit: Set<s
  *    `workflowStates` value is left untouched (the identity gate names it).
  */
 export function applyStateMappingDefaults(merged: Record<string, unknown>): void {
+  // FR-007: the global disable lever means "leave issue state untouched" — the
+  // default table fills NOTHING, configured or not (the legacy no-mapping posture).
+  if (merged.stateMappingEnabled === false) return;
   const teams = merged.teams;
   if (teams === null || typeof teams !== "object" || Array.isArray(teams)) return;
   for (const teamKey of Object.keys(teams as Record<string, unknown>)) {
@@ -129,6 +132,7 @@ export function applyStateMappingDefaults(merged: Record<string, unknown>): void
     }
     if (workflowStates === null || typeof workflowStates !== "object" || Array.isArray(workflowStates)) continue;
     const ws = workflowStates as Record<string, unknown>;
+    if (ws.mappingEnabled === false) continue; // per-team disable adopts nothing (FR-007)
     for (const [identity, defaultName] of Object.entries(DEFAULT_WORKFLOW_STATE_NAMES)) {
       if (ws[identity] === undefined) ws[identity] = defaultName; // configured (incl. blank/null) wins — kept verbatim
     }

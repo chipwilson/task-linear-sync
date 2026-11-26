@@ -4,5 +4,5 @@
 { this line is deliberately malformed — counted, content never propagates
 {"kind": "annotation", "wp_id": "WP03", "delta": "note", "at": "2025-11-03T09:00:00Z"}
 {"wp_id": "WP02", "from_lane": "planned", "to_lane": "in_progress", "at": "2025-11-04T09:00:00Z", "actor": "ops-placeholder"}
-{"wp_id": "WP03", "from_lane": "planned", "to_lane": "canceled", "at": "2025-11-05T09:00:00Z", "actor": "ops-placeholder"}
+{"wp_id": "WP03", "from_lane": "planned", "to_lane": "blocked", "at": "2025-11-05T09:00:00Z", "actor": "ops-placeholder"}
 {"wp_id": "WP99", "from_lane": "planned", "to_lane": "done", "at": "2025-11-06T09:00:00Z", "actor": "ops-placeholder"}

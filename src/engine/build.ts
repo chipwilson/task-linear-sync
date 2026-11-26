@@ -117,6 +117,7 @@ import { EngineError, IntegrityError, DocumentIdentityCollisionError } from "./e
 import { classifyTask, resolveConfiguredNormalizer } from "./classify.js";
 import { readCheckpointStore, selectMode } from "./mode.js";
 import type { ModeSelection } from "./mode.js";
+import { assertBootstrapStateMapping } from "./state-validation.js";
 import { appliedAction, resolveConflictAction } from "./actions.js";
 import { desiredCompletionStateName, resolveLaneState, resolveWorkflowStateId } from "./completion.js";
 import { loadMissionStatuses, missionDirectory } from "./status-load.js";
@@ -627,6 +628,16 @@ export async function buildSyncPlan(
   // ── Stage 4: mode (checkpoint reality wins over the hint) + checkpoint map. ──
   const storeFile = await readCheckpointStore(deps.state);
   const mode = selectMode(storeFile, o.mode);
+
+  // ── 024 C4.1 (T014): bootstrap existence validation — ONLY in bootstrap mode, against
+  // the stage-3 snapshot already fetched (C4.3: no extra Linear_Port calls). A mapped
+  // name the team's live workflow does not offer (default or configured) refuses the run
+  // HERE, before planning, reporting, journaling, or any mutation (C4.5); sync runs
+  // never execute it (FR-011).
+  if (mode.mode === "bootstrap") {
+    assertBootstrapStateMapping(config, snapshot);
+  }
+
   const conflictMap: ConflictResolutionMap =
     mode.mode === "bootstrap" ? config.bootstrapConflictMap : config.syncConflictMap;
   const normalizer = resolveConfiguredNormalizer(
