@@ -31,7 +31,6 @@ import {
   seedCheckpoints,
   type EngineWorld,
 } from "../helpers/engine-harness.js";
-import type { Checkpoint } from "task-linear-sync/domain";
 import { createSyncEngine } from "../../src/engine/create.js";
 import { StateMappingBootstrapError } from "../../src/engine/state-validation.js";
 

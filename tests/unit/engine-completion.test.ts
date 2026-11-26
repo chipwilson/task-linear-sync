@@ -219,6 +219,32 @@ test("engine-completion — present-but-blank configured names count as missing 
   expectPlanTimeFailure(() => desiredCompletionStateName(config, "blanked", false), /backlog/iu, /blanked/u);
 });
 
+test("engine-completion — 024 zero-config team row resolves the shared Done/Backlog defaults for EVERY framework (T020, C1.3, FR-004)", () => {
+  // FR-004/FR-005 live in the SHARED resolution: the completion seam consumes the
+  // resolved per-team identity table, and NOTHING framework-specific reaches it (the
+  // contract scan in framework-support-consistency pins that no adapter embeds names).
+  // A bare `projects`-only team row therefore yields identical targets whichever
+  // framework the changed task came from.
+  const config = loadConfig({
+    overrides: {
+      teams: { plain: { projects: ["core"] } },
+      defaultTeamKey: "plain",
+    },
+  });
+  for (const frameworkId of ["spec-kit", "kiro", "open-spec", "bmad", "generic", "spec-superpower", "spec-kitty"] as const) {
+    void frameworkId; // the seam takes no framework input — every iteration must answer identically
+    assert.equal(desiredCompletionStateName(config, "plain", true), "Done");
+    assert.equal(desiredCompletionStateName(config, "plain", false), "Backlog");
+  }
+  // Null-tolerant branch (T005/C5.1): an explicit `null` override is NOT re-filled by
+  // the default pass — it reaches the missing branch as a sanitized failure, never a
+  // silent guess and never a crash at trim.
+  const nulled = loadConfig({
+    overrides: { teams: { plain: { projects: ["core"], workflowStates: { done: null } } }, defaultTeamKey: "plain" } as never },
+  );
+  assert.throws(() => desiredCompletionStateName(nulled, "plain", true), (e: unknown) => e instanceof EngineError && /teams\[plain\]\.workflowStates\.done/u.test((e as Error).message));
+});
+
 test("engine-completion — unknown teamKey fails at plan time; never falls back to defaultTeamKey or a built-in name", () => {
   const config = makeConfig(); // defaultTeamKey: "acme" is configured…
 

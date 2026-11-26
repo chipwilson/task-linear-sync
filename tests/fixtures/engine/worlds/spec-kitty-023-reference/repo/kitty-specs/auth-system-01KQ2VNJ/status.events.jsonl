@@ -1,1 +1,1 @@
-{"wp_id": "WP01", "from_lane": "planned", "to_lane": "canceled", "at": "2026-11-06T09:00:00Z", "actor": "ops-placeholder"}
+{"wp_id": "WP01", "from_lane": "planned", "to_lane": "blocked", "at": "2026-11-06T09:00:00Z", "actor": "ops-placeholder"}

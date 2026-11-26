@@ -19,7 +19,7 @@
  *      templates only, exactly as the CLI refuses the rest with zero writes).
  */
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
@@ -113,4 +113,37 @@ test("framework-consistency: custom adapters are documented as discovery-only in
     "README must state that plan/apply accept only the built-in identities (engine/build.ts refuses the rest)",
   );
   assert.match(requirements, /custom framework adapter configuration/, "requirements.md R7.6 must keep the custom-adapter lane");
+});
+
+// ── 024 (T019, contract C1.3 / FR-005): ONE default table ──────────────────────────
+
+test("framework-consistency: no framework-specific module embeds its own workflow-state name defaults (C1.3)", () => {
+  // The five shipped Linear default state names may be CODE-STRING LITERALS in exactly
+  // one module (`src/config/defaults.ts`, the shared table). Adapters, parsers and the
+  // engine resolve names exclusively through DEFAULT_WORKFLOW_STATE_NAMES /
+  // DEFAULT_LANE_STATE_MAP — a second copy anywhere would fracture FR-005 equivalence.
+  const NAMES = ["Backlog", "Todo", "In Progress", "Done", "Canceled"] as const;
+  const scanRoots = ["src/discovery", "src/parsing", "src/engine", "src/matching", "src/domain"];
+  const offenders: string[] = [];
+  const strip = (src: string): string => src.replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "");
+  const walk = (dir: string): void => {
+    for (const entry of readdirSync(dir, { withFileTypes: true })) {
+      const path = join(dir, entry.name);
+      if (entry.isDirectory()) {
+        walk(path);
+        continue;
+      }
+      if (!entry.name.endsWith(".ts") || entry.name.endsWith(".d.ts")) continue;
+      const rel = path.slice(pkgRoot.length + 1);
+      if (rel === join("src", "config", "defaults.ts")) continue; // the owner module
+      const src = strip(readFileSync(path, "utf8"));
+      for (const name of NAMES) {
+        if (new RegExp(`["'\`]${name}["'\`]`, "u").test(src)) offenders.push(`${rel}: '${name}'`);
+      }
+    }
+  };
+  for (const root of scanRoots) {
+    if (existsSync(join(pkgRoot, root))) walk(join(pkgRoot, root));
+  }
+  assert.deepEqual(offenders, [], "workflow-state name literals belong ONLY to src/config/defaults.ts (C1.3)");
 });

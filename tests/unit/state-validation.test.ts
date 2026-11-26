@@ -67,7 +67,9 @@ function configOver(overrides: ConfigOverrides): ResolvedConfig {
   });
 }
 
-const acmeOnly = (extra?: ConfigOverrides): ResolvedConfig =>
+/** Team-level override row merged into acme's config entry (root keys go through configOver). */
+type TeamOverride = NonNullable<ConfigOverrides["teams"]>[string];
+const acmeOnly = (extra?: TeamOverride): ResolvedConfig =>
   configOver({ teams: { acme: { projects: ["proj-alpha"], ...(extra ?? {}) } } });
 
 function reportFor(reports: readonly Report[], teamKey: string): Report {
@@ -118,7 +120,7 @@ test("024 validator: exact case-sensitive presence — a renamed state is MISSIN
 });
 
 test("024 validator: case-insensitive near matches are HINTS and never clear the miss (R5, spec edge case)", () => {
-  const config = acmeOnly({ teams: { acme: { projects: ["proj-alpha"], workflowStates: { todo: "todo" } } } });
+  const config = acmeOnly({ workflowStates: { todo: "todo" } });
   const r = reportFor(computeReports!(config, [defaultWorkflow("acme", "st-a")]), "acme");
   assert.ok(
     r.missing.some((m) => m.entryPath === "teams[acme].workflowStates.todo" && m.intendedName === "todo"),
@@ -162,9 +164,7 @@ test("024 validator: lanes null skips lane entries; identities and type categori
     ...world,
     workflowStates: world.workflowStates.map((s) => (s.name === "Todo" ? { ...s, name: "Queue" } : s)),
   };
-  const withNullLanes = acmeOnly({
-    teams: { acme: { projects: ["proj-alpha"], workflowStates: { lanes: null } } },
-  });
+  const withNullLanes = acmeOnly({ workflowStates: { lanes: null } });
   const r = reportFor(computeReports!(withNullLanes, [brokenTodo]), "acme");
   assert.ok(r.missing.some((m) => m.entryPath === "teams[acme].workflowStates.todo"), "identity still validated");
   assert.ok(
@@ -180,9 +180,7 @@ test("024 validator: configured lane targets are checked; blocked is checked ONL
     !implicit.missing.some((m) => m.entryPath.endsWith(".lanes.blocked")),
     "the default table has no blocked entry — nothing to check",
   );
-  const configured = acmeOnly({
-    teams: { acme: { projects: ["proj-alpha"], workflowStates: { lanes: { blocked: "Blocked State" } } } },
-  });
+  const configured = acmeOnly({ workflowStates: { lanes: { blocked: "Blocked State" } } });
   const r = reportFor(computeReports!(configured, [noBlockedWorld]), "acme");
   assert.ok(
     r.missing.some((m) => m.entryPath === "teams[acme].workflowStates.lanes.blocked" && m.intendedName === "Blocked State"),
@@ -193,14 +191,15 @@ test("024 validator: configured lane targets are checked; blocked is checked ONL
 // ── disabled teams validate vacuously (US4-AC2 posture) ──────────────────────────────
 
 test("024 validator: mapping-disabled teams pass without checks — globally and per-team (C3, V5 byte-identical posture)", () => {
-  const disabledGlobal = reportFor(computeReports!(acmeOnly({ stateMappingEnabled: false }), []), "acme");
+  const disabledGlobal = reportFor(
+    computeReports!(configOver({ stateMappingEnabled: false, teams: { acme: { projects: ["proj-alpha"] } } }), []),
+    "acme",
+  );
   assert.equal(disabledGlobal.workflowEmpty, false, "an off team's snapshot is not its problem");
   assert.deepEqual(disabledGlobal.missing, []);
   assert.deepEqual(disabledGlobal.missingTypes, []);
 
-  const perTeam = acmeOnly({
-    teams: { acme: { projects: ["proj-alpha"], workflowStates: { mappingEnabled: false } } },
-  });
+  const perTeam = acmeOnly({ workflowStates: { mappingEnabled: false } });
   assert.deepEqual(reportFor(computeReports!(perTeam, []), "acme").missing, []);
 });
 
@@ -276,7 +275,8 @@ test("024 validator: ONE error lists every missing name across every failing tea
 
 test("024 validator: reports are deterministic — identical inputs produce identical reports (Principle IV)", () => {
   const world = defaultWorkflow("acme", "st-a");
-  const first = JSON.stringify(computeReports!(acmeOnly({ teams: { acme: { projects: ["p"], workflowStates: { done: "Done!" } } } }), [world]));
-  const second = JSON.stringify(computeReports!(acmeOnly({ teams: { acme: { projects: ["p"], workflowStates: { done: "Done!" } } } }), [world]));
+  const configOverAcme = () => configOver({ teams: { acme: { projects: ["p"], workflowStates: { done: "Done!" } } } });
+  const first = JSON.stringify(computeReports!(configOverAcme(), [world]));
+  const second = JSON.stringify(computeReports!(configOverAcme(), [world]));
   assert.equal(first, second);
 });

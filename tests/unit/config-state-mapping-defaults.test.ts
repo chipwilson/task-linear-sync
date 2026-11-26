@@ -11,7 +11,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 
-import { builtInDefaults, canonicalizeConfig, loadConfig } from "task-linear-sync/config";
+import { builtInDefaults, canonicalizeConfig, loadConfig, validateWorkspaceIdentity } from "task-linear-sync/config";
 import type { ConfigOverrides, ResolvedConfig } from "task-linear-sync/config";
 
 /** Zero-config team row: identity ONLY (SC-001's "no state-mapping keys at all"). */
@@ -126,10 +126,116 @@ test("024: the pass fills teams PRESENT in the config only — a config with no 
 
 // ── C2.3 — determinism (property posture; the engine-properties cross-cutter repeats it) ──
 
-test("024 C2.3: canonicalizeConfig of the resolved config is byte-identical across repeated loadConfig calls (Principle IV)", () => {
-  const first = canonicalizeConfig(zeroConfig());
+test("024 C2.3: canonicalizeConfig of the resolved config is byte-identical across repeated loadConfig calls (Principle IV)", () => {  const first = canonicalizeConfig(zeroConfig());
   const second = canonicalizeConfig(zeroConfig());
   assert.equal(first, second, "identical inputs ⇒ byte-identical canonical config");
   const third = canonicalizeConfig(loadConfig({ overrides: structuredClone(ZERO_CONFIG) }));
   assert.equal(first, third);
+});
+
+// ── V2 / T021 [US4] — precedence: configured wins, partial merges, null disables ───
+
+test("024 V2: a configured done: \"Completed\" wins over the default — and survives verbatim (C2.1, US4-AC1, SC-005)", () => {
+  const resolved = loadConfig({
+    overrides: {
+      teams: { acme: { projects: ["proj-alpha"], workflowStates: { done: "Completed" } } },
+      defaultTeamKey: "acme",
+      defaultProject: "proj-alpha",
+    },
+  });
+  const ws = resolved.teams.acme.workflowStates as Record<string, unknown>;
+  assert.equal(ws.done, "Completed", "configured entry wins");
+  assert.equal(ws.backlog, "Backlog", "absent entries still fall back to the default table (FR-006)");
+});
+
+test("024 V2: a partial lane map merges PER LANE — configured lanes win, absent lanes fill, deterministic (US4-AC3, FR-006)", () => {
+  const partial = () =>
+    loadConfig({
+      overrides: {
+        teams: {
+          acme: { projects: ["proj-alpha"], workflowStates: { lanes: { in_progress: "Doing", done: "Shipped" } } },
+        },
+        defaultTeamKey: "acme",
+        defaultProject: "proj-alpha",
+      },
+    });
+  const first = partial().teams.acme.workflowStates as { lanes: Record<string, string> };
+  const second = partial().teams.acme.workflowStates as { lanes: Record<string, string> };
+  assert.equal(first.lanes.in_progress, "Doing", "configured lane wins");
+  assert.equal(first.lanes.done, "Shipped", "configured lane wins");
+  assert.equal(first.lanes.planned, "Backlog", "absent lane adopts the default");
+  assert.equal(first.lanes.canceled, "Canceled", "absent lane adopts the default");
+  assert.ok(!("blocked" in first.lanes), "blocked still has no default entry (FR-003)");
+  assert.deepEqual(first.lanes, second.lanes, "deterministic across repeated loads (Principle IV)");
+});
+
+test("024 V2: an operator-authored BLANK lane value still raises LaneMapError — authored content keeps A-023-0(b) (C2.4)", () => {
+  // The blank value is preserved verbatim by the pass (never re-filled); validation
+  // (validateWorkspaceIdentity) is what refuses it — exactly as pre-024.
+  const resolved = loadConfig({
+    overrides: {
+      teams: { acme: { projects: ["proj-alpha"], workflowStates: { lanes: { done: "  " } } } },
+      defaultTeamKey: "acme",
+      defaultProject: "proj-alpha",
+    },
+  });
+  const lanes = (resolved.teams.acme.workflowStates as { lanes: Record<string, string | null> }).lanes;
+  assert.equal(lanes.done, "  ", "blank survives verbatim — the default pass never overwrites authored values (C1.4/A-024-0(b))");
+  assert.throws(() => validateWorkspaceIdentity(resolved), (e: unknown) => (e as Error).name === "LaneMapError" && /lanes\.done/u.test((e as Error).message));
+});
+
+test("024 V2: lanes null survives the resolution pass as null — `{}` is NOT the same thing (R3, C2.2, C3.3)", () => {
+  const nulled = loadConfig({
+    overrides: {
+      teams: { acme: { projects: ["proj-alpha"], workflowStates: { lanes: null } } },
+      defaultTeamKey: "acme",
+      defaultProject: "proj-alpha",
+    },
+  });
+  assert.equal((nulled.teams.acme.workflowStates as { lanes: unknown }).lanes, null, "null is the documented lane-mapping-OFF (R3)");
+
+  const empty = loadConfig({
+    overrides: {
+      teams: { acme: { projects: ["proj-alpha"], workflowStates: { lanes: {} } } },
+      defaultTeamKey: "acme",
+      defaultProject: "proj-alpha",
+    },
+  });
+  const lanes = (empty.teams.acme.workflowStates as { lanes: Record<string, string> }).lanes;
+  assert.equal(lanes.done, "Done", "an empty object deep-merges into ALL-DEFAULTS — explicitly NOT a disable (R3)");
+});
+
+test("024 V2: a FULL pre-024 explicit config resolves byte-identical to what it always carried (SC-005)", () => {
+  const legacy = {
+    teams: {
+      acme: {
+        projects: ["proj-alpha"],
+        workflowStates: {
+          backlog: "Triage",
+          todo: "Funnel",
+          inProgress: "Building",
+          done: "Shipped",
+          lanes: {
+            planned: "Triage",
+            claimed: "Funnel",
+            in_progress: "Building",
+            for_review: "Building",
+            in_review: "Building",
+            approved: "Building",
+            done: "Shipped",
+            blocked: "Building",
+            canceled: "Shipped",
+          },
+        },
+      },
+    },
+    defaultTeamKey: "acme",
+    defaultProject: "proj-alpha",
+  } as ConfigOverrides;
+  const resolved = loadConfig({ overrides: structuredClone(legacy) });
+  assert.deepEqual(
+    resolved.teams.acme.workflowStates,
+    (legacy.teams as never as { acme: { workflowStates: unknown } }).acme.workflowStates,
+    "every configured key survives verbatim and NOTHING is added — no behavior change for complete configs (FR-006)",
+  );
 });

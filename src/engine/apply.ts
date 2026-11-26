@@ -135,7 +135,7 @@ import {
   writeRunReportWithMarker,
   type PlanReportAssertion,
 } from "./report.js";
-import { desiredCompletionStateName, resolveLaneState, resolveWorkflowStateId } from "./completion.js";
+import { desiredCompletionStateName, resolveLaneState, resolveWorkflowStateId, stateMappingActive } from "./completion.js";
 import { resolveConfiguredNormalizer } from "./classify.js";
 import { normalizedContentHash } from "./normalize.js";
 import { synthesizeConflictMarkerBlock } from "./markers.js";
@@ -948,7 +948,7 @@ async function runCreateFlow(context: RunContext, flow: TaskFlow, ledger: StepLe
   // a dead lane name fails the cell without ever creating an issue.
   const createLaneLabel = flow.entry.reasons.find((r) => r.startsWith("lane:"));
   let laneStateType: string | undefined;
-  if (createLaneLabel !== undefined) {
+  if (createLaneLabel !== undefined && stateMappingActive(context.config, teamKey)) {
     try {
       laneStateType = resolveLaneState(context.config, context.snapshot, teamKey, createLaneLabel.slice("lane:".length))?.stateType;
     } catch {
@@ -1203,6 +1203,12 @@ async function runUpdateFlow(context: RunContext, flow: TaskFlow, ledger: StepLe
     if (desired !== issue.description) patch.description = desired;
   }
   if (changed.includes("state")) {
+    if (laneDriven && !stateMappingActive(context.config, flow.routing.teamKey)) {
+      // C3.2 (T024): mapping OFF at apply time ⇒ a lane-driven move never mutates (the
+      // plan predates the disable; the live config wins, mirroring `completionStateId`).
+      skipOutcome(context, flow, "state-mapping-disabled — configured disable landed after planning; state left untouched");
+      return;
+    }
     if (laneDriven) {
       let resolved: ReturnType<typeof resolveLaneState> | "conflict" = null;
       try {
@@ -1363,6 +1369,9 @@ async function renderConflictFile(
 
 async function completionStateId(context: RunContext, flow: TaskFlow): Promise<string | null | "conflict"> {
   const teamKey = flow.routing.teamKey;
+  // C3.2 (T024): an inactive team never moves state on this seam — a plan built before
+  // a config change (or a hand-crafted store) can never smuggle a completion move.
+  if (!stateMappingActive(context.config, teamKey)) return null;
   let stateName: string;
   try {
     stateName = desiredCompletionStateName(context.config, teamKey, flow.task.checked ?? false);

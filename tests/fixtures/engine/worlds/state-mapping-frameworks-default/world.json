@@ -1,0 +1,30 @@
+{
+  "$comment": "Feature 024 US3 fixture (quickstart V3) — six frameworks, ONE zero-config team row (`projects` only): every state target must come from the shared default table. The team workflow carries exactly Linear's default workflow states.",
+  "name": "state-mapping-frameworks-default",
+  "clock": "2026-01-01T00:00:00.000Z",
+  "teams": [
+    {
+      "key": "TEAM-A",
+      "id": "ac000000-0000-4000-8000-000000000101",
+      "projects": [{ "id": "proj-alpha", "name": "Project Alpha" }],
+      "workflowStates": [
+        { "id": "ac000000-0000-4000-8000-000000000201", "name": "Backlog", "type": "backlog" },
+        { "id": "ac000000-0000-4000-8000-000000000202", "name": "Todo", "type": "todo" },
+        { "id": "ac000000-0000-4000-8000-000000000203", "name": "In Progress", "type": "started" },
+        { "id": "ac000000-0000-4000-8000-000000000204", "name": "Done", "type": "completed" },
+        { "id": "ac000000-0000-4000-8000-000000000205", "name": "Canceled", "type": "canceled" }
+      ]
+    }
+  ],
+  "issues": [],
+  "attachments": [],
+  "config": {
+    "teams": {
+      "TEAM-A": { "projects": ["proj-alpha"] }
+    },
+    "defaultTeamKey": "TEAM-A",
+    "defaultProject": "proj-alpha",
+    "confirmationKey": "SYNC"
+  },
+  "metadata": {}
+}

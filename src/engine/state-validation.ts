@@ -31,7 +31,7 @@ import { stateMappingActive } from "./completion.js";
 
 /** One config entry whose mapped name the team's workflow does not offer. */
 export interface MappingMiss {
-  /** Config entry path, e.g. `teams[ACME].workflowStates.lanes.in_progress`. */
+  /** Config entry path, e.g. `teams[<teamKey>].workflowStates.lanes.in_progress`. */
   readonly entryPath: string;
   readonly intendedName: string;
 }

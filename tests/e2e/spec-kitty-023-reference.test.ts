@@ -74,7 +74,10 @@ test("spec-kitty 023 reference reproduction (stock defaults): count parity, zero
     // SC-003 posture at plan time.
     const byPath = (p: string) => plan.entries.find((e) => e.filePath === p)!;
     assert.ok(byPath(WP01_ONBOARDING).reasons.includes("lane:in_progress"), "LAST qualifying log line wins — status.json 'done' and front-matter 'planned' are never consulted");
-    assert.ok(byPath(WP01_GATEWAY).reasons.includes("lane-state-unmapped"), "canceled is not configured for acme — untouched + reported");
+    assert.ok(
+      byPath(WP01_GATEWAY).reasons.includes("lane-state-unmapped"),
+      "blocked has no default counterpart (FR-003, 024) — untouched + reported",
+    );
     assert.ok(!byPath(WP02_ROTATION).reasons.some((r) => r.startsWith("lane:")), "annotation-only log — no lane, no label");
     assert.ok(!byPath(WP01_VERIFY).reasons.some((r) => r.startsWith("lane")), "the no-log mission is untouched — nothing is even reported");
 
