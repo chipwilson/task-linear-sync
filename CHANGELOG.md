@@ -7,6 +7,8 @@ this preview — lives in [docs/versioning.md](docs/versioning.md).
 
 ## [Unreleased]
 
+## [0.8.0] - 2026-11-26
+
 Feature — **default-on task state mapping to Linear default issue states**
 (feature 024). Spec Kitty lane moves now work with zero configuration: the
 per-team `workflowStates.lanes` map gains a built-in default table resolved
