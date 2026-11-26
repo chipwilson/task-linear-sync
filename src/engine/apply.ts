@@ -907,6 +907,27 @@ async function runCreateFlow(context: RunContext, flow: TaskFlow, ledger: StepLe
   const title = screenText(context.screener, flow.baseTitle);
   const description = desiredIssueDescription(context, flow);
 
+  // 024 T009 durable-anchor guard: with default-on mapping a mapped lane can place an
+  // issue in a state the sync scope EXCLUDES via `ignoredStateTypes` (canceled→
+  // "Canceled" is the default path) — the issue stays durable (it holds the canonical
+  // identity attachment URL) but invisible to matching, so the task re-plans as a
+  // create. BEFORE minting a new intent/attempt, reconcile by canonical attachment URL:
+  // a carrier already exists ⇒ the identity is minted — skip the cell instead of
+  // conjuring a duplicate anchor (Constitution II; the ignored-state issue stays
+  // deliberately outside sync management, and the run converges — every later plan
+  // skips identically with zero mutation).
+  {
+    const carriers = await carriersFor(context.deps.port, context.config, uuid);
+    if (carriers.length > 0) {
+      skipOutcome(
+        context,
+        flow,
+        `durable identity already held by ${carriers.length === 1 ? "an issue" : `${carriers.length} issues`} outside the sync scope (ignored workflow state) — no new issue created (Principle II)`,
+      );
+      return;
+    }
+  }
+
   // 023 C6.3 — a lane-labeled create goes straight into the MAPPED state (the tracker
   // default otherwise). Resolution happens BEFORE the intent and the single attempt, so
   // a dead lane name fails the cell without ever creating an issue.

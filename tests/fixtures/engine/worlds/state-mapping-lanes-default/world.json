@@ -1,0 +1,151 @@
+{
+  "$comment": "024 T008 [US1] — quickstart V4: default-on lane mapping on a ZERO-CONFIG team (config carries only the team identity — the load-time resolution pass materializes the C1.1 tables). The tracker team mirrors Linear's default workflow: Backlog/Todo/In Progress/Done/Canceled. status.events.jsonl sets one last-lane per work package: WP01 planned (issue todo -> Backlog), WP02 claimed (backlog -> Todo), WP03 in_progress (todo -> In Progress), WP04 done (started -> Done), WP05 canceled (todo -> Canceled), WP06 blocked (NO default counterpart — untouched + lane-state-unmapped), WP07 no lane events (untouched, no label; unmatched -> create carries no lane label). WP01..WP06 pre-exist with durable anchors and byte-identical mirrored descriptions so the lane move plans as an UPDATE with a clean description channel. A second plan+apply over unchanged inputs is a no-op (live types match the mapped ones).",
+  "name": "state-mapping-lanes-default",
+  "clock": "2026-01-01T00:00:00.000Z",
+  "teams": [
+    {
+      "key": "acme",
+      "id": "ac000000-0000-4000-8000-000000000101",
+      "projects": [{ "id": "proj-alpha", "name": "Project Alpha" }],
+      "workflowStates": [
+        { "id": "ac000000-0000-4000-8000-000000000201", "name": "Backlog", "type": "backlog" },
+        { "id": "ac000000-0000-4000-8000-000000000202", "name": "Todo", "type": "todo" },
+        { "id": "ac000000-0000-4000-8000-000000000203", "name": "In Progress", "type": "started" },
+        { "id": "ac000000-0000-4000-8000-000000000204", "name": "Done", "type": "completed" },
+        { "id": "ac000000-0000-4000-8000-000000000205", "name": "Canceled", "type": "canceled" }
+      ]
+    }
+  ],
+  "issues": [
+    {
+      "id": "ac000000-0000-4000-8000-000000000501",
+      "key": "SYNC-1",
+      "teamKey": "acme",
+      "projectId": "proj-alpha",
+      "title": "Provision the ledger",
+      "description": "# WP01 — Provision the ledger\n\n## Objectives & Success Criteria\n- Last lane planned: the issue must move to Backlog with zero mapping configured.",
+      "stateType": "todo",
+      "updatedAt": "2025-11-01T10:00:00.000Z"
+    },
+    {
+      "id": "ac000000-0000-4000-8000-000000000502",
+      "key": "SYNC-2",
+      "teamKey": "acme",
+      "projectId": "proj-alpha",
+      "title": "Wire the intake",
+      "description": "# WP02 — Wire the intake\n\n## Objectives & Success Criteria\n- Last lane claimed: the issue must move to Todo.",
+      "stateType": "backlog",
+      "updatedAt": "2025-11-01T10:00:01.000Z"
+    },
+    {
+      "id": "ac000000-0000-4000-8000-000000000503",
+      "key": "SYNC-3",
+      "teamKey": "acme",
+      "projectId": "proj-alpha",
+      "title": "Build the mover",
+      "description": "# WP03 — Build the mover\n\n## Objectives & Success Criteria\n- Last lane in_progress: the issue must move to In Progress, then match on re-plan.",
+      "stateType": "todo",
+      "updatedAt": "2025-11-01T10:00:02.000Z"
+    },
+    {
+      "id": "ac000000-0000-4000-8000-000000000504",
+      "key": "SYNC-4",
+      "teamKey": "acme",
+      "projectId": "proj-alpha",
+      "title": "Ship the closer",
+      "description": "# WP04 — Ship the closer\n\n## Objectives & Success Criteria\n- Last lane done: the issue must move to Done.",
+      "stateType": "started",
+      "updatedAt": "2025-11-01T10:00:03.000Z"
+    },
+    {
+      "id": "ac000000-0000-4000-8000-000000000505",
+      "key": "SYNC-5",
+      "teamKey": "acme",
+      "projectId": "proj-alpha",
+      "title": "Retire the stub",
+      "description": "# WP05 — Retire the stub\n\n## Objectives & Success Criteria\n- Last lane canceled: the issue must move to Canceled.",
+      "stateType": "todo",
+      "updatedAt": "2025-11-01T10:00:04.000Z"
+    },
+    {
+      "id": "ac000000-0000-4000-8000-000000000506",
+      "key": "SYNC-6",
+      "teamKey": "acme",
+      "projectId": "proj-alpha",
+      "title": "Hold the blocker",
+      "description": "# WP06 — Hold the blocker\n\n## Objectives & Success Criteria\n- Last lane blocked: NO default counterpart — untouched state plus a lane-state-unmapped report.",
+      "stateType": "todo",
+      "updatedAt": "2025-11-01T10:00:05.000Z"
+    }
+  ],
+  "attachments": [
+    {
+      "issueId": "ac000000-0000-4000-8000-000000000501",
+      "id": "att-durable-wp01",
+      "url": "https://sync.example.invalid/task-linear-sync/485a14f9-97b4-568f-b4b4-a0d1933f334f",
+      "title": "task-linear-sync sync state",
+      "metadata": {
+        "__task-linear-sync": "{\"cursors\":{\"lastSyncAt\":\"2025-11-01T10:00:00.000Z\"},\"descriptionContentHash\":\"0000000000000000000000000000000000000000000000000000000000000000\",\"frameworkMetadata\":{\"featureName\":\"004-default-lanes\",\"filePath\":\"kitty-specs/004-default-lanes/tasks/WP01.md\",\"frameworkId\":\"spec-kitty\",\"localTaskId\":\"WP01\"},\"history\":[],\"taskUuid\":\"485a14f9-97b4-568f-b4b4-a0d1933f334f\"}"
+      }
+    },
+    {
+      "issueId": "ac000000-0000-4000-8000-000000000502",
+      "id": "att-durable-wp02",
+      "url": "https://sync.example.invalid/task-linear-sync/7ba72d5d-1c6b-5f38-b651-1b32c7c2fc30",
+      "title": "task-linear-sync sync state",
+      "metadata": {
+        "__task-linear-sync": "{\"cursors\":{\"lastSyncAt\":\"2025-11-01T10:00:00.000Z\"},\"descriptionContentHash\":\"0000000000000000000000000000000000000000000000000000000000000000\",\"frameworkMetadata\":{\"featureName\":\"004-default-lanes\",\"filePath\":\"kitty-specs/004-default-lanes/tasks/WP02.md\",\"frameworkId\":\"spec-kitty\",\"localTaskId\":\"WP02\"},\"history\":[],\"taskUuid\":\"7ba72d5d-1c6b-5f38-b651-1b32c7c2fc30\"}"
+      }
+    },
+    {
+      "issueId": "ac000000-0000-4000-8000-000000000503",
+      "id": "att-durable-wp03",
+      "url": "https://sync.example.invalid/task-linear-sync/183e3822-b1fc-55b0-b834-521041d7b089",
+      "title": "task-linear-sync sync state",
+      "metadata": {
+        "__task-linear-sync": "{\"cursors\":{\"lastSyncAt\":\"2025-11-01T10:00:00.000Z\"},\"descriptionContentHash\":\"0000000000000000000000000000000000000000000000000000000000000000\",\"frameworkMetadata\":{\"featureName\":\"004-default-lanes\",\"filePath\":\"kitty-specs/004-default-lanes/tasks/WP03.md\",\"frameworkId\":\"spec-kitty\",\"localTaskId\":\"WP03\"},\"history\":[],\"taskUuid\":\"183e3822-b1fc-55b0-b834-521041d7b089\"}"
+      }
+    },
+    {
+      "issueId": "ac000000-0000-4000-8000-000000000504",
+      "id": "att-durable-wp04",
+      "url": "https://sync.example.invalid/task-linear-sync/420082d5-4098-5c9b-952b-6e2cbcd73551",
+      "title": "task-linear-sync sync state",
+      "metadata": {
+        "__task-linear-sync": "{\"cursors\":{\"lastSyncAt\":\"2025-11-01T10:00:00.000Z\"},\"descriptionContentHash\":\"0000000000000000000000000000000000000000000000000000000000000000\",\"frameworkMetadata\":{\"featureName\":\"004-default-lanes\",\"filePath\":\"kitty-specs/004-default-lanes/tasks/WP04.md\",\"frameworkId\":\"spec-kitty\",\"localTaskId\":\"WP04\"},\"history\":[],\"taskUuid\":\"420082d5-4098-5c9b-952b-6e2cbcd73551\"}"
+      }
+    },
+    {
+      "issueId": "ac000000-0000-4000-8000-000000000505",
+      "id": "att-durable-wp05",
+      "url": "https://sync.example.invalid/task-linear-sync/92a3d8ac-149b-5da0-bbce-82cc3ffb1f48",
+      "title": "task-linear-sync sync state",
+      "metadata": {
+        "__task-linear-sync": "{\"cursors\":{\"lastSyncAt\":\"2025-11-01T10:00:00.000Z\"},\"descriptionContentHash\":\"0000000000000000000000000000000000000000000000000000000000000000\",\"frameworkMetadata\":{\"featureName\":\"004-default-lanes\",\"filePath\":\"kitty-specs/004-default-lanes/tasks/WP05.md\",\"frameworkId\":\"spec-kitty\",\"localTaskId\":\"WP05\"},\"history\":[],\"taskUuid\":\"92a3d8ac-149b-5da0-bbce-82cc3ffb1f48\"}"
+      }
+    },
+    {
+      "issueId": "ac000000-0000-4000-8000-000000000506",
+      "id": "att-durable-wp06",
+      "url": "https://sync.example.invalid/task-linear-sync/433197d9-c02d-5fed-9cfb-b7c32f2d2a1e",
+      "title": "task-linear-sync sync state",
+      "metadata": {
+        "__task-linear-sync": "{\"cursors\":{\"lastSyncAt\":\"2025-11-01T10:00:00.000Z\"},\"descriptionContentHash\":\"0000000000000000000000000000000000000000000000000000000000000000\",\"frameworkMetadata\":{\"featureName\":\"004-default-lanes\",\"filePath\":\"kitty-specs/004-default-lanes/tasks/WP06.md\",\"frameworkId\":\"spec-kitty\",\"localTaskId\":\"WP06\"},\"history\":[],\"taskUuid\":\"433197d9-c02d-5fed-9cfb-b7c32f2d2a1e\"}"
+      }
+    }
+  ],
+  "config": {
+    "teams": {
+      "acme": {
+        "projects": ["proj-alpha"]
+      }
+    },
+    "defaultTeamKey": "acme",
+    "defaultProject": "proj-alpha",
+    "confirmationKey": "SYNC",
+    "descriptionNormalizationProfile": "default"
+  },
+  "metadata": {
+    "scenario": "V4/US1: zero-config lane propagation — planned→Backlog, claimed→Todo, in_progress→In Progress, done→Done, canceled→Canceled all move; blocked stays untouched with lane-state-unmapped; a mapped lane already matching the live type is a no-op on re-plan."
+  }
+}
