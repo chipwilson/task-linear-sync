@@ -6,10 +6,10 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 
-import { ConfigFileError, MissingIdentityError } from "task-linear-sync/config";
+import { ConfigFileError, LaneMapError, MissingIdentityError } from "task-linear-sync/config";
 import { TaskDepthConfigError } from "task-linear-sync/parsing";
 import { StatePlacementError, ReportScreeningError } from "task-linear-sync/state";
-import { EngineError, EngineFailError, IntegrityError, JournalError } from "task-linear-sync/engine";
+import { EngineError, EngineFailError, IntegrityError, JournalError, StateMappingBootstrapError } from "task-linear-sync/engine";
 import type { GateFailure, GateFailureCode } from "task-linear-sync/gates";
 
 import { ExitCode, exitCodeForError, exitCodeForGateFailureCode } from "../../src/cli/exit-codes.js";
