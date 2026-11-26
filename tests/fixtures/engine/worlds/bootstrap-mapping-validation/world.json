@@ -1,0 +1,65 @@
+{
+  "$comment": "Feature 024 US2 fixture — per-team Linear workflows deliberately incomplete; the config block carries NO workflowStates so the built-in default table applies verbatim.",
+  "name": "bootstrap-mapping-validation",
+  "clock": "2026-01-01T00:00:00.000Z",
+  "teams": [
+    {
+      "key": "ALPHA",
+      "id": "ac000000-0000-4000-8000-000000000101",
+      "projects": [{ "id": "proj-boot", "name": "Boot" }],
+      "workflowStates": [
+        { "id": "ac000000-0000-4000-8000-000000000201", "name": "Backlog", "type": "backlog" },
+        { "id": "ac000000-0000-4000-8000-000000000202", "name": "Todo", "type": "todo" },
+        { "id": "ac000000-0000-4000-8000-000000000203", "name": "In Progress", "type": "started" },
+        { "id": "ac000000-0000-4000-8000-000000000204", "name": "Done", "type": "completed" },
+        { "id": "ac000000-0000-4000-8000-000000000205", "name": "Canceled", "type": "canceled" }
+      ]
+    },
+    {
+      "key": "BETA",
+      "id": "ac000000-0000-4000-8000-000000000102",
+      "projects": [{ "id": "proj-boot", "name": "Boot" }],
+      "workflowStates": [
+        { "id": "ac000000-0000-4000-8000-000000000211", "name": "Backlog", "type": "backlog" },
+        { "id": "ac000000-0000-4000-8000-000000000212", "name": "Todo", "type": "todo" },
+        { "id": "ac000000-0000-4000-8000-000000000213", "name": "In Progress", "type": "started" },
+        { "id": "ac000000-0000-4000-8000-000000000214", "name": "Done", "type": "completed" }
+      ]
+    },
+    {
+      "key": "GAMMA",
+      "id": "ac000000-0000-4000-8000-000000000103",
+      "projects": [{ "id": "proj-boot", "name": "Boot" }],
+      "workflowStates": [
+        { "id": "ac000000-0000-4000-8000-000000000221", "name": "Backlog", "type": "backlog" },
+        { "id": "ac000000-0000-4000-8000-000000000222", "name": "Todo", "type": "todo" },
+        { "id": "ac000000-0000-4000-8000-000000000223", "name": "Waiting on User", "type": "unstarted" },
+        { "id": "ac000000-0000-4000-8000-000000000224", "name": "Done", "type": "completed" },
+        { "id": "ac000000-0000-4000-8000-000000000225", "name": "Canceled", "type": "canceled" }
+      ]
+    },
+    {
+      "key": "DELTA",
+      "id": "ac000000-0000-4000-8000-000000000104",
+      "projects": [{ "id": "proj-boot", "name": "Boot" }],
+      "workflowStates": [
+        { "id": "ac000000-0000-4000-8000-000000000231", "name": "Todo", "type": "todo" },
+        { "id": "ac000000-0000-4000-8000-000000000232", "name": "Done", "type": "completed" }
+      ]
+    }
+  ],
+  "issues": [],
+  "attachments": [],
+  "config": {
+    "teams": {
+      "ALPHA": { "projects": ["proj-boot"] },
+      "BETA": { "projects": ["proj-boot"] },
+      "GAMMA": { "projects": ["proj-boot"] },
+      "DELTA": { "projects": ["proj-boot"] }
+    },
+    "defaultTeamKey": "ALPHA",
+    "defaultProject": "proj-boot",
+    "confirmationKey": "SYNC"
+  },
+  "metadata": {}
+}

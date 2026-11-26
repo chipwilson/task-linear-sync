@@ -101,22 +101,49 @@ The intelligent default is "never guess a workspace identity":
 
 | Key | Type | Default | Required shape |
 |---|---|---|---|
-| `teams` | record | `{}` (invalid) | ≥ 1 team key; per team ≥ 1 entry in `projects` and ≥ 1 identity in `workflowStates` (backlog/todo/inProgress/done) |
+| `teams` | record | `{}` (invalid) | ≥ 1 team key; per team ≥ 1 entry in `projects` (workflow-state identities default on since 024 — the config-shape floor applies only under an explicit mapping disable) |
 | `projectByPath` | array | `[]` (empty is legal, but each entry then must carry both fields) | every entry: non-empty `teamKey` **and** `project` |
 | `defaultTeamKey` | string | `""` (invalid) | non-empty |
 | `defaultProject` | string | `""` (invalid) | non-empty |
 
-Per team, `teams[<key>].workflowStates.lanes` is an **optional** map from the
-nine Spec Kitty lane names (`planned`, `claimed`, `in_progress`, `for_review`,
-`in_review`, `approved`, `done`, `blocked`, `canceled`) to workflow-state
-**names** — the bridge from the mission's `status.events.jsonl` lanes to
-tracker states (023 amendment A-023-0). It has **no default**: absent or
-missing an entry, that lane leaves issue state untouched and the run reports
-`lane-state-unmapped` (never a guessed state). Keys outside the vocabulary
-and blank state names are refused by `validateWorkspaceIdentity()`
-(`LaneMapError`) whenever the map is present; a mapped name that the
-team's live workflow states do not contain is a plan-time conflict finding,
-not a silent skip.
+Per team, `teams[<key>].workflowStates.lanes` maps the nine Spec Kitty lane
+names (`planned`, `claimed`, `in_progress`, `for_review`, `in_review`,
+`approved`, `done`, `blocked`, `canceled`) to workflow-state **names** — the
+bridge from the mission's `status.events.jsonl` lanes to tracker states
+(023 amendment A-023-0). Since feature 024 the map **defaults**: an
+unconfigured lane resolves through the built-in table below, so a zero-config
+team drives state moves with no mapping at all. Absent or configured lanes
+are checked at bootstrap against the live workflow (missing names, or a
+missing `completed`/`canceled` type category, refuse the bootstrap run with
+exit 3 naming every gap; the sync mode still reports the 023 plan-time
+conflict finding). Keys outside the vocabulary and blank state names are
+refused by `validateWorkspaceIdentity()` (`LaneMapError`) whenever the map is
+explicitly present.
+
+**State mapping defaults (feature 024).** The built-in table — materialized
+into every team's lane map at config load, overridable per lane, names
+resolved case-sensitively against the live workflow:
+
+| Lane | Default |
+|---|---|
+| `planned`, `claimed` | `Todo` (creates start in `Backlog`, the Linear convention) |
+| `in_progress`, `for_review`, `in_review`, `approved` | `In Progress` |
+| `done` | `Done` (requires a `completed`-type state) |
+| `blocked` | none — configure it explicitly to get blocked moves |
+| `canceled` | requires a `canceled`-type state (natively `Canceled`; `Done` serves when there is none) |
+
+Identity entries (`backlog`/`todo`/`in_progress`/`done`) and lane entries are
+two arms of the same resolution: config wins, else the table, else the lane
+is unmapped. A lane with no counterpart anywhere (e.g. `blocked` by default)
+keeps the 023 posture: state untouched, `lane-state-unmapped` reported —
+never a guessed state.
+
+Two explicit disables opt out of all of it (validation and mapping both,
+byte-identical to the pre-024 posture): `stateMappingEnabled: false` at the
+config root, or `teams[<key>].workflowStates.mappingEnabled: false` for one
+team. `lanes: null` is the per-lane-set disable — it requests no lane moves
+at all (no defaults, no lane validation) while identity entries keep their
+own validation; `{}` is **not** the null and still fills every default.
 
 ## Matching (task ↔ issue pairing)
 
@@ -269,9 +296,12 @@ The three tool-owned names re-derive from `toolId` automatically.
 `syncAttachmentIconUrl`, `historyLogMaxBytes` — and the four routing
 identities, whose empty values fail validation. Absent means "platform-
 computed", "adapter-supplied", or "feature not configured", never a silent
-guess. The per-team `workflowStates.lanes` map and the adapter row's
-`statusEventFileName` member (023) are likewise absent-by-default: lane
-mapping is opt-in, and the status-event file name ships only on the built-in
+guess. The per-team `workflowStates.lanes` map is **no longer**
+absent-by-default (feature 024): an absent map resolves to the full built-in
+lane table; `lanes: null` is the explicit lane-mapping disable, and —
+explicitly — `"lanes": {}` is NOT the null, it deep-merges into all-defaults
+(research R3). The adapter row's `statusEventFileName` member (023) remains
+absent-by-default: the status-event file name ships only on the built-in
 `spec-kitty` row (re-pointable through the programmatic
 `overrides.adapters["spec-kitty"]` lane — no config-file key).
 

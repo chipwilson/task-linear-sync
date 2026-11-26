@@ -117,8 +117,9 @@ import { EngineError, IntegrityError, DocumentIdentityCollisionError } from "./e
 import { classifyTask, resolveConfiguredNormalizer } from "./classify.js";
 import { readCheckpointStore, selectMode } from "./mode.js";
 import type { ModeSelection } from "./mode.js";
+import { assertBootstrapStateMapping } from "./state-validation.js";
 import { appliedAction, resolveConflictAction } from "./actions.js";
-import { desiredCompletionStateName, resolveLaneState, resolveWorkflowStateId } from "./completion.js";
+import { desiredCompletionStateName, resolveLaneState, resolveWorkflowStateId, stateMappingActive } from "./completion.js";
 import { loadMissionStatuses, missionDirectory } from "./status-load.js";
 import type { MissionStatus } from "./status-load.js";
 import { normalizedContentHash } from "./normalize.js";
@@ -423,24 +424,31 @@ function buildEntry(unit: TaskUnit, context: EntryContext): EntryBuild {
     if (outcome.checkedChanged && matched) {
       // FR-006/R7 completion mapping — name via config, id via the discoverMetadata
       // snapshot captured at plan time (re-fetched pre-mutation by apply).
-      try {
-        const stateName = desiredCompletionStateName(
-          context.config,
-          unit.routing.teamKey,
-          task.checked ?? false,
-        );
-        const stateId = resolveWorkflowStateId(context.snapshot, unit.routing.teamKey, stateName);
-        labels.push(`completion:state-name:${stateName}`, `completion:state-id:${stateId}`);
-        changedFields.push("state");
-      } catch (error) {
-        if (!(error instanceof EngineError)) throw error;
-        labels.push("validation:completion-state", `reason:${error.message}`);
-        decision = "conflict"; // surfaced for the human via the report conflicts section
-        assertions.push({
-          guarantee: "completion-state-validation",
-          status: "fail",
-          detail: error.message,
-        });
+      if (!stateMappingActive(context.config, unit.routing.teamKey)) {
+        // C3.2 (T023): mapping OFF for this team ⇒ a checkbox change derives NO state
+        // change — the unit carries `state-mapping-disabled` and otherwise behaves
+        // byte-identically to the pre-024 default-off posture.
+        labels.push("state-mapping-disabled");
+      } else {
+        try {
+          const stateName = desiredCompletionStateName(
+            context.config,
+            unit.routing.teamKey,
+            task.checked ?? false,
+          );
+          const stateId = resolveWorkflowStateId(context.snapshot, unit.routing.teamKey, stateName);
+          labels.push(`completion:state-name:${stateName}`, `completion:state-id:${stateId}`);
+          changedFields.push("state");
+        } catch (error) {
+          if (!(error instanceof EngineError)) throw error;
+          labels.push("validation:completion-state", `reason:${error.message}`);
+          decision = "conflict"; // surfaced for the human via the report conflicts section
+          assertions.push({
+            guarantee: "completion-state-validation",
+            status: "fail",
+            detail: error.message,
+          });
+        }
       }
     }
   }
@@ -461,6 +469,12 @@ function buildEntry(unit: TaskUnit, context: EntryContext): EntryBuild {
     const mission = missionDirectory(task.filePath);
     const lane = mission === undefined ? undefined : context.statusByMission.get(mission)?.lanes.get(task.localTaskId ?? "");
     if (lane !== undefined) {
+      if (!stateMappingActive(context.config, unit.routing.teamKey)) {
+        // C3.2 (T023): mapping OFF ⇒ the lane event derives no state change and no
+        // create-carrier label; the unit reports why. (`lanes: null` is NOT this case —
+        // an active team with a null map keeps the `lane-state-unmapped` posture, C3.3.)
+        labels.push("state-mapping-disabled");
+      } else {
       try {
         const resolved = resolveLaneState(context.config, context.snapshot, unit.routing.teamKey, lane);
         if (resolved === null) {
@@ -478,6 +492,7 @@ function buildEntry(unit: TaskUnit, context: EntryContext): EntryBuild {
         labels.push("validation:lane-state", `reason:${error.message}`);
         decision = "conflict"; // surfaced for the human via the report conflicts section
         assertions.push({ guarantee: "lane-state-validation", status: "fail", detail: error.message });
+      }
       }
     }
   }
@@ -627,6 +642,16 @@ export async function buildSyncPlan(
   // ── Stage 4: mode (checkpoint reality wins over the hint) + checkpoint map. ──
   const storeFile = await readCheckpointStore(deps.state);
   const mode = selectMode(storeFile, o.mode);
+
+  // ── 024 C4.1 (T014): bootstrap existence validation — ONLY in bootstrap mode, against
+  // the stage-3 snapshot already fetched (C4.3: no extra Linear_Port calls). A mapped
+  // name the team's live workflow does not offer (default or configured) refuses the run
+  // HERE, before planning, reporting, journaling, or any mutation (C4.5); sync runs
+  // never execute it (FR-011).
+  if (mode.mode === "bootstrap") {
+    assertBootstrapStateMapping(config, snapshot);
+  }
+
   const conflictMap: ConflictResolutionMap =
     mode.mode === "bootstrap" ? config.bootstrapConflictMap : config.syncConflictMap;
   const normalizer = resolveConfiguredNormalizer(

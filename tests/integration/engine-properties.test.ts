@@ -63,6 +63,8 @@ import {
   type EngineWorld,
 } from "../helpers/engine-harness.js";
 
+import { canonicalizeConfig, loadConfig } from "task-linear-sync/config";
+
 import { createSyncEngine } from "../../src/engine/create.js";
 
 // ───────────────────────────────────────────────── seeded pseudo-random property flavor
@@ -502,4 +504,59 @@ test("engine-properties — SC-003 rollback total restoration over seeded worlds
     }
   }
   assert.equal(checkedWorlds, ROLLBACK_WORLDS.length, "both rollback worlds ran the restoration battery");
+});
+
+// ── 024 T026 [US2] — resolution-pass & bootstrap-rerun determinism (R9, C2.3) ──────
+
+test("engine-properties — 024 canonicalizeConfig is byte-identical across repeated loadConfig calls THROUGH the resolution pass (C2.3, Principle IV)", () => {
+  // The default-materialization pass must never be a source of nondeterminism: the
+  // PRNG-free property here is load→canonicalize equality over a fixed override set,
+  // iterated in PRNG-driven order (same fixed-seed discipline as the suites above).
+  const rand = mulberry32(PROPERTY_SEED);
+  const shapes: Array<Record<string, unknown>> = [
+    { teams: { acme: { projects: ["proj-alpha"] } } }, // zero-config → full default fill
+    { teams: { acme: { projects: ["proj-alpha"], workflowStates: { lanes: null } } } }, // null survives
+    { teams: { acme: { projects: ["proj-alpha"], workflowStates: { done: "Shipped", lanes: { in_progress: "Doing" } } } } }, // per-lane merge
+    { stateMappingEnabled: false, teams: { acme: { projects: ["proj-alpha"], workflowStates: { backlog: "Triage" } } } }, // disabled fills nothing
+  ];
+  for (const shape of shapes) {
+    const overrides = { ...shape, defaultTeamKey: "acme", defaultProject: "proj-alpha" } as never;
+    const first = canonicalizeConfig(loadConfig({ overrides }));
+    const rounds = 1 + Math.floor(rand() * 3);
+    for (let i = 0; i < rounds; i += 1) {
+      const again = canonicalizeConfig(loadConfig({ overrides: structuredClone(overrides) }));
+      assert.equal(again, first, "repeated loads canonicalize byte-identically through the resolution pass");
+    }
+  }
+});
+
+test("engine-properties — 024 repeated bootstrap plan+apply over unchanged inputs stays byte-identical and quiescent under default-on mapping (R9, SC-004 posture)", async () => {
+  // Default-on bootstrap convergence: after the first gated apply, a second plan over
+  // unchanged inputs reports zero pending changes and the second apply performs ZERO
+  // tracker writes — including the mapped lane moves (every target already live-matches).
+  const w = await buildWorld("state-mapping-frameworks-default");
+  try {
+    const engine = attachEngine(w, createSyncEngine, { keyProvider: w.keyProvider });
+    const plan = await engine.buildSyncPlan({ repositoryRoot: w.repositoryRoot });
+    const applied = await engine.applySyncPlan(plan, {
+      applyFlag: true,
+      confirmationKey: w.config.confirmationKey,
+      acceptLowConfidence: plan.lowConfidencePresent,
+      planReference: plan.planId,
+    });
+    assert.equal(applied.status, "applied");
+    const second = await engine.buildSyncPlan({ repositoryRoot: w.repositoryRoot });
+    const pending = second.entries.filter((e) => e.decision !== "no-change");
+    assert.deepEqual(pending.map((e) => e.taskUuid), [], "second plan is fully quiescent under default-on mapping");
+    const mark = callsMark(w);
+    await engine.applySyncPlan(second, {
+      applyFlag: true,
+      confirmationKey: w.config.confirmationKey,
+      acceptLowConfidence: second.lowConfidencePresent,
+      planReference: second.planId,
+    });
+    assert.deepEqual(mutationCalls(w).slice(mark), [], "the converged apply performs zero tracker writes");
+  } finally {
+    await w.dispose();
+  }
 });

@@ -75,6 +75,8 @@
     "WorkerConfig"
   ],
   "config/defaults": [
+    "DEFAULT_LANE_STATE_MAP",
+    "DEFAULT_WORKFLOW_STATE_NAMES",
     "DERIVATIONS",
     "builtInDefaults",
     "envVarPrefixFor"
@@ -84,6 +86,7 @@
     "deepMerge"
   ],
   "config/load": [
+    "applyStateMappingDefaults",
     "loadConfig"
   ],
   "config/validate": [

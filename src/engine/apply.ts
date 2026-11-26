@@ -128,13 +128,14 @@ import {
 import { historyPageAddress, parseHistoryPageRecord, serializeHistoryPageRecord } from "./history-page.js";
 import { EngineError } from "./errors.js";
 import { readCheckpointStore, writeCheckpointStore } from "./mode.js";
+import { assertBootstrapStateMapping } from "./state-validation.js";
 import {
   buildPlanReportJson,
   renderPlanReportMarkdown,
   writeRunReportWithMarker,
   type PlanReportAssertion,
 } from "./report.js";
-import { desiredCompletionStateName, resolveLaneState, resolveWorkflowStateId } from "./completion.js";
+import { desiredCompletionStateName, resolveLaneState, resolveWorkflowStateId, stateMappingActive } from "./completion.js";
 import { resolveConfiguredNormalizer } from "./classify.js";
 import { normalizedContentHash } from "./normalize.js";
 import { synthesizeConflictMarkerBlock } from "./markers.js";
@@ -340,6 +341,16 @@ async function runUnderLock(
 
   const storeFile = await readCheckpointStore(deps.state);
   const checkpointMap: Record<string, Checkpoint> = { ...storeFile.checkpoints };
+
+  // ── 024 C4.1 (T015): apply-side bootstrap re-check — the same validator against the
+  // pre-mutation snapshot just re-fetched by the stability pass, under the lock and
+  // BEFORE the journal (the first file write) or any mutation. It fires only on a
+  // bootstrap store (empty checkpoints — the same reality rule as `selectMode`): a
+  // workflow that moved between plan build and apply still refuses cleanly (C4.5: no
+  // partial state; a corrected re-run succeeds).
+  if (Object.keys(checkpointMap).length === 0) {
+    assertBootstrapStateMapping(deps.config, derived.snapshot);
+  }
 
   // ── (4) Journal materialized COMPLETE before the first mutation (unjournaled per
   //      spec when journaling is disabled). ───────────────────────────────────────────
@@ -907,12 +918,37 @@ async function runCreateFlow(context: RunContext, flow: TaskFlow, ledger: StepLe
   const title = screenText(context.screener, flow.baseTitle);
   const description = desiredIssueDescription(context, flow);
 
+  // 024 T009 durable-anchor guard: with default-on mapping a mapped lane can place an
+  // issue in a state the sync scope EXCLUDES via `ignoredStateTypes` (canceled→
+  // "Canceled" is the default path) — the issue stays durable (it holds the canonical
+  // identity attachment URL) but invisible to matching, so the task re-plans as a
+  // create. The guard fires only for a RE-PLANNED create — a stored checkpoint means the
+  // sync minted this identity before, so the canonical URL is already issued. It
+  // reconciles by canonical URL BEFORE minting an intent/attempt: a carrier exists ⇒
+  // the identity is minted — skip the cell instead of conjuring a duplicate anchor
+  // (Constitution II; the ignored-state issue stays deliberately outside sync management,
+  // and the run converges — every later plan skips identically with zero mutation).
+  // Fresh creates (no checkpoint) keep the existing attempt-then-reconcile flow — the
+  // indeterminate-create recovery path pins exactly one attempt (data-model §8) — and
+  // pending/terminal intents already returned above (FR-012 replay guard).
+  if (flow.checkpoint !== undefined) {
+    const carriers = await carriersFor(context.deps.port, context.config, uuid);
+    if (carriers.length > 0) {
+      skipOutcome(
+        context,
+        flow,
+        `durable identity already held by ${carriers.length === 1 ? "an issue" : `${carriers.length} issues`} outside the sync scope (ignored workflow state) — no new issue created (Principle II)`,
+      );
+      return;
+    }
+  }
+
   // 023 C6.3 — a lane-labeled create goes straight into the MAPPED state (the tracker
   // default otherwise). Resolution happens BEFORE the intent and the single attempt, so
   // a dead lane name fails the cell without ever creating an issue.
   const createLaneLabel = flow.entry.reasons.find((r) => r.startsWith("lane:"));
   let laneStateType: string | undefined;
-  if (createLaneLabel !== undefined) {
+  if (createLaneLabel !== undefined && stateMappingActive(context.config, teamKey)) {
     try {
       laneStateType = resolveLaneState(context.config, context.snapshot, teamKey, createLaneLabel.slice("lane:".length))?.stateType;
     } catch {
@@ -1167,6 +1203,12 @@ async function runUpdateFlow(context: RunContext, flow: TaskFlow, ledger: StepLe
     if (desired !== issue.description) patch.description = desired;
   }
   if (changed.includes("state")) {
+    if (laneDriven && !stateMappingActive(context.config, flow.routing.teamKey)) {
+      // C3.2 (T024): mapping OFF at apply time ⇒ a lane-driven move never mutates (the
+      // plan predates the disable; the live config wins, mirroring `completionStateId`).
+      skipOutcome(context, flow, "state-mapping-disabled — configured disable landed after planning; state left untouched");
+      return;
+    }
     if (laneDriven) {
       let resolved: ReturnType<typeof resolveLaneState> | "conflict" = null;
       try {
@@ -1327,6 +1369,9 @@ async function renderConflictFile(
 
 async function completionStateId(context: RunContext, flow: TaskFlow): Promise<string | null | "conflict"> {
   const teamKey = flow.routing.teamKey;
+  // C3.2 (T024): an inactive team never moves state on this seam — a plan built before
+  // a config change (or a hand-crafted store) can never smuggle a completion move.
+  if (!stateMappingActive(context.config, teamKey)) return null;
   let stateName: string;
   try {
     stateName = desiredCompletionStateName(context.config, teamKey, flow.task.checked ?? false);

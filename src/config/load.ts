@@ -6,7 +6,7 @@
  */
 import { statSync, readFileSync } from "node:fs";
 
-import { builtInDefaults, DERIVATIONS } from "./defaults.js";
+import { builtInDefaults, DEFAULT_LANE_STATE_MAP, DEFAULT_WORKFLOW_STATE_NAMES, DERIVATIONS } from "./defaults.js";
 import { deepMerge } from "./merge.js";
 import { ConfigFileError } from "./schema.js";
 import type { ConfigOverrides, LoadConfigOptions, ResolvedConfig } from "./schema.js";
@@ -94,6 +94,60 @@ function applyToolIdDerivations(merged: Record<string, unknown>, explicit: Set<s
   }
 }
 
+/**
+ * 024 resolution pass (research R1; contract C2.1/C2.2; data-model §2): after the
+ * defaults→file→overrides merge, materialize the task-state-mapping defaults for
+ * EVERY team key present in `merged.teams` — the resolved config is the single
+ * source of truth, so `resolveLaneState`/`desiredCompletionStateName` consume the
+ * defaults as ordinary configured values (zero mapping-logic change).
+ *
+ * Fill rules (deterministic and total — identical inputs ⇒ byte-identical
+ * `canonicalizeConfig`, C2.3):
+ *  - identity entries (`backlog`/`todo`/`inProgress`/`done`): `undefined` ⇒ filled
+ *    from `DEFAULT_WORKFLOW_STATE_NAMES`; a configured non-empty string wins (FR-006);
+ *    a configured blank/`null` string is KEPT (validation unchanged — C2.4; the
+ *    resolver treats `null` as missing, research R7);
+ *  - `lanes`: absent ⇒ a FRESH per-team copy of `DEFAULT_LANE_STATE_MAP`; present
+ *    map ⇒ every absent table key filled, configured lane keys kept; an explicit
+ *    `null` map SURVIVES as `null` (lane-mapping OFF — research R3; `"lanes": {}`
+ *    is NOT the disable — it deep-merges into all-defaults);
+ *  - a team ABSENT from the config is never created; a non-object team row or
+ *    `workflowStates` value is left untouched (the identity gate names it).
+ */
+export function applyStateMappingDefaults(merged: Record<string, unknown>): void {
+  // FR-007: the global disable lever means "leave issue state untouched" — the
+  // default table fills NOTHING, configured or not (the legacy no-mapping posture).
+  if (merged.stateMappingEnabled === false) return;
+  const teams = merged.teams;
+  if (teams === null || typeof teams !== "object" || Array.isArray(teams)) return;
+  for (const teamKey of Object.keys(teams as Record<string, unknown>)) {
+    const team = (teams as Record<string, unknown>)[teamKey];
+    if (team === null || typeof team !== "object" || Array.isArray(team)) continue;
+    const teamRecord = team as Record<string, unknown>;
+    let workflowStates = teamRecord.workflowStates;
+    if (workflowStates === undefined) {
+      // A team row with only `projects` adopts the full default mapping (SC-001).
+      workflowStates = {};
+      teamRecord.workflowStates = workflowStates;
+    }
+    if (workflowStates === null || typeof workflowStates !== "object" || Array.isArray(workflowStates)) continue;
+    const ws = workflowStates as Record<string, unknown>;
+    if (ws.mappingEnabled === false) continue; // per-team disable adopts nothing (FR-007)
+    for (const [identity, defaultName] of Object.entries(DEFAULT_WORKFLOW_STATE_NAMES)) {
+      if (ws[identity] === undefined) ws[identity] = defaultName; // configured (incl. blank/null) wins — kept verbatim
+    }
+    if (ws.lanes === undefined) {
+      ws.lanes = { ...DEFAULT_LANE_STATE_MAP }; // fresh per-team copy — never a shared object (C2.2)
+    } else if (ws.lanes !== null && typeof ws.lanes === "object" && !Array.isArray(ws.lanes)) {
+      const lanes = ws.lanes as Record<string, unknown>;
+      for (const [lane, defaultName] of Object.entries(DEFAULT_LANE_STATE_MAP)) {
+        if (lanes[lane] === undefined) lanes[lane] = defaultName;
+      }
+    }
+    // `lanes: null` — explicit lane-mapping-off — survives untouched (R3).
+  }
+}
+
 /** Layered load: built-in defaults -> JSON file -> programmatic overrides (constitution III). */
 export function loadConfig(o: LoadConfigOptions = {}): ResolvedConfig {
   // `o.env` and `o.clock` are accepted per contract: env supplies NAME-based lookups at use
@@ -114,5 +168,9 @@ export function loadConfig(o: LoadConfigOptions = {}): ResolvedConfig {
   ) as Record<string, unknown>;
 
   applyToolIdDerivations(merged, explicit);
+  // 024 (research R1): resolution pass runs immediately after the toolId
+  // re-derivations — before any consumer (validation, engine, reports) reads the
+  // config, so the resolved document is the single truth (C2.4).
+  applyStateMappingDefaults(merged);
   return merged as unknown as ResolvedConfig;
 }

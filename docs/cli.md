@@ -103,7 +103,12 @@ The frozen gate trio: `--plan` (a stored `planId` — Plan_Reference), `--apply`
 (bootstrap vs sync) is engine-selected from checkpoints — the CLI never forces it.
 On success prints the applied `runId` and report paths; refusals exit 4 naming the
 frozen gate code (`CONFIRMATION_KEY_MISMATCH`, `PLAN_REFERENCE_UNKNOWN`,
-`LOW_CONFIDENCE_NOT_ACCEPTED`, …) with zero mutations.
+`LOW_CONFIDENCE_NOT_ACCEPTED`, …) with zero mutations. A bootstrap apply
+additionally validates the default-on state mapping against the live workflow
+first (feature 024): a configured lane name or required type category the
+team's workflow lacks exits 3 (`StateMappingBootstrapError`) listing every
+gap with the available states — zero writes, zero checkpoints, zero
+telemetry; sync mode keeps the plan-time conflict finding instead.
 
 ### `rollback` — reverse a journaled run
 
@@ -145,7 +150,7 @@ These five route through the `QueueSurface` seam, not the engine:
 | 0 | `SUCCESS` | command completed normally |
 | 1 | `UNEXPECTED_ERROR` | anything unmapped (sanitized one-line stderr) |
 | 2 | `USAGE_ERROR` | parse failures: unknown command/flag, arity, missing `--plan`, apply flags on `plan`/`check` |
-| 3 | `CONFIGURATION_ERROR` | config file errors (category + path), missing workspace identity, state placement, `TaskDepthConfigError` (invalid `maxTaskIssueDepth`: key + value only, 020), credential-preflight diagnostics (names only, never values) |
+| 3 | `CONFIGURATION_ERROR` | config file errors (category + path), missing workspace identity, state placement, `TaskDepthConfigError` (invalid `maxTaskIssueDepth`: key + value only, 020), credential-preflight diagnostics (names only, never values), bootstrap state-mapping refusals `StateMappingBootstrapError` (every missing name with available states, 024) and malformed lane maps `LaneMapError` |
 | 4 | `GATE_REFUSED` | frozen gate refusals: `APPLY_FLAG_MISSING`, `CONFIRMATION_KEY_MISMATCH`, `LOW_CONFIDENCE_NOT_ACCEPTED`, `PLAN_REFERENCE_UNKNOWN`, `PLAN_REFERENCE_STALE`, `MANIFEST_UNJOURNALED`, `MANIFEST_EXPIRED` (plus queue-surface `refused` outcomes) |
 | 5 | `RUN_ABORTED` | aborted apply, integrity errors, report-screening failures, read-only violations, blocked output lines |
 | 6 | `LOCK_HELD` | another sync holds the lock — reported, never waited on or stolen |

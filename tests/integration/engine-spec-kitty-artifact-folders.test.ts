@@ -62,14 +62,20 @@ test("T027 apply: three issues land, artifacts conjure nothing, status log witho
     const engine = attachEngine(w, createSyncEngine, { keyProvider: w.keyProvider });
     const plan = await engine.buildSyncPlan({ repositoryRoot: w.repositoryRoot });
     for (const entry of plan.entries) {
-      assert.ok(!entry.changedFields.includes("state"), "the status log without a configured lanes map never patches state");
+      // Lane authority stays with the event log (023 C6.1) — the `planned` lane rides
+      // the CREATE carrier label (`lane:planned`), not `changedFields`, so no entry
+      // reports state drift here.
+      assert.ok(!entry.changedFields.includes("state"), "lane state rides the create, never a drift patch");
     }
     const applied = await engine.applySyncPlan(plan, gates(w, plan));
     assert.equal(applied.status, "applied");
     const creates = callsOf(w, "createIssue");
     assert.equal(creates.length, 3, "exactly the three canonical documents create");
     for (const c of creates) {
-      assert.equal((c.args[0] as CreateIssueInput).stateType, undefined, "unmapped lane ⇒ tracker default state");
+      // 024 default-on: the log's `planned` lane event now resolves through the default
+      // table (planned → "Backlog", FR-002), so the create CARRIES its mapped state —
+      // this replaces the pre-default "unmapped lane ⇒ tracker default" posture.
+      assert.equal((c.args[0] as CreateIssueInput).stateType, "backlog", "planned-lane create carries the default Backlog state");
     }
     assert.equal(w.fake.world.issues.size, 3, "no artifact, roll-up, roster id or unknown wp_id conjured an issue");
   } finally {

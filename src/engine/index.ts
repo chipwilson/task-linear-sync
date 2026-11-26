@@ -73,6 +73,15 @@ export { synthesizeConflictMarkerBlock } from "./markers.js";
 
 // ── Completion mapping (T023; research R7; tests T016/T033) ────────────────────────
 export { desiredCompletionStateName, resolveWorkflowStateId } from "./completion.js";
+// 024 (T017): bootstrap state-mapping validator surface — the refusal error and the
+// per-team report shape are operator-facing (exit 3 diagnostics, CI annotations).
+export {
+  StateMappingBootstrapError,
+  assertBootstrapStateMapping,
+  computeBootstrapMappingReports,
+  bootstrapMappingTeamPasses,
+} from "./state-validation.js";
+export type { BootstrapMappingReport, MappingMiss, MappingNearMatch } from "./state-validation.js";
 
 // ── Payload rewrite + history append/rollover (T042; history-log contract; T029/T035)
 export type {

@@ -9,7 +9,8 @@
  *  - ONLY `WP02` (last qualifying event `in_progress`, mapped to `Doing`) plans
  *    `changedFields += "state"` with label `lane:in_progress`; apply patches the `Doing`
  *    state id and records the append-only `"lane-changed"` history event;
- *  - `WP01` (no lane events) stays untouched, no label; `WP03` (`canceled`, unmapped) is
+ *  - `WP01` (no lane events) stays untouched, no label; `WP03` (`blocked` — the one lane
+ *    the 024 default table deliberately leaves without a counterpart, FR-003) is
  *    untouched with `lane-state-unmapped` reported;
  *  - the contradiction fixture NEVER resolves to `status.json` / front matter (they say
  *    `planned`); mirrored descriptions carry no status text and no `---` block;
@@ -111,7 +112,10 @@ test("spec-kitty-event-status: the log is the SOLE status authority — one lane
     assert.ok(!wp01.reasons.includes("lane-state-unmapped"));
     const wp03 = byPath("WP03-teardown");
     assert.equal(wp03.decision, "create");
-    assert.ok(wp03.reasons.includes("lane-state-unmapped"), "canceled is NOT configured for team acme — untouched + reported");
+    assert.ok(
+      wp03.reasons.includes("lane-state-unmapped"),
+      "blocked has no built-in default counterpart (FR-003) — untouched + reported",
+    );
     assert.ok(!wp03.changedFields.includes("state"), "an unmapped lane never patches state");
 
     // Reported findings: the malformed line COUNT (content never propagates) and the
@@ -139,7 +143,11 @@ test("spec-kitty-event-status: the log is the SOLE status authority — one lane
     const creates = callsOf(w, "createIssue");
     assert.equal(creates.length, 2, "WP01 + WP03 create; WP02 re-matched its seeded issue");
     for (const c of creates) {
-      assert.equal((c.args[0] as CreateIssueInput).stateType, undefined, "unmapped/absent lanes create at the tracker default");
+      assert.equal(
+        (c.args[0] as CreateIssueInput).stateType,
+        undefined,
+        "no lane events (WP01) / unmapped lane (WP03) ⇒ tracker default state (C6.2 preserved)",
+      );
     }
 
     // `lane-changed` history (append-only additive kind) — NOT a checkbox event.

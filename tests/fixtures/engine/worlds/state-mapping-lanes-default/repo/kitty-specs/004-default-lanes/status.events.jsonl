@@ -1,0 +1,6 @@
+{"wp_id": "WP01", "from_lane": "genesis", "to_lane": "planned", "at": "2025-11-01T09:00:00Z", "actor": "ops-placeholder"}
+{"wp_id": "WP02", "from_lane": "planned", "to_lane": "claimed", "at": "2025-11-01T09:01:00Z", "actor": "ops-placeholder"}
+{"wp_id": "WP03", "from_lane": "claimed", "to_lane": "in_progress", "at": "2025-11-01T09:02:00Z", "actor": "ops-placeholder"}
+{"wp_id": "WP04", "from_lane": "in_progress", "to_lane": "done", "at": "2025-11-01T09:03:00Z", "actor": "ops-placeholder"}
+{"wp_id": "WP05", "from_lane": "planned", "to_lane": "canceled", "at": "2025-11-01T09:04:00Z", "actor": "ops-placeholder"}
+{"wp_id": "WP06", "from_lane": "planned", "to_lane": "blocked", "at": "2025-11-01T09:05:00Z", "actor": "ops-placeholder"}

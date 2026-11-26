@@ -34,6 +34,8 @@ const WORLD = {
         { id: "ac000000-0000-4000-8000-000000000201", name: "Backlog", type: "backlog" },
         { id: "ac000000-0000-4000-8000-000000000202", name: "Todo", type: "todo" },
         { id: "ac000000-0000-4000-8000-000000000203", name: "Done", type: "completed" },
+        { id: "ac000000-0000-4000-8000-000000000204", name: "In Progress", type: "started" },
+        { id: "ac000000-0000-4000-8000-000000000205", name: "Canceled", type: "canceled" },
       ],
     },
   ],

@@ -1,4 +1,5 @@
 {
+  "stateMappingEnabled": false,
   "teams": {
     "acme": {
       "projects": [],

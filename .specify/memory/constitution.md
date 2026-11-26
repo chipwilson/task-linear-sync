@@ -1,6 +1,28 @@
 <!--
 Sync Impact Report
 ==================
+- Version change: 1.0.0 → 1.1.0 (MINOR: added a narrowly-scoped exception to Principle III;
+  no principle removed, no existing MUST relaxed beyond the exception's own terms)
+- Modified principles:
+  - Core Principles III. Intelligent Defaults, Overridable Configuration — added the feature-024
+    platform-default exception: built-in defaults MAY ship for per-team workflow-state identities
+    and the lane-to-state mapping WHEN the shipped values are the platform's (Linear's) own
+    generic default workflow-state names, remain overridable through the existing deep-merge
+    precedence, and are validated against the team's live workflow before any mutation. The
+    zero-organization-literal ban and the "no built-in default for workspace-tied values" rule are
+    otherwise retained verbatim; team/project identities, `Project_by_Path`, and default
+    team/project remain default-free.
+- Added sections: none
+- Removed sections: none
+- Follow-up TODOs: none — the exception is exercised by `src/config/defaults.ts`, the load-time
+  resolution pass (`applyStateMappingDefaults`), and the bootstrap validator
+  (`src/engine/state-validation.ts`); feature 024 records amendments A-024-0/1/2
+- (Prior adoption retained below.)
+-->
+
+<!--
+Sync Impact Report
+==================
 - Version change: (none — initial adoption) → 1.0.0 (MAJOR: first ratified constitution)
 - Modified principles: none (initial adoption; scaffold contained placeholders only)
 - Added sections:
@@ -68,7 +90,12 @@ overridable via configuration, deep-merged in precedence order: built-in default
 file, then programmatic overrides. Only values intrinsically tied to a specific workspace MAY be
 required from the consumer — team identities, per-team project identities, per-team workflow
 state identities, `ProjectByPath` entries, and default team/project — and these MUST have no
-built-in default. Distributed defaults, example configs, and documentation MUST contain zero real
+built-in default, EXCEPT that built-in defaults MAY ship for per-team workflow-state identities
+and the task lane-to-state mapping when the shipped values are the platform's own generic default
+names (Linear's default team workflow states), remain overridable through the existing deep-merge
+precedence, and are validated against each team's live workflow before any mutation (feature 024,
+amendment A-024-0; platform-generic names carry zero organization-specific information);
+Distributed defaults, example configs, and documentation MUST contain zero real
 organization identifiers, team keys, tokens, or UUID values; tool-owned names derive from the
 configurable `toolId` and placeholders MUST remain benign and generic.
 
@@ -205,4 +232,4 @@ permitted.
   constitution governs and the conflict MUST be resolved by amendment or by correcting the
   requirement.
 
-**Version**: 1.0.0 | **Ratified**: 2026-10-20 | **Last Amended**: 2026-10-20
+**Version**: 1.1.0 | **Ratified**: 2026-10-20 | **Last Amended**: 2026-11-25
