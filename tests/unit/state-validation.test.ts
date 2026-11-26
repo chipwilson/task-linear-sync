@@ -280,3 +280,31 @@ test("024 validator: reports are deterministic — identical inputs produce iden
   const second = JSON.stringify(computeReports!(configOverAcme(), [world]));
   assert.equal(first, second);
 });
+
+test("024 cross-cutting: bootstrap refusals leak no state ids, no credentials — lane paths and names only (R10)", async () => {
+  const { StateMappingBootstrapError } = await import("../../src/engine/state-validation.js");
+  const world = defaultWorkflow("acme", "st-a");
+  const config = configOver({ teams: { acme: { projects: ["p"], workflowStates: { done: "Finished" } } } });
+  let err: InstanceType<typeof StateMappingBootstrapError> | undefined;
+  try {
+    assertMapping!(config, [world]);
+  } catch (e) {
+    err = e as InstanceType<typeof StateMappingBootstrapError>;
+  }
+  assert.ok(err instanceof StateMappingBootstrapError);
+  // Names and lane entry paths surface; state IDs (the `st-a…` seed and any digits) do not.
+  assert.match(err!.message, /Finished/);
+  assert.match(err!.message, /workflowStates\.done/);
+  assert.doesNotMatch(err!.message, /st-a/);
+  assert.doesNotMatch(err!.message, /\d{3}/);
+  for (const r of err!.reports) {
+    // The typed report carries no id fields at all; the runtime check pins it.
+    assert.equal((r as unknown as Record<string, unknown>).stateId, undefined);
+    assert.equal((r as unknown as Record<string, unknown>).stateTypeId, undefined);
+  }
+  // The payload serializes nothing credential-shaped (audit-safe by construction).
+  assert.doesNotMatch(JSON.stringify(err!.reports), /token|secret|credential/i);
+  // Screening posture is unchanged by the mapping pass: a fully default team passes with
+  // the validator reporting nothing else about the source.
+  assert.equal(assertMapping!(configOver({}), [defaultWorkflow("acme", "st-b")]), undefined);
+});

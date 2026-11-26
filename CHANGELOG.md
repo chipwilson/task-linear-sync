@@ -7,6 +7,39 @@ this preview — lives in [docs/versioning.md](docs/versioning.md).
 
 ## [Unreleased]
 
+Feature — **default-on task state mapping to Linear default issue states**
+(feature 024). Spec Kitty lane moves now work with zero configuration: the
+per-team `workflowStates.lanes` map gains a built-in default table resolved
+at config load — `planned`/`claimed` → `Todo`, `in_progress`/`for_review`/
+`in_review`/`approved` → `In Progress`, `done` → `Done`, and `Backlog` for
+creates — so a zero-config team's mission lifecycle drives real Linear states
+instead of reporting `lane-state-unmapped` for every lane. Configured
+entries keep winning lane by lane; `blocked` stays unmapped until configured
+(it has no Linear counterpart), and `canceled` requires a `canceled`-type
+state (natively `Canceled`; `Done` serves when there is none).
+
+- **BREAKING** — bootstrap runs now validate every configured lane target
+  and workflow-state identity against the live team workflow BEFORE any
+  write: a missing name or missing `completed`/`canceled` type category
+  refuses the run with exit 3 (`StateMappingBootstrapError`), listing every
+  gap with the team's available states and correction steps (sync mode keeps
+  the 023 plan-time conflict finding). Teams whose configured states live in
+  renamed columns must add the matching `workflowStates` entries or disable
+  the mapping.
+- The config-shape floor "every team declares ≥ 1 workflow-state identity"
+  no longer rejects identity-light configs under default-on mapping — the
+  materialized defaults satisfy it at load. It returns verbatim under an
+  explicit mapping disable.
+- Escape hatches restoring the exact 0.7 posture: `stateMappingEnabled:
+  false` (root) or `teams[<key>].workflowStates.mappingEnabled: false`
+  (per team) disable the defaults and the validation together;
+  `lanes: null` requests no lane moves at all (`{}` is not the null).
+- A bootstrap-created task whose lane later names a hidden (`ignoredTypes`)
+  state resumes against its own issue after a state round-trip instead of
+  creating a duplicate — the durable create-intent anchor records the issue
+  before the state patch is issued, and a create resumed from an applied
+  intent carries no state at all.
+
 ## [0.7.0] - 2026-11-24
 
 Feature — **spec-kitty sub-task depth + event-log status authority**

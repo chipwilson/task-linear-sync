@@ -463,3 +463,55 @@ C2/C4):
   work-package id + bare `T` token identity, durable-only pairing, promoted spans holed
   from the parent mirror). At the shipped default cap of 1 the old posture IS the
   behavior — folding renders the parent body byte-identical to 0.6.0.
+
+## Feature 024 amendments — default-on task state mapping & bootstrap validation
+
+Linear's default state names ship as built-in defaults, an enablement switch pair
+governs them, and bootstrap validates every mapped name against the team's live
+workflow. The normative feature contract is
+[specs/024-default-state-mapping/contracts/state-mapping-defaults.md](../specs/024-default-state-mapping/contracts/state-mapping-defaults.md)
+(C1–C7). This is the feature's BREAKING default-behavior change: "no lanes configured
+⇒ no state moves" now requires the explicit disable (see the CHANGELOG callout).
+
+- 2026-11-25 · config · `DEFAULT_WORKFLOW_STATE_NAMES` / `DEFAULT_LANE_STATE_MAP` ·
+  new frozen exports in `src/config/defaults.ts` — the four workflow-state identity
+  defaults and the lane→state table over Linear's own default workflow names (no
+  `blocked` entry; `canceled` carries NO name identity) · A-024-0 (constitution v1.1.0
+  Principle III platform-default exception; supersedes ONLY the "NO built-in default
+  ships" clause of A-023-0(b) for these tables — configured values still win per the
+  existing deep-merge precedence and authored blanks still fail `LaneMapError`) ·
+  artifacts: `src/config/{defaults,load}.ts` (`applyStateMappingDefaults` resolution
+  pass), the regenerated `tests/contract/snapshots/frozen-surface.json` · gate:
+  `tests/unit/config-state-mapping-defaults.test.ts`,
+  `tests/integration/state-mapping-defaults.test.ts` · migration: a team row with only
+  `projects` now moves issues on checkbox/lane movement; the pre-024 posture is restored
+  verbatim by `stateMappingEnabled: false` / per-team `mappingEnabled: false` /
+  `lanes: null`
+
+- 2026-11-25 · config+engine · `stateMappingEnabled` (root, built-in `true`) ·
+  `WorkflowStateIdentities.mappingEnabled?` (per-team) · new engine helper
+  `stateMappingActive(config, teamKey)` · A-024-1 (research R7: one enablement rule
+  across both arms — an inactive team derives NO state change from a checkbox or lane
+  event, reports `state-mapping-disabled`, and validates vacuously) · artifacts:
+  `src/config/{schema,defaults,load}.ts`, `src/domain/routing.ts`,
+  `src/engine/{completion,build,apply}.ts` · gate:
+  `tests/integration/state-mapping-disable.test.ts`,
+  `tests/unit/state-validation.test.ts` · migration: additive optional keys; absent ⇒
+  enabled (the new default); a disabled run is otherwise byte-identical to the pre-024
+  default-off posture (US4-AC2)
+
+- 2026-11-25 · engine · `StateMappingBootstrapError` · new named engine-family error +
+  `computeBootstrapMappingReports` / `assertBootstrapStateMapping` (new module
+  `src/engine/state-validation.ts`, re-exported from the engine surface) · A-024-2
+  (research R4/R5/R6: bootstrap mode validates every mapped name — default or
+  configured — against the stage-3 snapshot at plan build and again in apply before the
+  first mutation; one error carries every team's PASS/FAIL, entry paths, available
+  `name (type)` states — never ids — case-differing hints that never clear a miss, and
+  correction steps; `exitCodeForError` registers it AND the previously unmapped
+  `LaneMapError` as `CONFIGURATION_ERROR` (3)) · artifacts:
+  `src/engine/{build,apply,exit-codes via src/cli/exit-codes}.ts` · gate:
+  `tests/unit/state-validation.test.ts`,
+  `tests/integration/bootstrap-mapping-validation.test.ts`,
+  `tests/e2e/cli-bootstrap-refusal.test.ts`, `tests/unit/cli-exit-codes.test.ts` ·
+  migration: sync-mode runs never execute the check (FR-011); a corrected config or
+  Linear workflow makes an otherwise-identical re-run succeed (SC-004)

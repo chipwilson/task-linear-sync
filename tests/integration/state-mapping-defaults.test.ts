@@ -29,7 +29,7 @@ import type { GateRequest } from "task-linear-sync/gates";
 import type { IssueUpdatePatch } from "task-linear-sync/ports";
 import type { Plan } from "task-linear-sync/domain";
 
-import { attachEngine, buildWorld, callsOf, mutationCalls, type EngineWorld } from "../helpers/engine-harness.js";
+import { attachEngine, buildWorld, callsOf, type EngineWorld } from "../helpers/engine-harness.js";
 import { createSyncEngine } from "../../src/engine/create.js";
 
 const DONE_ID = "ac000000-0000-4000-8000-000000000204";

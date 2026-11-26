@@ -311,11 +311,27 @@ parent body, while roster ids without a body anchor are reported as excluded
 and never become issues. Status is read ONLY from the mission's append-only
 `status.events.jsonl` (the last qualifying `wp_id`/`to_lane` line per work
 package wins; malformed lines are counted and reported, never read): a mapped
-lane (`workflowStates.lanes`, no built-in default) patches the issue state or
-carries it on create, an unmapped lane leaves the state untouched and is
-reported. `status.json` and front-matter `lane:` are never consulted, and no
+lane (`workflowStates.lanes`) patches the issue state or carries it on
+create; since feature 024 the lane map **defaults on** — an unconfigured lane
+resolves through the built-in table (feature 024), and only a lane with no
+counterpart there (e.g. `blocked`) is left untouched and reported.
+`status.json` and front-matter `lane:` are never consulted, and no
 status text ever enters mirrored content or the repository (status files are
 never written back).
+
+State mapping defaults (feature 024): a zero-config team resolves to
+Linear's default workflow states — `Todo` for `planned`/`claimed` lanes,
+`In Progress` for `in_progress`/`for_review`/`in_review`/`approved`, `Done`
+for `done`, and `Backlog` for creates; `canceled` needs a `canceled`-type
+state (natively `Canceled`; `Done` serves when there is none), and `blocked`
+stays unmapped until configured. Configured entries always win, lane by
+lane. Bootstrap runs validate every configured lane against the live
+workflow up front: a missing name or type category refuses the run
+(exit 3) listing every gap with the team's available states and
+correction steps, while sync mode keeps the 023 plan-time conflict
+finding. Two explicit disables opt out entirely — `stateMappingEnabled:
+false` (root) or `teams[<key>].workflowStates.mappingEnabled: false` —
+restoring the exact pre-024 unmapped posture.
 
 Identity is the mission plus the work-package id: the front-matter
 `work_package_id` scalar when present, else the leading `WP<digits>` token

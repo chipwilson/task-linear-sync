@@ -37,8 +37,16 @@ Identity values intentionally have **no defaults** (constitution III).
 `MissingIdentityError` naming **every** missing/empty value simultaneously (SC-002) —
 empty strings and empty arrays count as absent:
 
-- `teams` — ≥ 1 team key; per team: ≥ 1 project identity (`teams[<key>].projects`) and
-  ≥ 1 workflow-state identity (`teams[<key>].workflowStates`: backlog/todo/inProgress/done)
+- `teams` — ≥ 1 team key; per team: ≥ 1 project identity (`teams[<key>].projects`)
+- Workflow states **default on** (feature 024): an unconfigured team resolves to
+  Linear's default states (`Backlog`/`Todo`/`In Progress`/`Done`) through the
+  built-in lane table — see [configuration-reference.md](configuration-reference.md);
+  explicit `teams[<key>].workflowStates` entries override lane by lane. An
+  explicit mapping disable (`stateMappingEnabled: false` at the root, or
+  `teams[<key>].workflowStates.mappingEnabled: false` per team) restores the
+  pre-024 posture — and with it the classic identity floor: under a disable,
+  each team needs ≥ 1 workflow-state identity
+  (`teams[<key>].workflowStates`: backlog/todo/inProgress/done)
 - `projectByPath[n].teamKey` and `projectByPath[n].project` — both required per entry
   (project-only shapes are unsupported)
 - `defaultTeamKey`, `defaultProject` — non-empty
